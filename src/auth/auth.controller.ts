@@ -44,7 +44,7 @@ export class AuthController {
 
     const isCapacitor = this.supportsCapacitor
 
-    console.log('isCapacitor', isCapacitor)
+    console.log('isCapacitor ?', isCapacitor)
 
     try {
       const userId = await this.findOrCreateUser(user);
