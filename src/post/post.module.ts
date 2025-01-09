@@ -5,9 +5,6 @@ import { PostController } from './post.controller';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { UserModel } from 'src/user/user.model';
 import { GraphModule } from 'src/graph/graph.module';
-import { PostTagModule } from 'src/postTag/postTag.module';
-import { TaggedPostModule } from 'src/taggedPost/taggedPost.module';
-import { PythonModule } from 'src/microservice/python.module';
 import { S3Module } from 'src/s3/s3.module';
 import { PostReactionModule } from 'src/postReaction/postReaction.module';
 import { UserPostReactionModule } from 'src/userPostReaction/userPostReaction.module';
@@ -38,9 +35,6 @@ import { getJwtConfig } from 'src/config/jwt.config';
       },
     ]),
     GraphModule,
-    PostTagModule,
-    TaggedPostModule,
-    PythonModule,
     S3Module,
     PostReactionModule,
     UserPostReactionModule,

@@ -16,12 +16,12 @@ export class PostModel extends TimeStamps {
     @prop({ ref: () => UserModel, index: true })
     user: Ref<UserModel>
 
+    @prop({ ref: () => GraphModel, index: true })
+    graphId: Ref<GraphModel>
+
     @prop ({ index: true })
     content: string
 
     @prop ()
     imgPath?: string
-
-    @prop({ ref: () => GraphModel, index: true })
-    graphId: Ref<GraphModel>
 }

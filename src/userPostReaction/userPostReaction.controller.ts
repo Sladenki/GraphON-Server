@@ -27,7 +27,7 @@ export class UserPostReactionController {
         )   
     }
 
-    // Проверка, поставил ли пользователь реакцию
+    // --- Проверка, поставил ли пользователь реакцию --- 
     @Get('checkUserReaction')
     async checkUserReaction(
         @Body() dto: {reactionId: string, userId: string}

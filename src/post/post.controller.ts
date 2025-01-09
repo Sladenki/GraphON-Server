@@ -25,15 +25,14 @@ export class PostController {
     @UsePipes(new ValidationPipe())
     @HttpCode(200)
     @Post('create')
-    // @Auth()
-    @UseGuards(AuthGuard('google'))
+    @Auth()
     @UseInterceptors(FileInterceptor('imgPath'))
     async createPost(
       @CurrentUser('_id') userId: Types.ObjectId,
       @Body() dto: CreatePostDto,
       @UploadedFile() imgPath: any,
     ) {
-      // console.log('CurrentUser - dto', dto)
+      console.log('createPost', userId, dto, imgPath)
       dto.imgPath = imgPath;
       return this.postService.createPost(dto, userId)
     }

@@ -31,7 +31,7 @@ export class PostReactionModel extends TimeStamps {
     @prop({ default: 0})
     clickNum: number
 
-    @prop({ ref: () => PostModel })
+    @prop({ ref: () => PostModel, index: true })
     post: Ref<PostModel>
 }
 

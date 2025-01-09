@@ -3,15 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { getMongoConfig } from './config/mongo.config';
 import { UserModule } from './user/user.module';
-// import { UserSubsModule } from './userSubs/userSubs.module';
 import { PostModule } from './post/post.module';
 import { LogginMiddleware } from './logging.middleware';
 // import { CacheModule } from '@nestjs/cache-manager';
 // import { redisStore } from 'cache-manager-redis-yet';
 import { GraphModule } from './graph/graph.module';
-import { PostTagModule } from './postTag/postTag.module';
-import { TaggedPostModule } from './taggedPost/taggedPost.module';
-// import { PythonModule } from './microservice/python.module';
 import { S3Module } from './s3/s3.module';
 import { PostReactionModule } from './postReaction/postReaction.module';
 import { UserPostReactionModule } from './userPostReaction/userPostReaction.module';
@@ -53,17 +49,13 @@ import { AppService } from './app.service';
     AuthModule,
 
     UserModule,
-    // // UserSubsModule,
     PostModule,
 
-    PostTagModule,
-    TaggedPostModule,
     GraphModule,
 
     PostReactionModule,
     UserPostReactionModule,
 
-    // PythonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
