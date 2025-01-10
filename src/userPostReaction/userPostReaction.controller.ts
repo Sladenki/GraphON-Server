@@ -18,7 +18,7 @@ export class UserPostReactionController {
         @CurrentUser('_id') userId: Types.ObjectId,
         @Body() dto: {reactionId: string, postId: string, isReacted: boolean}
     ) {
-        console.log('dto', dto, userId)
+        // console.log('dto', dto, userId)
         return this.userPostReactionPostService.createUserAndReactionConnection(
             userId,
             dto.reactionId,

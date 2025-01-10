@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post, Query, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { PostService } from "./post.service";
 import { Auth, OptionalAuth } from "src/decorators/auth.decorator";
-import { CurrentUser, OptionalCurrentUser } from "src/decorators/currentUser.decorator";
+import { CurrentUser } from "src/decorators/currentUser.decorator";
 import { Types } from "mongoose";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -11,14 +11,22 @@ import { AuthGuard } from "@nestjs/passport";
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-    // Получение всех постов 
-    @Get('getPosts')
-    @OptionalAuth()
+    // Получение всех постов
+    @Get('getPostsNoAuth')
+    async getAllPostsWithInfoNoAuth(
+      @Query('skip') skip,
+    ) {
+      return this.postService.getPostsNoAuth(skip)
+    }
+
+    // Получение всех постов для авторизованного пользователя
+    @Get('getPostsAuth')
+    @Auth()
     async getAllPostsWithInfo(
       @Query('skip') skip,
-      @OptionalCurrentUser('_id') userId?: Types.ObjectId,
+      @CurrentUser('_id') userId: Types.ObjectId,
     ) {
-      return this.postService.getPosts(skip, userId)
+      return this.postService.getPostsAuth(skip, userId)
     }
 
     // Создание поста 

@@ -1,6 +1,8 @@
 import { prop, Ref, modelOptions } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { Types } from "mongoose";
 import { GraphModel } from "src/graph/graph.model";
+import { PostReactionModel } from "src/postReaction/postReaction.model";
 import { UserModel } from "src/user/user.model";
 
 // Base - уникальные id 
@@ -24,4 +26,7 @@ export class PostModel extends TimeStamps {
 
     @prop ()
     imgPath?: string
+
+    @prop({ type: [Types.ObjectId], ref: () => PostReactionModel })
+    reactions?: Types.ObjectId[];
 }

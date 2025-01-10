@@ -92,6 +92,7 @@ export class PostService {
 
 
     // Если `reactionObject` присутствует, отправляем его в postReactionService
+    let reactionId: Types.ObjectId | undefined = undefined;
     if (reactionObject) {
       // Если emoji пустое, установим значение по умолчанию
       const emoji = reactionObject.emoji || Emoji.LOVE;
@@ -103,44 +104,49 @@ export class PostService {
       };
 
       try {
-        await this.postReactionService.createPostReaction(reactionDto);
+        const reaction = await this.postReactionService.createPostReaction(reactionDto);
+
+        reactionId = reaction._id;
         console.log('Reaction created successfully');
       } catch (error) {
         console.error('Error creating reaction:', error);
       }
     }
 
+    if (reactionId) {
+      await this.PostModel.findByIdAndUpdate(
+        newPost._id,
+        { $push: { reactions: reactionId } }, // Добавляем ID реакции в массив reactions
+        { new: true },
+      );
+    }
+
+
     return newPost;
   }
 
-  // --- Получение всех постов --- 
-  async getPosts(skip: any, userId?: Types.ObjectId): Promise<any[]> {
+  // --- Получение всех постов ---
+  async getPostsNoAuth(skip: any): Promise<any[]> {
     const skipPosts = skip ? Number(skip) : 0;
-
+  
+    // Получаем посты, как и раньше
     const posts = await this.PostModel.find()
       .populate('user', 'name avaPath')
       .skip(skipPosts)
       .limit(DEFAULTLIMIT_POSTS)
       .sort({ createdAt: -1 })
       .lean(); // Преобразуем посты в обычные объекты
-
+  
+    // Для каждого поста обрабатываем реакции
     const postsWithReactions = await Promise.all(
       posts.map(async (post) => {
-        // Находим реакции для текущего поста и преобразуем их в обычные объекты
-        const reactions = await this.postReactionService.findReactionsByPostId(
-          post._id,
-        );
+        const postReactions = post.reactions
 
+        console.log('postReactions', postReactions)
+  
         // Проверяем наличие реакции от пользователя для каждой реакции
         const reactionsWithUserStatus = await Promise.all(
-          reactions.map(async (reaction) => {
-            // console.log('reactionsWithUserStatus', 'called', userId)
-            const isReacted = userId
-              ? await this.userPostReactionService.isUserReactionExists(
-                  reaction._id.toString(),
-                  userId.toString(),
-                )
-              : false;
+          postReactions.map(async (reaction: any) => {
 
             return {
               _id: reaction._id,
@@ -150,30 +156,67 @@ export class PostService {
               post: reaction.post,
               createdAt: reaction.createdAt,
               updatedAt: reaction.updatedAt,
-              isReacted, // Добавляем статус реакции пользователя
             };
           }),
         );
-
-        // Определяем isReacted на уровне поста как true, если хотя бы одна реакция от пользователя
-        const postIsReacted = reactionsWithUserStatus.some(
-          (reaction) => reaction.isReacted,
-        );
-
-        // console.log('postIsReacted', postIsReacted)
-
-        // console.log('post', post)
-
+  
         return {
           ...post,
           reactions: reactionsWithUserStatus,
-          isReacted: postIsReacted,
         };
       }),
     );
-
+  
     return postsWithReactions;
   }
+
+  // --- Получение всех постов для авторизованного пользователя --- 
+  async getPostsAuth(skip: any, userId?: Types.ObjectId): Promise<any[]> {
+    // console.log('userId', userId)
+
+    const skipPosts = skip ? Number(skip) : 0;
+  
+    // Получаем посты, как и раньше
+    const posts = await this.PostModel.find()
+      .populate('user', 'name avaPath')
+      .populate('reactions', '_id text emoji clickNum')
+      .skip(skipPosts)
+      .limit(DEFAULTLIMIT_POSTS)
+      .sort({ createdAt: -1 })
+      .lean(); // Преобразуем посты в обычные объекты
+
+      // console.log('posts', posts)
+
+      const postsWithReactions = await Promise.all(
+        posts.map(async (post) => {
+          const reactionsWithStatus = await Promise.all(
+            post.reactions.map(async (reaction) => {
+              const isReacted = userId
+                ? await this.userPostReactionService.isUserReactionExists(
+                    reaction._id.toString(), // ID реакции
+                    userId.toString() // ID пользователя
+                  )
+                : false;
+    
+              return {
+                ...reaction, // Оставляем все остальные данные реакции
+                isReacted, // Добавляем поле isReacted
+              };
+            })
+          );
+    
+          return {
+            ...post,
+            reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
+          };
+        })
+      );
+    
+      return postsWithReactions;
+  
+  }
+  
+
 
 
 

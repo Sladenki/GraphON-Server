@@ -71,11 +71,13 @@ export class UserPostReactionService {
     reactionId: string,
     userId: string,
   ): Promise<boolean> {
-    console.log('isUserReactionExists', reactionId, userId)
+    // console.log('isUserReactionExists', reactionId, userId)
     const reaction = await this.userPostReactionModel.findOne({
       postReaction: new Types.ObjectId(reactionId),
       user: new Types.ObjectId(userId),
     });
+
+    // console.log('Есть реакция?', !!reaction)
 
     return !!reaction; // true, если реакция найдена; иначе false
   }
