@@ -41,6 +41,8 @@ export class PostService {
 
   // --- Создание поста ---
   async createPost(dto: CreatePostDto, creatorId: Types.ObjectId) {
+    console.log('createPost', dto);
+
     const childrenTopic = dto.childrenTopic;
     console.log('childrenTopic', childrenTopic);
 
@@ -62,8 +64,6 @@ export class PostService {
     // @ts-ignore
     const reactionObject = JSON.parse(dto.reaction);
 
-    const userId = creatorId.toString();
-
     this.UserModel.findByIdAndUpdate(
       creatorId,
       { $inc: { postsNum: 1 } },
@@ -83,8 +83,8 @@ export class PostService {
     const newPost = await this.PostModel.create({
       content: dto.content,
       user: creatorId,
-      ...(childGraphId && { graphId: childGraphId }),
-      // graphId: graph._id,
+      // @ts-ignore
+      graphId: new Types.ObjectId(selectedTopicId),
       // @ts-ignore
       ...(imgPathUrl && { imgPath: imgPathUrl.key }),
     });
@@ -125,68 +125,32 @@ export class PostService {
     return newPost;
   }
 
-  // --- Получение всех постов ---
-  async getPostsNoAuth(skip: any): Promise<any[]> {
+  async getPostsBase(skip: any): Promise<any[]> {
     const skipPosts = skip ? Number(skip) : 0;
   
     // Получаем посты, как и раньше
-    const posts = await this.PostModel.find()
+    return this.PostModel.find()
       .populate('user', 'name avaPath')
+      .populate('reactions', '_id text emoji clickNum')
+      .populate('graphId', 'name')
       .skip(skipPosts)
       .limit(DEFAULTLIMIT_POSTS)
       .sort({ createdAt: -1 })
       .lean(); // Преобразуем посты в обычные объекты
-  
-    // Для каждого поста обрабатываем реакции
-    const postsWithReactions = await Promise.all(
-      posts.map(async (post) => {
-        const postReactions = post.reactions
+  }
 
-        console.log('postReactions', postReactions)
-  
-        // Проверяем наличие реакции от пользователя для каждой реакции
-        const reactionsWithUserStatus = await Promise.all(
-          postReactions.map(async (reaction: any) => {
-
-            return {
-              _id: reaction._id,
-              text: reaction.text,
-              emoji: reaction.emoji,
-              clickNum: reaction.clickNum,
-              post: reaction.post,
-              createdAt: reaction.createdAt,
-              updatedAt: reaction.updatedAt,
-            };
-          }),
-        );
-  
-        return {
-          ...post,
-          reactions: reactionsWithUserStatus,
-        };
-      }),
-    );
-  
-    return postsWithReactions;
+  // --- Получение всех постов ---
+  async getPostsNoAuth(skip: any): Promise<any[]> {
+    return await this.getPostsBase(skip);
   }
 
   // --- Получение всех постов для авторизованного пользователя --- 
   async getPostsAuth(skip: any, userId?: Types.ObjectId): Promise<any[]> {
-    // console.log('userId', userId)
+    const posts = await this.getPostsBase(skip);
 
-    const skipPosts = skip ? Number(skip) : 0;
-  
-    // Получаем посты, как и раньше
-    const posts = await this.PostModel.find()
-      .populate('user', 'name avaPath')
-      .populate('reactions', '_id text emoji clickNum')
-      .skip(skipPosts)
-      .limit(DEFAULTLIMIT_POSTS)
-      .sort({ createdAt: -1 })
-      .lean(); // Преобразуем посты в обычные объекты
+    // console.log('posts', posts)
 
-      // console.log('posts', posts)
-
+      // Проверка на реакцию
       const postsWithReactions = await Promise.all(
         posts.map(async (post) => {
           const reactionsWithStatus = await Promise.all(
@@ -216,9 +180,6 @@ export class PostService {
   
   }
   
-
-
-
 
 
 }

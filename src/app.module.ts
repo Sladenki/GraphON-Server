@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { GraphSubsModule } from './graphSubs/graphSubs.module';
 
 @Module({
   imports: [
@@ -56,10 +57,14 @@ import { AppService } from './app.service';
     PostReactionModule,
     UserPostReactionModule,
 
+    GraphSubsModule
+
   ],
   controllers: [AppController],
   providers: [AppService],
 })
+
+
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LogginMiddleware).forRoutes('*');

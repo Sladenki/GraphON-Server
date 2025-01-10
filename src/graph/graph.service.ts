@@ -37,6 +37,7 @@ export class GraphService {
 
   // --- Создание дочернего графа и обновление родительского ---
   async createChildGraph(name: string, parentGraphId: Types.ObjectId) {
+    console.log('createChildGraph', name, parentGraphId)
     // Создаем новый дочерний граф
     const childGraph = await this.GraphModel.create({ name, parentGraphId });
 

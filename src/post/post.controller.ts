@@ -40,7 +40,7 @@ export class PostController {
       @Body() dto: CreatePostDto,
       @UploadedFile() imgPath: any,
     ) {
-      console.log('createPost', userId, dto, imgPath)
+      // console.log('createPost', userId, dto, imgPath)
       dto.imgPath = imgPath;
       return this.postService.createPost(dto, userId)
     }
