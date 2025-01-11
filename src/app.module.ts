@@ -16,6 +16,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GraphSubsModule } from './graphSubs/graphSubs.module';
+import { ScheduleModule } from './schedule/schedule.module';
 
 @Module({
   imports: [
@@ -57,7 +58,8 @@ import { GraphSubsModule } from './graphSubs/graphSubs.module';
     PostReactionModule,
     UserPostReactionModule,
 
-    GraphSubsModule
+    GraphSubsModule,
+    ScheduleModule
 
   ],
   controllers: [AppController],

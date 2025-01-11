@@ -27,6 +27,7 @@ export class GraphSubsController {
         return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
     }
 
+    // Получение постов из подписанных графов
     @Get('getSubsPosts')
     @Auth()
     async getSubsPosts(

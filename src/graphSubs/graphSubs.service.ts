@@ -34,7 +34,7 @@ export class GraphSubsService {
   }
 
 
-  // --- Получение 
+  // --- Получение постов из подписанных графов ---
   async getSubsPosts(skip: any, userId: Types.ObjectId): Promise<any[]> {
     const skipPosts = skip ? Number(skip) : 0;
   
@@ -43,6 +43,7 @@ export class GraphSubsService {
       .find({ user: userId }) // Фильтруем по userId
       .distinct('graph');
 
+    // Получаем посты из полученного массива id графов 
     const posts = await this.postService.getPostsFromSubscribedGraphs(skipPosts, subscribedGraphs)
 
     return posts

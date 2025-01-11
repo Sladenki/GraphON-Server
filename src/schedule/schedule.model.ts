@@ -1,0 +1,39 @@
+import { modelOptions, prop, Ref } from "@typegoose/typegoose";
+import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { GraphModel } from "src/graph/graph.model";
+
+// Base - уникальные id 
+export interface ScheduleModel extends Base {}
+
+export enum ScheduleType {
+    LECTURE = 'lecture',
+    PRACTICE = 'practice',
+    REHEARSAL = 'rehearsal',
+    FIELD_EVENT = 'field_event',
+}
+
+@modelOptions({
+    schemaOptions: {
+        timestamps: false, // Отключает поля createdAt и updatedAt
+        versionKey: false  // Отключает поле _v
+    }
+})
+export class ScheduleModel extends TimeStamps {
+    @prop({ ref: () => GraphModel, index: true })
+    graphId: Ref<GraphModel>
+
+    @prop({ required: true, enum: ScheduleType })
+    type: string;
+
+    @prop({ required: true })
+    roomNumber: number;
+
+    @prop({ required: true, min: 0, max: 6 }) // 0 - Понедельник, 6 - Воскресенье
+    dayOfWeek: number;
+
+    @prop({ required: true }) // Время проведения (например, '14:00')
+    timeFrom: string;
+
+    @prop({ required: true }) // Время проведения (например, '14:00')
+    timeTo: string;
+}
