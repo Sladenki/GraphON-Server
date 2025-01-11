@@ -1,5 +1,6 @@
 export class CreateScheduleDto {
     graphId: string;
+    name: string;
     type: string;
     roomNumber: number;
     dayOfWeek: number;

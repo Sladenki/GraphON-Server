@@ -16,7 +16,7 @@ export class ScheduleController {
   }
 
   // --- Получает расписание для одного графа с понедельника по пятницу ---    
-  @Get('weekday-by-graph')
+  @Post('weekday-by-graph')
   async getWeeklyScheduleByGraphId(
     @Body() body: { graphId: string },
   ) {

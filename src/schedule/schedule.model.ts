@@ -22,6 +22,9 @@ export class ScheduleModel extends TimeStamps {
     @prop({ ref: () => GraphModel, index: true })
     graphId: Ref<GraphModel>
 
+    @prop({ required: true })
+    name: string
+
     @prop({ required: true, enum: ScheduleType })
     type: string;
 
@@ -34,6 +37,6 @@ export class ScheduleModel extends TimeStamps {
     @prop({ required: true }) // Время проведения (например, '14:00')
     timeFrom: string;
 
-    @prop({ required: true }) // Время проведения (например, '14:00')
+    @prop({ required: false }) // Время проведения (до, '15:40')
     timeTo: string;
 }
