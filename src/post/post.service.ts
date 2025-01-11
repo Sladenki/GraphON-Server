@@ -129,7 +129,8 @@ export class PostService {
     const skipPosts = skip ? Number(skip) : 0;
   
     // Получаем посты, как и раньше
-    return this.PostModel.find()
+    return this.PostModel
+      .find()
       .populate('user', 'name avaPath')
       .populate('reactions', '_id text emoji clickNum')
       .populate('graphId', 'name')
@@ -178,6 +179,22 @@ export class PostService {
     
       return postsWithReactions;
   
+  }
+
+
+  // --- Получение постов из подписанных графов ---
+  async getPostsFromSubscribedGraphs(skip: any, subscribedGraphs: any[]): Promise<any[]> {
+
+    return this.PostModel
+      .find({ graphId: { $in: subscribedGraphs } }) // Фильтр по graph
+      .populate('user', 'name avaPath')
+      .populate('reactions', '_id text emoji clickNum')
+      .populate('graphId', 'name')
+      .skip(skip)
+      .limit(DEFAULTLIMIT_POSTS)
+      .sort({ createdAt: -1 })
+      .lean(); 
+
   }
   
 

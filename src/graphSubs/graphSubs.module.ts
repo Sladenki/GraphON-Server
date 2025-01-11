@@ -6,6 +6,7 @@ import { GraphSubsService } from "./graphSubs.service";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { getJwtConfig } from "src/config/jwt.config";
+import { PostModule } from "src/post/post.module";
 
 
 @Module({
@@ -25,6 +26,7 @@ import { getJwtConfig } from "src/config/jwt.config";
         schemaOptions: { collection: 'GraphSubs' }
       },
     ]),
+    PostModule
   ]
 })
 

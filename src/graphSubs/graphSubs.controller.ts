@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Param, Patch, Post, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
 
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
@@ -17,10 +17,23 @@ export class GraphSubsController {
     @Auth() 
     async toggleSub(
         @CurrentUser('_id') currentUserId: Types.ObjectId,
-        @Body() graphId: string,
+        @Body() body: { graphId: string },
     ) {
-        console.log('toggleSub', currentUserId, graphId)
-        return this.graphSubsService.toggleSub(currentUserId, graphId)
+        const { graphId } = body;
+
+        // Преобразуем graphId в ObjectId
+        const graphIdObjectId = new Types.ObjectId(graphId);
+
+        return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
+    }
+
+    @Get('getSubsPosts')
+    @Auth()
+    async getSubsPosts(
+        @Query('skip') skip,
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.graphSubsService.getSubsPosts(skip, userId)
     }
 
 }
