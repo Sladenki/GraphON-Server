@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { getJwtConfig } from "src/config/jwt.config";
 import { PostModule } from "src/post/post.module";
 import { ScheduleModule } from "src/schedule/schedule.module";
+import { GraphModel } from "src/graph/graph.model";
 
 
 @Module({
@@ -25,6 +26,10 @@ import { ScheduleModule } from "src/schedule/schedule.module";
       {
         typegooseClass: GraphSubsModel,
         schemaOptions: { collection: 'GraphSubs' }
+      },
+      {
+        typegooseClass: GraphModel,
+        schemaOptions: { collection: 'Graph' }
       },
     ]),
     PostModule,

@@ -15,6 +15,9 @@ export class GraphModel extends TimeStamps {
     @prop()
     name: string
 
+    @prop({ default: 0 })
+    subsNum: number
+
     @prop({ ref: () => GraphModel, index: true })
     parentGraphId?: Ref<GraphModel>; 
 

@@ -5,12 +5,16 @@ import { GraphSubsModel } from './graphSubs.model';
 import { Types } from 'mongoose';
 import { PostService } from 'src/post/post.service';
 import { ScheduleService } from 'src/schedule/schedule.service';
+import { GraphModel } from 'src/graph/graph.model';
 
 @Injectable()
 export class GraphSubsService {
   constructor(
     @InjectModel(GraphSubsModel)
     private readonly graphSubsModel: ModelType<GraphSubsModel>,
+
+    @InjectModel(GraphModel)
+    private readonly GraphModel: ModelType<GraphModel>,
 
     private readonly postService: PostService,
 
@@ -26,11 +30,13 @@ export class GraphSubsService {
     if (isSubExists) {
       // Если существует, то удаляем его и обновляем счётчики
       await Promise.all([
+        this.GraphModel.findOneAndUpdate({ _id: graph }, { $inc: { subsNum: -1 } }).exec(),
         this.graphSubsModel.deleteOne({ user, graph })
       ]);
     } else {
       // Создаём новый объект, если его ещё нет, и обновляем счётчики
       await Promise.all([
+        this.GraphModel.findOneAndUpdate({ _id: graph }, { $inc: { subsNum: 1 } }).exec(),
         this.graphSubsModel.create({ user, graph })
       ]);
     }
