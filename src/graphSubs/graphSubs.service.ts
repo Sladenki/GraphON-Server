@@ -4,6 +4,7 @@ import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphSubsModel } from './graphSubs.model';
 import { Types } from 'mongoose';
 import { PostService } from 'src/post/post.service';
+import { ScheduleService } from 'src/schedule/schedule.service';
 
 @Injectable()
 export class GraphSubsService {
@@ -11,7 +12,9 @@ export class GraphSubsService {
     @InjectModel(GraphSubsModel)
     private readonly graphSubsModel: ModelType<GraphSubsModel>,
 
-    private readonly postService: PostService
+    private readonly postService: PostService,
+
+    private readonly scheduleService: ScheduleService
   ) {}
 
   // --- Переключение подписки на граф ---
@@ -45,6 +48,21 @@ export class GraphSubsService {
 
     // Получаем посты из полученного массива id графов 
     const posts = await this.postService.getPostsFromSubscribedGraphs(skipPosts, subscribedGraphs)
+
+    return posts
+  }
+
+  // --- Получение расписания из подписанных графов ---
+  async getSubsSchedule(userId: Types.ObjectId): Promise<any[]> {
+  
+    // Получаем массив графов, на которые подписан пользователь
+    const subscribedGraphs = await this.graphSubsModel
+      .find({ user: userId }) // Фильтруем по userId
+      .distinct('graph');
+
+    // Получаем посты из полученного массива id графов 
+    // @ts-expect-error ошибка массива 
+    const posts = await this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs)
 
     return posts
   }

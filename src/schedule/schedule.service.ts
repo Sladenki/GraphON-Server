@@ -34,6 +34,7 @@ export class ScheduleService {
       graphId: { $in: graphIds },
       dayOfWeek: { $gte: 0, $lte: 4 }, // Понедельник - Пятница
     })
+    .populate('graphId', 'name')
     .exec();
   }
 

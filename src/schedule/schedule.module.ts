@@ -15,7 +15,8 @@ import { ScheduleModel } from "./schedule.model";
         schemaOptions: { collection: 'Schedule' }
       },
     ]),
-  ]
+  ],
+  exports: [ScheduleService]
 })
 
 export class ScheduleModule {}

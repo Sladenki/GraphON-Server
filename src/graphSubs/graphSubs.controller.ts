@@ -37,4 +37,13 @@ export class GraphSubsController {
         return this.graphSubsService.getSubsPosts(skip, userId)
     }
 
+    // Получение расписания из подписанных графов
+    @Get('getSubsSchedule')
+    @Auth()
+    async getSubsSchedule(
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.graphSubsService.getSubsSchedule(userId)
+    }
+
 }
