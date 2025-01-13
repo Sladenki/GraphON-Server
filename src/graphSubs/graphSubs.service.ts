@@ -53,7 +53,7 @@ export class GraphSubsService {
       .distinct('graph');
 
     // Получаем посты из полученного массива id графов 
-    const posts = await this.postService.getPostsFromSubscribedGraphs(skipPosts, subscribedGraphs)
+    const posts = await this.postService.getPostsFromSubscribedGraphs(skipPosts, subscribedGraphs, userId)
 
     return posts
   }

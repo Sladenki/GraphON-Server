@@ -21,7 +21,6 @@ export class UserPostReactionService {
     postId: string,
     isReacted: boolean,
   ) {
-    // console.log(userId, postReaction, postId, isReacted);
 
     if (!isReacted) {
       // Инкрементируем clickNum и создаем запись в БД
@@ -54,24 +53,13 @@ export class UserPostReactionService {
     }
   }
 
-  // async createUserAndReactionConnection(userId: Types.ObjectId, postReaction: string, postId: string, isReacted: boolean) {
-  //     console.log('isReacted', isReacted);
-
-  //     // Делает +1 к реакции
-  //     await this.postReactionService.incrementClickNum(new Types.ObjectId(postId));
-
-  //     return await this.userPostReactionModel.create({
-  //         user: userId,
-  //         postReaction
-  //     });
-  // }
 
   // --- Проверка наличия реакции пользователя ---
   async isUserReactionExists(
     reactionId: string,
     userId: string,
   ): Promise<boolean> {
-    // console.log('isUserReactionExists', reactionId, userId)
+    console.log('isUserReactionExists', reactionId, userId)
     const reaction = await this.userPostReactionModel.findOne({
       postReaction: new Types.ObjectId(reactionId),
       user: new Types.ObjectId(userId),
@@ -83,29 +71,7 @@ export class UserPostReactionService {
   }
 
 
-  // async findUserReactions(reactionIds: string[], userId: any) {
-  //   const userReactions = await this.userPostReactionModel.find({
-  //     reaction: { $in: reactionIds },
-  //     user: userId,
-  //   }).lean();
 
-  //   return userReactions
-  // } 
-
-//   async areUserReactionsExist(reactionIds: string[], userId: string): Promise<Map<string, boolean>> {
-//     const userReactions = await this.userPostReactionModel.find({
-//         reaction: { $in: reactionIds },
-//         user: userId,
-//     }).lean();
-
-//     const resultMap = new Map<string, boolean>();
-//     reactionIds.forEach(reactionId => resultMap.set(reactionId, false)); // Инициализируем все значения как false
-
-//     // @ts-expect-error 123
-//     userReactions.forEach(reaction => resultMap.set(reaction.reaction.toString(), true)); // Устанавливаем true для найденных реакций
-
-//     return resultMap;
-// }
 
 
 }

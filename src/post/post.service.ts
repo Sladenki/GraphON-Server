@@ -125,10 +125,10 @@ export class PostService {
     return newPost;
   }
 
+  // --- Получение всех постов ---
   async getPostsBase(skip: any): Promise<any[]> {
     const skipPosts = skip ? Number(skip) : 0;
   
-    // Получаем посты, как и раньше
     return this.PostModel
       .find()
       .populate('user', 'name avaPath')
@@ -146,46 +146,43 @@ export class PostService {
   }
 
   // --- Получение всех постов для авторизованного пользователя --- 
-  async getPostsAuth(skip: any, userId?: Types.ObjectId): Promise<any[]> {
+  async getPostsAuth(skip: any, userId: Types.ObjectId): Promise<any[]> {
     const posts = await this.getPostsBase(skip);
 
-    // console.log('posts', posts)
-
-      // Проверка на реакцию
-      const postsWithReactions = await Promise.all(
-        posts.map(async (post) => {
-          const reactionsWithStatus = await Promise.all(
-            post.reactions.map(async (reaction) => {
-              const isReacted = userId
-                ? await this.userPostReactionService.isUserReactionExists(
-                    reaction._id.toString(), // ID реакции
-                    userId.toString() // ID пользователя
-                  )
-                : false;
-    
-              return {
-                ...reaction, // Оставляем все остальные данные реакции
-                isReacted, // Добавляем поле isReacted
-              };
-            })
-          );
-    
-          return {
-            ...post,
-            reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
-          };
-        })
-      );
-    
-      return postsWithReactions;
+    // Проверка на реакцию
+    const postsWithReactions = await Promise.all(
+      posts.map(async (post) => {
+        const reactionsWithStatus = await Promise.all(
+          post.reactions.map(async (reaction) => {
+            const isReacted = userId
+              ? await this.userPostReactionService.isUserReactionExists(
+                  reaction._id.toString(), // ID реакции
+                  userId.toString() // ID пользователя
+                )
+              : false;
+  
+            return {
+              ...reaction, // Оставляем все остальные данные реакции
+              isReacted, // Добавляем поле isReacted
+            };
+          })
+        );
+  
+        return {
+          ...post,
+          reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
+        };
+      })
+    );
+  
+    return postsWithReactions;
   
   }
 
-
   // --- Получение постов из подписанных графов ---
-  async getPostsFromSubscribedGraphs(skip: any, subscribedGraphs: any[]): Promise<any[]> {
+  async getPostsFromSubscribedGraphs(skip: any, subscribedGraphs: any[], userId: Types.ObjectId): Promise<any[]> {
 
-    return this.PostModel
+    const posts = await this.PostModel
       .find({ graphId: { $in: subscribedGraphs } }) // Фильтр по graph
       .populate('user', 'name avaPath')
       .populate('reactions', '_id text emoji clickNum')
@@ -195,7 +192,38 @@ export class PostService {
       .sort({ createdAt: -1 })
       .lean(); 
 
+    // Проверка на реакцию
+    const postsWithReactions = await Promise.all(
+      posts.map(async (post) => {
+        const reactionsWithStatus = await Promise.all(
+          post.reactions.map(async (reaction) => {
+            const isReacted = userId
+              ? await this.userPostReactionService.isUserReactionExists(
+                  reaction._id.toString(), // ID реакции
+                  userId.toString() // ID пользователя
+                )
+              : false;
+  
+            return {
+              ...reaction, // Оставляем все остальные данные реакции
+              isReacted, // Добавляем поле isReacted
+            };
+          })
+        );
+  
+        return {
+          ...post,
+          reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
+        };
+      })
+    );
+  
+    return postsWithReactions;
+
   }
+
+
+
   
 
 
