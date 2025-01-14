@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphSubsModel } from './graphSubs.model';
@@ -16,6 +16,7 @@ export class GraphSubsService {
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
 
+    @Inject(forwardRef(() => PostService)) // Используем forwardRef
     private readonly postService: PostService,
 
     private readonly scheduleService: ScheduleService
@@ -71,6 +72,19 @@ export class GraphSubsService {
     const posts = await this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs)
 
     return posts
+  }
+
+  // --- Проверка подписки на граф ---
+  async isUserSubsExists(graph: string, userId: string): Promise<boolean> {
+
+    const reaction = await this.graphSubsModel
+    .findOne({
+      graph: new Types.ObjectId(graph),
+      user: new Types.ObjectId(userId),
+    });
+
+
+    return !!reaction; // true, если реакция найдена; иначе false
   }
 
 }

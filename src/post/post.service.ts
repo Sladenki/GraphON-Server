@@ -14,7 +14,8 @@ import { S3Service } from 'src/s3/s3.service';
 import { PostReactionService } from 'src/postReaction/postReaction.service';
 import { UserPostReactionService } from 'src/userPostReaction/userPostReaction.service';
 import { Emoji } from 'src/postReaction/postReaction.model';
-import { CreateGraphDto } from 'src/graph/dto/create-graph.dto';
+import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
+
 
 @Injectable()
 export class PostService {
@@ -37,6 +38,8 @@ export class PostService {
     private readonly postReactionService: PostReactionService,
 
     private readonly userPostReactionService: UserPostReactionService,
+
+    private readonly graphSubsService: GraphSubsService,
   ) {}
 
   // --- Создание поста ---
@@ -140,12 +143,12 @@ export class PostService {
       .lean(); // Преобразуем посты в обычные объекты
   }
 
-  // --- Получение всех постов ---
+  // --- Получение всех постов для главной страницы без авторизации---
   async getPostsNoAuth(skip: any): Promise<any[]> {
     return await this.getPostsBase(skip);
   }
 
-  // --- Получение всех постов для авторизованного пользователя --- 
+  // --- Получение всех постов для главной для авторизованного пользователя --- 
   async getPostsAuth(skip: any, userId: Types.ObjectId): Promise<any[]> {
     const posts = await this.getPostsBase(skip);
 
@@ -167,10 +170,20 @@ export class PostService {
             };
           })
         );
+
+        // Проверка на подписку
+        const isSubscribed = userId
+        ? await this.graphSubsService.isUserSubsExists(
+            post.graphId._id.toString(), // ID графа
+            userId.toString() // ID пользователя
+          )
+        : false;
+
   
         return {
           ...post,
           reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
+          isSubscribed
         };
       })
     );

@@ -1,5 +1,5 @@
 import { PostModel } from './post.model';
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostController } from './post.controller';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
@@ -11,6 +11,8 @@ import { UserPostReactionModule } from 'src/userPostReaction/userPostReaction.mo
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from 'src/config/jwt.config';
+import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
+import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
 
 @Module({
   controllers: [PostController],
@@ -38,6 +40,7 @@ import { getJwtConfig } from 'src/config/jwt.config';
     S3Module,
     PostReactionModule,
     UserPostReactionModule,
+    forwardRef(() => GraphSubsModule)
   ],
   exports: [PostService],
 })

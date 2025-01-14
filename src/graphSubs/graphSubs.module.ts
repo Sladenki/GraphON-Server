@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { GraphSubsController } from "./graphSubs.controller";
 import { TypegooseModule } from "@m8a/nestjs-typegoose";
 import { GraphSubsModel } from "./graphSubs.model";
@@ -32,9 +32,10 @@ import { GraphModel } from "src/graph/graph.model";
         schemaOptions: { collection: 'Graph' }
       },
     ]),
-    PostModule,
+    forwardRef(() => PostModule),
     ScheduleModule
-  ]
+  ],
+  exports: [GraphSubsService]
 })
 
 export class GraphSubsModule {}
