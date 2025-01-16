@@ -22,6 +22,7 @@ export class ScheduleService {
   async getWeekdaySchedulesByGraph(graphId: string) {
     const schedule = this.ScheduleModel
     .find({ graphId: graphId })
+    .populate('graphId', 'name')
     .lean();
 
     return schedule

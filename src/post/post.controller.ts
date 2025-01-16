@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Query, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, InternalServerErrorException, Post, Query, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from "@nestjs/common";
 import { PostService } from "./post.service";
 import { Auth, OptionalAuth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
@@ -26,7 +26,12 @@ export class PostController {
       @Query('skip') skip,
       @CurrentUser('_id') userId: Types.ObjectId,
     ) {
-      return this.postService.getPostsAuth(skip, userId)
+      try {
+        return this.postService.getPostsAuth(skip, userId)
+      } catch (error) {
+        throw new InternalServerErrorException('Ошибка получения постов - Controller', error);
+      }
+      
     }
 
     // Создание поста 
