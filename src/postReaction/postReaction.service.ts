@@ -18,11 +18,11 @@ export class PostReactionService {
   }
 
   // --- Поиск реакций по ID поста ---
-  async findReactionsByPostId(postId: Types.ObjectId) {
-    const reactions = await this.postReactionModel.find({ post: postId });
+  // async findReactionsByPostId(postId: Types.ObjectId) {
+  //   const reactions = await this.postReactionModel.find({ post: postId });
 
-    return reactions;
-  }
+  //   return reactions;
+  // }
 
   // --- Увеличение clickNum на 1 для определенной реакции ---
   async incrementClickNum(postId: Types.ObjectId) {

@@ -22,12 +22,12 @@ export class PostReactionController {
     }
 
     // --- Поиск всех реакций по ID поста ---
-    @Get(':postId')
-    async getReactionsByPostId(
-        @Body() postId: string
-    ) {
-        return this.postReactionService.findReactionsByPostId(new Types.ObjectId(postId));
-    }
+    // @Get(':postId')
+    // async getReactionsByPostId(
+    //     @Body() postId: string
+    // ) {
+    //     return this.postReactionService.findReactionsByPostId(new Types.ObjectId(postId));
+    // }
 
     // --- Увеличение clickNum на 1 для определенной реакции ---
     @Post(':postId/increment')

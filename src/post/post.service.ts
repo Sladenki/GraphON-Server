@@ -143,53 +143,68 @@ export class PostService {
     const skipPosts = skip ? Number(skip) : 0;
     
     try {
-
       // Агрегация для минимизации запросов и объединения данных
       const posts = await this.PostModel.aggregate([
-        // Сортируем по дате создания
+        // Сортируем по дате создания (сначала самые новые записи)
         { $sort: { createdAt: -1 } },
         
         // Пропускаем нужное количество записей
         { $skip: skipPosts },
 
-        // // Ограничиваем количество возвращаемых записей
+        // Ограничиваем количество возвращаемых записей
         { $limit: DEFAULTLIMIT_POSTS },
 
         // Заполняем поле user, включая только name и avaPath
         {
           $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'user',
+            from: 'User', // Коллекция User
+            localField: 'user', // Поле в моделе Post
+            foreignField: '_id', // Поле в моделе User
+            as: 'user', // Имя результирующего поля
           },
         },
+        // Если поле user содержит массив, он разворачивается в объект. 
+        // Если массив пустой, используется preserveNullAndEmptyArrays: true, чтобы поле оставалось пустым вместо удаления записи.
         { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
-        { $project: { 'user.password': 0 } }, // Защита данных пользователя
+
+        {
+          $project: {
+              _id: 1,
+              user: {
+                  _id: 1,
+                  email: 1,
+                  avaPath: 1,
+                  name: 1,
+              },
+              graphId: 1,
+              content: 1,
+              imgPath: 1,
+              reactions: 1,
+              createdAt: 1,
+          },
+        },
 
         // Заполняем поле reactions
         {
           $lookup: {
-            from: 'PostReaction',
-            localField: 'reactions',
-            foreignField: '_id',
-            as: 'reactions',
+            from: 'PostReaction', // PostReaction User
+            localField: 'reactions', // Поле в моделе Post
+            foreignField: '_id', // Поле в моделе PostReaction
+            as: 'reactions', // Имя результирующего поля
           },
         },
 
         // Заполняем поле graphId
         {
           $lookup: {
-            from: 'graphs',
-            localField: 'graphId',
-            foreignField: '_id',
-            as: 'graphId',
+            from: 'Graph', // PostReaction Graph
+            localField: 'graphId', // Поле в моделе Post
+            foreignField: '_id', // Поле в моделе PostReaction
+            as: 'graphId', // Имя результирующего поля
           },
         },
         { $unwind: { path: '$graphId', preserveNullAndEmptyArrays: true } },
 
-        // Убираем MongoDB-метаданные
-        { $project: { __v: 0 } },
       ]);
 
       return posts;
@@ -206,165 +221,105 @@ export class PostService {
   // --- Получение всех постов для главной для авторизованного пользователя ---
   async getPostsAuth(skip: any, userId: Types.ObjectId): Promise<any[]> {
     const skipPosts = skip ? Number(skip) : 0;
-
-    const posts = await this.PostModel
-      .find()
-      .populate('user', 'name avaPath')
-      .populate('reactions', '_id text emoji clickNum')
-      .populate('graphId', 'name')
-      .skip(skipPosts)
-      .limit(DEFAULTLIMIT_POSTS)
-      .sort({ createdAt: -1 })
-      .lean(); // Преобразуем посты в обычные объекты
-
-    // Проверка на реакцию
-    const postsWithReactions = await Promise.all(
-      posts.map(async (post) => {
-        const reactionsWithStatus = await Promise.all(
-          post.reactions.map(async (reaction) => {
-            const isReacted = userId
-              ? await this.userPostReactionService.isUserReactionExists(
-                  reaction._id.toString(), // ID реакции
-                  userId.toString() // ID пользователя
-                )
-              : false;
   
-            return {
-              ...reaction, // Оставляем все остальные данные реакции
-              isReacted, // Добавляем поле isReacted
-            };
-          })
-        );
-
-        // Проверка на подписку
-        const isSubscribed = userId
-        ? await this.graphSubsService.isUserSubsExists(
-            post.graphId._id.toString(), // ID графа
-            userId.toString() // ID пользователя
-          )
-        : false;
-
+    try {
+      // 1. Получаем основные посты с пользователями, реакциями и графами
+      const posts = await this.PostModel.aggregate([
+        // Сортируем по дате создания (сначала самые новые записи)
+        { $sort: { createdAt: -1 } },
   
-        return {
-          ...post,
-          reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
-          isSubscribed
-        };
-      })
-    );
+        // Пропускаем нужное количество записей
+        { $skip: skipPosts },
   
-    return postsWithReactions;
+        // Ограничиваем количество возвращаемых записей
+        { $limit: DEFAULTLIMIT_POSTS },
   
+        // Присоединяем пользователя
+        {
+          $lookup: {
+            from: 'User',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+  
+        // Присоединяем реакции
+        {
+          $lookup: {
+            from: 'PostReaction',
+            localField: 'reactions',
+            foreignField: '_id',
+            as: 'reactions',
+          },
+        },
+  
+        // Присоединяем графы
+        {
+          $lookup: {
+            from: 'Graph',
+            localField: 'graphId',
+            foreignField: '_id',
+            as: 'graphId',
+          },
+        },
+        { $unwind: { path: '$graphId', preserveNullAndEmptyArrays: true } },
+  
+        // Проецируем необходимые поля
+        {
+          $project: {
+            _id: 1,
+            user: { _id: 1, name: 1, avaPath: 1 },
+            graphId: { _id: 1, name: 1 },
+            content: 1,
+            imgPath: 1,
+            reactions: 1,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        },
+      ]);
+  
+      // 2. Проверка на реакцию и подписку для каждого поста
+      const postsWithReactionsAndSubs = await Promise.all(
+        posts.map(async (post) => {
+          // 2.1 Проверяем статус реакций для каждого поста
+          const reactionsWithStatus = await Promise.all(
+            post.reactions.map(async (reaction) => {
+              const isReacted = await this.userPostReactionService.isUserReactionExists(
+                reaction._id.toString(),
+                userId.toString()
+              );
+              return {
+                ...reaction,
+                isReacted, // Добавляем поле isReacted
+              };
+            })
+          );
+  
+          // 2.2 Проверяем, подписан ли пользователь на граф
+          const isSubscribed = await this.graphSubsService.isUserSubsExists(
+            post.graphId._id.toString(),
+            userId.toString()
+          );
+  
+          return {
+            ...post,
+            reactions: reactionsWithStatus,
+            isSubscribed,
+          };
+        })
+      );
+  
+      return postsWithReactionsAndSubs;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Could not fetch posts');
+    }
   }
-
-  //  ---------------------
-
-  // async getPostsAuth(skip: number, userId: Types.ObjectId): Promise<any[]> {
-  //   console.log('userId', userId)
-
-  //   try {
-  //     const posts = await this.PostModel.aggregate([
-  //       { $sort: { createdAt: -1 } }, // Сортировка по дате создания
-  //       // { $skip: skip }, // Пропускаем указанные записи
-  //       { $limit: DEFAULTLIMIT_POSTS }, // Ограничиваем количество записей
-  //       // Подключаем данные пользователя
-  //       {
-  //         $lookup: {
-  //           from: 'users',
-  //           localField: 'user',
-  //           foreignField: '_id',
-  //           as: 'userDetails',
-  //         },
-  //       },
-  //       // Подключаем данные графа
-  //       {
-  //         $lookup: {
-  //           from: 'graphs',
-  //           localField: 'graphId',
-  //           foreignField: '_id',
-  //           as: 'graphDetails',
-  //         },
-  //       },
-  //       // Подключаем данные о реакциях
-  //       {
-  //         $lookup: {
-  //           from: 'PostReaction',
-  //           localField: 'reactions',
-  //           foreignField: '_id',
-  //           as: 'reactionDetails',
-  //         },
-  //       },
-  //       // Подключаем реакции пользователя
-  //       {
-  //         $lookup: {
-  //           from: 'userpostreactions',
-  //           let: { reactionIds: '$reactions', userId }, // Передаём массив реакций и ID пользователя
-  //           pipeline: [
-  //             {
-  //               $match: {
-  //                 $expr: {
-  //                   $and: [
-  //                     { $in: ['$postReaction', '$$reactionIds'] }, // ID реакции в массиве
-  //                     { $eq: ['$user', '$$userId'] }, // Реакция от пользователя
-  //                   ],
-  //                 },
-  //               },
-  //             },
-  //           ],
-  //           as: 'userReactions',
-  //         },
-  //       },
-  //       // Добавляем поле isReacted для каждой реакции
-  //       {
-  //         $addFields: {
-  //           reactions: {
-  //             $map: {
-  //               input: '$reactionDetails', // Для каждой детали реакции
-  //               as: 'reaction',
-  //               in: {
-  //                 _id: '$$reaction._id',
-  //                 text: '$$reaction.text',
-  //                 emoji: '$$reaction.emoji',
-  //                 clickNum: '$$reaction.clickNum',
-  //                 isReacted: {
-  //                   $in: ['$$reaction._id', { $map: { input: '$userReactions', as: 'userReaction', in: '$$userReaction.postReaction' } }],
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //       // Формируем результат
-  //       {
-  //         $project: {
-  //           _id: 1,
-  //           user: {
-  //             _id: { $arrayElemAt: ['$userDetails._id', 0] },
-  //             avaPath: { $arrayElemAt: ['$userDetails.avaPath', 0] },
-  //             name: { $arrayElemAt: ['$userDetails.name', 0] },
-  //           },
-  //           graphId: {
-  //             _id: { $arrayElemAt: ['$graphDetails._id', 0] },
-  //             name: { $arrayElemAt: ['$graphDetails.name', 0] },
-  //           },
-  //           content: 1,
-  //           imgPath: 1,
-  //           createdAt: 1,
-  //           updatedAt: 1,
-  //           reactions: 1,
-  //           isSubscribed: {
-  //             $in: [{ $arrayElemAt: ['$graphDetails._id', 0] }, { $map: { input: '$userReactions', as: 'reaction', in: '$$reaction.graph' } }],
-  //           },
-  //         },
-  //       },
-  //     ]);
-  
-  //     return posts;
-  //   } catch (error) {
-  //     console.error('Error in getPostsAuth:', error);
-  //     throw new InternalServerErrorException('Ошибка получения постов с реакциями.');
-  //   }
-  // }
   
 
   // --- Получение постов из подписанных графов ---

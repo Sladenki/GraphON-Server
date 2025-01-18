@@ -28,14 +28,14 @@ export class UserPostReactionController {
     }
 
     // --- Проверка, поставил ли пользователь реакцию --- 
-    @Get('checkUserReaction')
-    async checkUserReaction(
-        @Body() dto: {reactionId: string, userId: string}
-    ){
-        return this.userPostReactionPostService.isUserReactionExists(
-            dto.reactionId,
-            dto.userId,
-        );
-    }
+    // @Get('checkUserReaction')
+    // async checkUserReaction(
+    //     @Body() dto: {reactionId: string, userId: string}
+    // ){
+    //     return this.userPostReactionPostService.isUserReactionExists(
+    //         dto.reactionId,
+    //         dto.userId,
+    //     );
+    // }
 
 }
