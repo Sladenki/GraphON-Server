@@ -1,3 +1,3 @@
 export class CreateGraphDto {
-   keyWords: string[]
+   name: string
 }

@@ -27,6 +27,7 @@ export class PostController {
       @CurrentUser('_id') userId: Types.ObjectId,
     ) {
       try {
+        console.log('userId', userId)
         return this.postService.getPostsAuth(skip, userId)
       } catch (error) {
         throw new InternalServerErrorException('Ошибка получения постов - Controller', error);

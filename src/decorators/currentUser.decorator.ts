@@ -7,8 +7,6 @@ import { UserModel } from "src/user/user.model"
 export const CurrentUser = createParamDecorator(
     (data: keyof UserModel, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest()
-        // console.log('CurrentUser', request.user)
-        // console.log('request.user', request.user)
         const user = request.user
       
         const objectId = new Types.ObjectId(user.sub); 
@@ -16,22 +14,5 @@ export const CurrentUser = createParamDecorator(
     }
 )
 
-// export const OptionalCurrentUser = createParamDecorator(
-//     (data: keyof UserModel, ctx: ExecutionContext) => {
-//         const request = ctx.switchToHttp().getRequest()
-//         // console.log('request.user', request.user)
-//         console.log('OptionalCurrentUser', request.user)
-//         const user = request.user
 
-//         console.log('user', user)
-
-//         // Возвращаем undefined, если пользователь не авторизован - нужно когда используем OptionalAuth
-//         if (!user) {
-//             return undefined;
-//         }
-
-//         const objectId = new Types.ObjectId(user.sub); 
-//         return objectId;
-//     }
-// )
 

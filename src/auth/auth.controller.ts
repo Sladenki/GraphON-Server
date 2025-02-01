@@ -62,8 +62,6 @@ export class AuthController {
         const appScheme = 'com.mycompany.myapp://auth/callback';
         const redirectUrl = `${appScheme}?accessToken=${accessToken}`;
         return res.redirect(redirectUrl);
-        // return res.json({ accessToken, redirectUrl });
-        // return res.redirect(redirectUrl); 
       } else {
         // Редирект для веб-приложения
         res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);

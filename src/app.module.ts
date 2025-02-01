@@ -32,19 +32,6 @@ import { ScheduleModule } from './schedule/schedule.module';
 
     PassportModule.register({ session: false }),
 
-    // Redis
-    // CacheModule.registerAsync({
-    //   isGlobal: true,
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     store: redisStore,
-    //     host: configService.get<string>('REDIS_HOST'),
-    //     port: configService.get<number>('REDIS_PORT'),
-    //     ttl: 0, // время хранения = бессрочно
-    //   }),
-    // }),
-
     // Хранилище
     S3Module,
 
