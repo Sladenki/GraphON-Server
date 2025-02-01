@@ -56,7 +56,7 @@ export class UserPostReactionService {
 
   // --- Проверка наличия реакции пользователя ---
   async isUserReactionExists(reactionId: string, userId: string): Promise<boolean> {
-    console.log('isUserReactionExists', reactionId, userId)
+    // console.log('isUserReactionExists', reactionId, userId)
     const reaction = await this.userPostReactionModel.findOne({
       postReaction: new Types.ObjectId(reactionId),
       user: new Types.ObjectId(userId),
