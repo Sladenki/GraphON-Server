@@ -3,6 +3,8 @@ import { TypegooseModule } from "@m8a/nestjs-typegoose";
 import { ScheduleController } from "./schedule.controller";
 import { ScheduleService } from "./schedule.service";
 import { ScheduleModel } from "./schedule.model";
+import { EventService } from "src/event/event.service";
+import { EventModule } from "src/event/event.module";
 
 
 @Module({
@@ -15,6 +17,7 @@ import { ScheduleModel } from "./schedule.model";
         schemaOptions: { collection: 'Schedule' }
       },
     ]),
+    EventModule,
   ],
   exports: [ScheduleService]
 })

@@ -17,6 +17,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GraphSubsModule } from './graphSubs/graphSubs.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -46,7 +47,8 @@ import { ScheduleModule } from './schedule/schedule.module';
     UserPostReactionModule,
 
     GraphSubsModule,
-    ScheduleModule
+    ScheduleModule,
+    EventModule
 
   ],
   controllers: [AppController],
