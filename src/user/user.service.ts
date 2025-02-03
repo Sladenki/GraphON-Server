@@ -5,8 +5,6 @@ import { UserModel } from './user.model';
 import { JwtService } from '@nestjs/jwt';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { Types } from 'mongoose';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
-// import { Cache } from 'cache-manager';
 
 @Injectable()
 export class UserService {

@@ -35,7 +35,10 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  googleAuth() {} // Пустой метод, AuthGuard все обработает
+  googleAuth() {
+    // console.log('Маршрут /auth/google вызван');
+  }
+  
 
   @Get('callback/google')
   @UseGuards(AuthGuard('google'))
@@ -87,7 +90,7 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Req() req: Request, @Res() res) {
-    console.log('logount hit');
+    // console.log('logount hit');
     try {
       const user = req['user']; // Получаем пользователя из запроса (если есть)
 

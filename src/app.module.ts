@@ -5,8 +5,6 @@ import { getMongoConfig } from './config/mongo.config';
 import { UserModule } from './user/user.module';
 import { PostModule } from './post/post.module';
 import { LogginMiddleware } from './logging.middleware';
-// import { CacheModule } from '@nestjs/cache-manager';
-// import { redisStore } from 'cache-manager-redis-yet';
 import { GraphModule } from './graph/graph.module';
 import { S3Module } from './s3/s3.module';
 import { PostReactionModule } from './postReaction/postReaction.module';

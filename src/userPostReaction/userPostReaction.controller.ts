@@ -18,7 +18,6 @@ export class UserPostReactionController {
         @CurrentUser('_id') userId: Types.ObjectId,
         @Body() dto: {reactionId: string, postId: string, isReacted: boolean}
     ) {
-        // console.log('dto', dto, userId)
         return this.userPostReactionPostService.createUserAndReactionConnection(
             userId,
             dto.reactionId,
@@ -26,16 +25,5 @@ export class UserPostReactionController {
             dto.isReacted
         )   
     }
-
-    // --- Проверка, поставил ли пользователь реакцию --- 
-    // @Get('checkUserReaction')
-    // async checkUserReaction(
-    //     @Body() dto: {reactionId: string, userId: string}
-    // ){
-    //     return this.userPostReactionPostService.isUserReactionExists(
-    //         dto.reactionId,
-    //         dto.userId,
-    //     );
-    // }
 
 }

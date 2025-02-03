@@ -1,6 +1,5 @@
 import { prop } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { Types } from "mongoose";
 
 // Base - уникальные id 
 export interface UserModel extends Base {}
@@ -16,10 +15,7 @@ export class UserModel extends TimeStamps {
     avaPath: string
 
     @prop({ default: 0 })
-    followersNum: number  // подписчики
-
-    @prop({ default: 0 })
-    subsNum: number  // подписки
+    subsNum: number  // подписки на граф
 
     @prop({ default: 0 })
     postsNum: number 

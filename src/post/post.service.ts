@@ -5,9 +5,6 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UserModel } from 'src/user/user.model';
 import { Types } from 'mongoose';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
-// import { Cache } from 'cache-manager';
-
 import { DEFAULTLIMIT_POSTS } from 'src/constants/posts';
 import { GraphService } from 'src/graph/graph.service';
 import { S3Service } from 'src/s3/s3.service';

@@ -31,13 +31,11 @@ export class GraphService {
 
   // --- Получение всех дочерних графов по Id родительскому ---
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
-    console.log('parentGraphId', parentGraphId);
     return this.GraphModel.find({ parentGraphId }).exec();
   }
 
   // --- Создание дочернего графа и обновление родительского ---
   async createChildGraph(name: string, parentGraphId: Types.ObjectId) {
-    console.log('createChildGraph', name, parentGraphId)
     // Создаем новый дочерний граф
     const childGraph = await this.GraphModel.create({ name, parentGraphId });
 
