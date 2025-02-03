@@ -8,10 +8,10 @@ export interface PostReactionModel extends Base {}
 export enum Emoji {
     LIKE = '👍',
     LOVE = '❤️',
-    LAUGH = '😂',
+    SHARP = '😎',
     WOW = '😮',
-    SAD = '😢',
-    ANGRY = '😡',
+    SMILE = '😁',
+    EXOLIDING_HEAD = '🤯',
 }
 
 // TimeStamps - даты

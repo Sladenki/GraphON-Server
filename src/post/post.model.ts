@@ -21,7 +21,7 @@ export class PostModel extends TimeStamps {
     @prop({ ref: () => GraphModel, index: true })
     graphId: Ref<GraphModel>
 
-    @prop ({ index: true, maxlength: 800 })
+    @prop ({ index: true, maxlength: 600 })
     content: string
 
     @prop ()

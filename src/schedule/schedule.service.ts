@@ -23,7 +23,7 @@ export class ScheduleService {
     const schedule = this.ScheduleModel
     .find({ graphId: graphId })
     .populate('graphId', 'name')
-    .lean();
+    .exec();
 
     return schedule
   }

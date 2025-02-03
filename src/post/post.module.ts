@@ -12,9 +12,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from 'src/config/jwt.config';
 import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
-import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
-import { UserPostReactionModel } from 'src/userPostReaction/userPostReaction.model';
-import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
 
 @Module({
   controllers: [PostController],
@@ -36,14 +33,6 @@ import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
       {
         typegooseClass: UserModel,
         schemaOptions: { collection: 'User' },
-      },
-      {
-        typegooseClass: UserPostReactionModel,
-        schemaOptions: { collection: 'UserPostReaction' },
-      },
-      {
-        typegooseClass: GraphSubsModel,
-        schemaOptions: { collection: 'GraphSubs' }
       },
     ]),
     GraphModule,

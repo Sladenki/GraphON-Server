@@ -12,8 +12,6 @@ import { PostReactionService } from 'src/postReaction/postReaction.service';
 import { UserPostReactionService } from 'src/userPostReaction/userPostReaction.service';
 import { Emoji } from 'src/postReaction/postReaction.model';
 import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
-import { UserPostReactionModel } from 'src/userPostReaction/userPostReaction.model';
-import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
 
 
 @Injectable()
@@ -24,17 +22,6 @@ export class PostService {
 
     @InjectModel(UserModel)
     private readonly UserModel: ModelType<UserModel>,
-
-    @InjectModel(UserPostReactionModel)
-    private readonly userPostReactionModel: ModelType<UserPostReactionModel>,
-
-    @InjectModel(GraphSubsModel)
-    private readonly graphSubsModel: ModelType<GraphSubsModel>,
-
-    // Redis
-    // @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-
-    // Выделения ключевых слов
 
     private readonly graphService: GraphService,
 
@@ -51,24 +38,8 @@ export class PostService {
   // --- Создание поста ---
   async createPost(dto: CreatePostDto, creatorId: Types.ObjectId) {
     console.log('createPost', dto);
-
-    const childrenTopic = dto.childrenTopic;
-    console.log('childrenTopic', childrenTopic);
-
+    
     const selectedTopicId = dto.selectedTopic;
-    console.log('selectedTopicId', selectedTopicId);
-
-    // Проверяем, есть ли указанный дочерний граф и родительский ID
-    let childGraphId;
-    if (childrenTopic && selectedTopicId) {
-      // @ts-ignore
-      const childGraph = await this.graphService.createChildGraph(
-        childrenTopic,
-        // @ts-ignore
-        selectedTopicId,
-      );
-      childGraphId = childGraph._id; // Получаем ID созданного дочернего графа
-    }
 
     // @ts-ignore
     const reactionObject = JSON.parse(dto.reaction);
