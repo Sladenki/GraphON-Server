@@ -1,7 +1,16 @@
-import { prop, Ref } from "@typegoose/typegoose";
-import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { modelOptions, prop, Ref } from "@typegoose/typegoose";
+import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 import { GraphModel } from "src/graph/graph.model";
 
+// Base - уникальные id 
+export interface EventModel extends Base {}
+
+@modelOptions({
+    schemaOptions: {
+        timestamps: false, // Отключает поля createdAt и updatedAt
+        versionKey: false  // Отключает поле _v
+    }
+})
 export class EventModel extends TimeStamps {
     @prop({ ref: () => GraphModel, required: true, index: true })
     graphId: Ref<GraphModel>;
@@ -9,7 +18,7 @@ export class EventModel extends TimeStamps {
     @prop({ required: true })
     name: string;
 
-    @prop({ required: true })
+    @prop({})
     description: string;
 
     @prop({ required: true })
@@ -18,6 +27,6 @@ export class EventModel extends TimeStamps {
     @prop({ required: true })
     timeFrom: string; // Время начала
 
-    @prop({ required: true })
+    @prop({ })
     timeTo: string; // Время окончания
 }
