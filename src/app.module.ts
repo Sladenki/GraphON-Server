@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { forwardRef, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { getMongoConfig } from './config/mongo.config';
@@ -32,21 +32,26 @@ import { EventModule } from './event/event.module';
     PassportModule.register({ session: false }),
 
     // Хранилище
-    S3Module,
+    // S3Module,
+    forwardRef(() => S3Module),
 
     AuthModule,
 
     UserModule,
     PostModule,
 
-    GraphModule,
+    // GraphModule,
+    forwardRef(() => GraphModule),
 
     PostReactionModule,
-    UserPostReactionModule,
+    // UserPostReactionModule,
+    forwardRef(() => UserPostReactionModule),
 
     GraphSubsModule,
-    ScheduleModule,
-    EventModule
+    // ScheduleModule,
+    forwardRef(() => ScheduleModule),
+    // EventModule
+    forwardRef(() => EventModule),
 
   ],
   controllers: [AppController],
