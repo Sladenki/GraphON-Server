@@ -15,7 +15,8 @@ export class UserModel extends TimeStamps {
     avaPath: string
 
     @prop({ default: 0 })
-    subsNum: number  // подписки на граф
+    // subsNum: number  // подписки на граф
+    graphSubsNum: number
 
     @prop({ default: 0 })
     postsNum: number 

@@ -13,11 +13,14 @@ export class GraphService {
   ) {}
 
   // --- Создание графа ---
-  async createGraph(dto: CreateGraphDto) {
-    const graph = await this.GraphModel.create(dto);
-
+  async createGraph(dto: CreateGraphDto, userId: Types.ObjectId) {
+    const graph = await this.GraphModel.create({
+      ...dto, 
+      ownerUserId: userId, 
+    });
+  
     return graph;
-  }
+  }  
 
   // --- Получение графа по id ---
   async getGraphById(id: Types.ObjectId) {

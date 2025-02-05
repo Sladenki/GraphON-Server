@@ -18,7 +18,7 @@ export class EventModel extends TimeStamps {
     @prop({ required: true })
     name: string;
 
-    @prop({})
+    @prop({ maxlength: 150 })
     description: string;
 
     @prop({ required: true })
@@ -27,6 +27,6 @@ export class EventModel extends TimeStamps {
     @prop({ required: true })
     timeFrom: string; // Время начала
 
-    @prop({ })
+    @prop()
     timeTo: string; // Время окончания
 }

@@ -15,9 +15,10 @@ export class GraphController {
   @Post()
   @Auth()
   async createGraph(
+    @CurrentUser('_id') userId: Types.ObjectId,
     @Body() dto: CreateGraphDto
   ) {
-     return this.graphService.createGraph(dto)
+     return this.graphService.createGraph(dto, userId)
   }
 
   // --- Получение графа по id ---

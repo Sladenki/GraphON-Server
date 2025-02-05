@@ -1,5 +1,6 @@
 import { modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { UserModel } from "src/user/user.model";
 
 // Base - уникальные id 
 export interface GraphModel extends Base {}
@@ -15,6 +16,10 @@ export class GraphModel extends TimeStamps {
     @prop()
     name: string
 
+    @prop({ ref: () => UserModel, index: true })
+    ownerUserId: Ref<UserModel>; 
+
+    // Количество подписчиков на граф
     @prop({ default: 0 })
     subsNum: number
 
