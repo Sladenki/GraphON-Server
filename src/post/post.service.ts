@@ -303,33 +303,38 @@ export class PostService {
       .sort({ createdAt: -1 })
       .lean(); 
 
-    // Проверка на реакцию
-    const postsWithReactions = await Promise.all(
-      posts.map(async (post) => {
-        const reactionsWithStatus = await Promise.all(
-          post.reactions.map(async (reaction) => {
-            const isReacted = userId
-              ? await this.userPostReactionService.isUserReactionExists(
-                  reaction._id.toString(), // ID реакции
-                  userId.toString() // ID пользователя
-                )
-              : false;
+      // 2. Проверка на реакцию и подписку для каждого поста
+      const postsWithReactionsAndSubs = await Promise.all(
+        posts.map(async (post) => {
+          // 2.1 Проверяем статус реакций для каждого поста
+          const reactionsWithStatus = await Promise.all(
+            post.reactions.map(async (reaction) => {
+              const isReacted = await this.userPostReactionService.isUserReactionExists(
+                reaction._id.toString(),
+                userId.toString()
+              );
+              return {
+                ...reaction,
+                isReacted, // Добавляем поле isReacted
+              };
+            })
+          );
   
-            return {
-              ...reaction, // Оставляем все остальные данные реакции
-              isReacted, // Добавляем поле isReacted
-            };
-          })
-        );
+          // 2.2 Проверяем, подписан ли пользователь на граф
+          const isSubscribed = await this.graphSubsService.isUserSubsExists(
+            post.graphId._id.toString(),
+            userId.toString()
+          );
   
-        return {
-          ...post,
-          reactions: reactionsWithStatus, // Заменяем реакции на обновленные с isReacted
-        };
-      })
-    );
+          return {
+            ...post,
+            reactions: reactionsWithStatus,
+            isSubscribed,
+          };
+        })
+      );
   
-    return postsWithReactions;
+      return postsWithReactionsAndSubs;
 
   }
 
