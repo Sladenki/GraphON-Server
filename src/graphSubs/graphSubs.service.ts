@@ -78,10 +78,10 @@ export class GraphSubsService {
   async isUserSubsExists(graph: string, userId: string): Promise<boolean> {
 
     const reaction = await this.graphSubsModel
-    .findOne({
-      graph: new Types.ObjectId(graph),
-      user: new Types.ObjectId(userId),
-    });
+      .findOne({
+        graph: new Types.ObjectId(graph),
+        user: new Types.ObjectId(userId),
+      });
 
 
     return !!reaction; // true, если реакция найдена; иначе false

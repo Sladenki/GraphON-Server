@@ -54,7 +54,7 @@ export class AuthController {
 
       // const payload = { sub: userId, email: user.email };
       const payload = { sub: userId };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' }); // Короткий срок действия (например, 15 минут)
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '30d' }); // Короткий срок действия (например, 15 минут)
       const refreshToken = uuidv4(); // Генерируем уникальный refresh token
 
       // Сохраняем refresh token в базе данных, связав его с пользователем
