@@ -9,10 +9,19 @@ export class UserModel extends TimeStamps {
     email: string
 
     @prop()
-    name: string
+    firstName: string
+
+    @prop()
+    lastName: string
+
+    @prop()
+    username: string
 
     @prop()
     avaPath: string
+
+    @prop()
+    telegramId: number
 
     @prop({ default: 0 })
     // subsNum: number  // подписки на граф

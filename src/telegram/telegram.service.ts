@@ -6,6 +6,7 @@ export class TelegramBotService implements OnModuleInit {
   private bot: TelegramBot;
 
   constructor() {
+
     // Токен, который вы получили от BotFather
     const token = '7910385156:AAG-t9hxo7IpMme864JOwDta1CYS2_Qp2EE';
     this.bot = new TelegramBot(token, { polling: true });
@@ -32,7 +33,7 @@ export class TelegramBotService implements OnModuleInit {
               {
                 text: 'Авторизоваться через Telegram',
                 login_url: {
-                  url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
+                  url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
                 },
               },
             ],
