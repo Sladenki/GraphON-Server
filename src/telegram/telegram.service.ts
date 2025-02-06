@@ -16,21 +16,29 @@ export class TelegramBotService implements OnModuleInit {
     this.bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
 
-      // Отправка сообщения с кнопкой
-      this.bot.sendMessage(chatId, 'Привет! Перейди на наш сайт:', {
+      // Отправка сообщения с кнопками
+      this.bot.sendMessage(chatId, 'Привет! Выберите действие:', {
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: 'Перейти на сайт', // Текст на кнопке
+                text: 'Перейти на сайт', 
                 web_app: {
-                    url: 'https://graphon-client.onrender.com/', // Ссылка на ваш сайт
-                }  
+                  url: 'https://graphon-client.onrender.com/', 
+                },
+              },
+            ],
+            [
+              {
+                text: 'Авторизоваться через Telegram',
+                login_url: {
+                  url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
+                },
               },
             ],
           ],
         },
       });
     });
-  }
+    }
 }
