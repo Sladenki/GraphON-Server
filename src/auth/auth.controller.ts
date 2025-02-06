@@ -17,10 +17,10 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import * as TelegramBot from 'node-telegram-bot-api';
+import { TelegramBotService } from 'src/telegram/telegram.service';
 
 @Controller('auth')
-export class AuthController implements OnModuleInit {
-  private bot: TelegramBot;
+export class AuthController {
   private supportsCapacitor: boolean;
 
   constructor(
@@ -28,14 +28,12 @@ export class AuthController implements OnModuleInit {
     // Обращаемся к БД модели user
     @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
     private readonly configService: ConfigService,
+    private readonly telegramBotService: TelegramBotService,
     
   ) {
     const supportsCapacitorString = this.configService.get<string>('SUPPORTS_CAPACITOR');
     this.supportsCapacitor = supportsCapacitorString === 'true'; // Сравниваем со строкой "true"
 
-     // Инициализация бота
-     const token = '7910385156:AAG-t9hxo7IpMme864JOwDta1CYS2_Qp2EE'; // Ваш токен
-     this.bot = new TelegramBot(token, { polling: true });  // Инициализируем бот с polling
   }
 
   // Инициализация при старте модуля
@@ -46,14 +44,14 @@ export class AuthController implements OnModuleInit {
   // Эндпоинт для получения данных пользователя после авторизации через Telegram
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
-    console.log('called TG')
+    console.log('called TG');
     const { id, first_name, last_name, username } = query;
-    const userProfilePhotos = await this.bot.getUserProfilePhotos(id);  // Теперь bot существует
 
+    const userProfilePhotos = await this.telegramBotService.getUserProfilePhotos(id);
     let photoUrl = null;
     if (userProfilePhotos.total_count > 0) {
       const photoFileId = userProfilePhotos.photos[0][0].file_id;
-      photoUrl = await this.bot.getFileLink(photoFileId);  // Получаем ссылку на фото
+      photoUrl = await this.telegramBotService.bot.getFileLink(photoFileId);
     }
 
     const userData = {

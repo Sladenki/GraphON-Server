@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { UserModel } from 'src/user/user.model';
 import { GoogleStrategy } from 'src/strategies/google.strategy';
+import { TelegramBotModule } from 'src/telegram/telegram.module';
 
 @Module({
   controllers: [AuthController],
@@ -14,6 +15,8 @@ import { GoogleStrategy } from 'src/strategies/google.strategy';
   imports: [
     // для JWT
     ConfigModule,
+
+    TelegramBotModule,
 
     JwtModule.registerAsync({
       imports: [ConfigModule],
