@@ -33,7 +33,6 @@ export class AuthController {
   ) {
     const supportsCapacitorString = this.configService.get<string>('SUPPORTS_CAPACITOR');
     this.supportsCapacitor = supportsCapacitorString === 'true'; // Сравниваем со строкой "true"
-
   }
 
   // Инициализация при старте модуля
@@ -45,21 +44,14 @@ export class AuthController {
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
     console.log('called TG');
-    const { id, first_name, last_name, username } = query;
-
-    const userProfilePhotos = await this.telegramBotService.getUserProfilePhotos(id);
-    let photoUrl = null;
-    if (userProfilePhotos.total_count > 0) {
-      const photoFileId = userProfilePhotos.photos[0][0].file_id;
-      photoUrl = await this.telegramBotService.bot.getFileLink(photoFileId);
-    }
+    const { id, first_name, last_name, username, photo_url } = query;
 
     const userData = {
       telegramId: id,
       firstName: first_name,
       lastName: last_name,
       username: username,
-      avaPath: photoUrl,
+      avaPath: photo_url,
     };
 
     // Поиск или создание пользователя
@@ -75,6 +67,8 @@ export class AuthController {
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<string> {
+    console.log('user', user);
+
     const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
     if (existingUser) {
       return existingUser._id.toString();
@@ -85,13 +79,33 @@ export class AuthController {
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
-      photoUrl: user.photoUrl, // Если есть
+      avaPath: user.avaPath, // Если есть
     });
 
     const savedUser = await newUser.save();
     return savedUser._id.toString();
   }
+
+  // Серверный метод для выхода
+  @Post('logout')
+  async logout(@Req() req: Request, @Res() res: Response) {
+      try {
+          // Удаляем токен из кук или сессии
+          res.clearCookie('accessToken');
+          
+          // Удаляем информацию о текущем пользователе из сессии
+          req.session = null;
+
+          // Отправляем успешный ответ
+          res.status(200).json({ message: 'Вы успешно вышли из системы' });
+      } catch (error) {
+          res.status(500).json({ message: 'Ошибка при выходе из системы' });
+      }
+  }
+
 }
+
+
 
 
 // @Controller('auth')

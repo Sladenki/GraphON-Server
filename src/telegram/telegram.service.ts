@@ -9,10 +9,16 @@ export class TelegramBotService implements OnModuleInit {
     // Токен, который вы получили от BotFather
     const token = '7910385156:AAG-t9hxo7IpMme864JOwDta1CYS2_Qp2EE';
     this.bot = new TelegramBot(token, { polling: true });
+
+    console.log('Bot instance created');
   }
 
   onModuleInit() {
     console.log('Bot initialized');
+    // Даем немного времени для инициализации перед началом polling
+    setTimeout(() => {
+      this.handleStartCommand();
+    }, 1000); // 1 секунда задержки
   }
 
   // Метод для получения профиля пользователя
