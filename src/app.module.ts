@@ -16,6 +16,7 @@ import { AppService } from './app.service';
 import { GraphSubsModule } from './graphSubs/graphSubs.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { EventModule } from './event/event.module';
+import { TelegramBotModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -52,6 +53,8 @@ import { EventModule } from './event/event.module';
     forwardRef(() => ScheduleModule),
     // EventModule
     forwardRef(() => EventModule),
+
+    TelegramBotModule
 
   ],
   controllers: [AppController],
