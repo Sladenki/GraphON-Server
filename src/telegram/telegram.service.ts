@@ -44,8 +44,9 @@ export class TelegramBotService implements OnModuleInit {
             [
               {
                 text: 'Авторизоваться через Telegram',
-                login_url: {
-                  url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
+                web_app: {
+                  // url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
+                  url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
                 },
               },
             ],
