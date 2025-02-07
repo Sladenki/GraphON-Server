@@ -30,7 +30,11 @@ export class TelegramBotService implements OnModuleInit {
   handleStartCommand() {
     this.bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
-      this.bot.sendMessage(chatId, 'Привет! Выберите действие:', {
+      this.bot.sendMessage(chatId, 'Привет! Выберите действие:\n\n' +
+        '📌 *Какие данные мы собираем?*\n' +
+        'Мы получаем ваш *Telegram ID, имя, фамилию, юзернейм и фото профиля* ' +
+        'для авторизации и персонализации вашего профиля.', {
+        parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
             [
