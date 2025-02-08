@@ -44,23 +44,29 @@ export class AuthController {
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
     console.log('called TG');
-    const { id, first_name, last_name, username, photo_url } = query;
+    const { telegramId, first_name, last_name, username, photo_url } = query;
 
-    if (!id) {
+    console.log(telegramId, first_name, last_name, username, photo_url)
+
+    if (!telegramId) {
       console.error('❌ Ошибка: ID пользователя не передан!');
       return res.status(400).json({ message: 'Ошибка: ID пользователя отсутствует' });
     }
 
     const userData = {
-      telegramId: id,
+      telegramId: telegramId,
       firstName: first_name,
       lastName: last_name,
       username: username,
       avaPath: photo_url,
     };
 
+    console.log('userData', userData);
+
     // Поиск или создание пользователя
     const userId = await this.findOrCreateUser(userData);
+
+    console.log('userId', userId);
 
     // Генерация JWT
     const payload = { sub: userId };
