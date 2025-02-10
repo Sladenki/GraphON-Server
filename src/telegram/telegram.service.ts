@@ -7,10 +7,9 @@ export class TelegramBotService implements OnModuleInit {
 
   constructor() {
     // Токен, который вы получили от BotFather
-    // const token = '7910385156:AAG-t9hxo7IpMme864JOwDta1CYS2_Qp2EE';
+    const token = '7910385156:AAG-t9hxo7IpMme864JOwDta1CYS2_Qp2EE';
 
-    // Левый токен
-    const token = '7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs';
+    // const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
     
     this.bot = new TelegramBot(token, { polling: true });
 
@@ -43,7 +42,7 @@ export class TelegramBotService implements OnModuleInit {
           inline_keyboard: [
             [
               {
-                text: 'Перейти на сайт',
+                text: '🏡 Перейти на сайт',
                 web_app: {
                   url: 'https://graphon-client.onrender.com/', 
                 },
@@ -51,13 +50,27 @@ export class TelegramBotService implements OnModuleInit {
             ],
             [
               {
-                text: 'Авторизоваться через Telegram',
-                web_app: {
+                text: 'Авторизоваться через Telegram (временное решение)',
+                login_url: {
                   // url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
                   url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
                 },
               },
             ],
+
+            // [
+            //   {
+            //     text: '🔐 Авторизоваться через Telegram',
+            //     web_app: {
+            //       // url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
+
+            //       // url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
+
+            //       url: 'https://graphon-client.onrender.com/signIn',
+            //     },
+            //   },
+            // ],
+
           ],
         },
       });

@@ -43,30 +43,23 @@ export class AuthController {
   // Эндпоинт для получения данных пользователя после авторизации через Telegram
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
-    console.log('called TG');
-    const { telegramId, first_name, last_name, username, photo_url } = query;
+    console.log('called TG')
+    const { id, first_name, last_name, username, photo_url } = query;
 
-    console.log(telegramId, first_name, last_name, username, photo_url)
-
-    if (!telegramId) {
-      console.error('❌ Ошибка: ID пользователя не передан!');
-      return res.status(400).json({ message: 'Ошибка: ID пользователя отсутствует' });
-    }
+    console.log('Из query', id, first_name, last_name, username, photo_url)
 
     const userData = {
-      telegramId: telegramId,
+      telegramId: id,
       firstName: first_name,
       lastName: last_name,
       username: username,
-      avaPath: photo_url,
+      photoUrl: photo_url,
     };
 
-    console.log('userData', userData);
+    console.log('userData', userData)
 
     // Поиск или создание пользователя
     const userId = await this.findOrCreateUser(userData);
-
-    console.log('userId', userId);
 
     // Генерация JWT
     const payload = { sub: userId };
@@ -90,7 +83,7 @@ export class AuthController {
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
-      avaPath: user.avaPath, // Если есть
+      avaPath: user.photoUrl, // Если есть
     });
 
     const savedUser = await newUser.save();
