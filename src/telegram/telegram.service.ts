@@ -34,8 +34,7 @@ export class TelegramBotService implements OnModuleInit {
     this.bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
       this.bot.sendMessage(chatId, 'Привет! Выберите действие:\n\n' +
-        '📌 *Какие данные мы собираем?*\n\n' +
-        'Мы получаем следующие данные:\n' +
+        '📌 *Какие данные мы получаем?*\n\n' +
         '- *Telegram ID*\n' +
         '- *Имя*\n' +
         '- *Фамилию*\n' +
@@ -54,26 +53,13 @@ export class TelegramBotService implements OnModuleInit {
             ],
             [
               {
-                text: '🔐 Авторизоваться через Telegram',
+                text: '🔐 Авторизоваться',
                 login_url: {
                   // url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
                   url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
                 },
               },
             ],
-
-            // [
-            //   {
-            //     text: '🔐 Авторизоваться через Telegram',
-            //     web_app: {
-            //       // url: 'https://graphon.up.railway.app/api/auth/telegram/callback',
-
-            //       // url: 'https://graphon-server.onrender.com/api/auth/telegram/callback',
-
-            //       url: 'https://graphon-client.onrender.com/signIn',
-            //     },
-            //   },
-            // ],
 
           ],
         },

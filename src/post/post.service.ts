@@ -101,7 +101,6 @@ export class PostService {
       );
     }
 
-
     return newPost;
   }
 

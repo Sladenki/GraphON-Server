@@ -1,9 +1,15 @@
-import { prop } from "@typegoose/typegoose";
+import { modelOptions, prop } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
 
 // Base - уникальные id 
 export interface UserModel extends Base {}
 
+@modelOptions({
+    schemaOptions: {
+      versionKey: false, // Отключает поле _v
+      timestamps: { createdAt: true, updatedAt: false }, // Оставляет createdAt, но убирает updatedAt
+    },
+  })
 export class UserModel extends TimeStamps {
     @prop ({ unique: false })
     email: string
