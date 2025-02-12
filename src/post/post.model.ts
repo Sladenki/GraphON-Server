@@ -11,7 +11,8 @@ export interface PostModel extends Base {}
 // TimeStamps - даты
 @modelOptions({
     schemaOptions: {
-        versionKey: false  // Отключает поле _v
+        versionKey: false,  // Отключает поле _v
+        timestamps: { createdAt: true, updatedAt: false }, // Оставляет createdAt, но убирает updatedAt
     }
 })
 export class PostModel extends TimeStamps {
