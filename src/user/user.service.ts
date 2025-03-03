@@ -15,23 +15,10 @@ export class UserService {
     // Для JWT токена
     private readonly jwtService: JwtService,
 
-    // Redis
-    // @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   // --- Вход или регистрация пользователя ---
   async auth(dto: AuthUserDto) {
-    // const redisUserKey = `/user/auth/${dto.email}`;
-
-    // // Попытка получить пользователя из Redis
-    // const cachedUser = await this.cacheManager.get<any>(redisUserKey);
-
-    // if (cachedUser) {
-    //     return {
-    //         ...cachedUser,
-    //         token: this.jwtService.sign({ _id: cachedUser._id }),
-    //     };
-    // }
 
     const user = await this.UserModel.findOneAndUpdate(
       { email: dto.email },
@@ -52,13 +39,11 @@ export class UserService {
     // @ts-ignore
     const mainData = user?._doc;
 
-    // await this.cacheManager.set(redisUserKey, mainData);
-
-    const www = {
-      ...mainData,
-      // Вшиваем в токен id пользователя
-      token: this.jwtService.sign({ _id: mainData._id }),
-    };
+    // const www = {
+    //   ...mainData,
+    //   // Вшиваем в токен id пользователя
+    //   token: this.jwtService.sign({ _id: mainData._id }),
+    // };
 
     return {
       ...mainData,

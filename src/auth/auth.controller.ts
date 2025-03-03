@@ -14,26 +14,15 @@ import { JwtService } from '@nestjs/jwt'; // Для генерации JWT
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from 'src/user/user.model';
 import { ModelType } from '@typegoose/typegoose/lib/types';
-import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
-import * as TelegramBot from 'node-telegram-bot-api';
-import { TelegramBotService } from 'src/telegram/telegram.service';
 
 @Controller('auth')
 export class AuthController {
-  private supportsCapacitor: boolean;
-
   constructor(
     private jwtService: JwtService,
     // Обращаемся к БД модели user
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
-    private readonly configService: ConfigService,
-    private readonly telegramBotService: TelegramBotService,
-    
-  ) {
-    const supportsCapacitorString = this.configService.get<string>('SUPPORTS_CAPACITOR');
-    this.supportsCapacitor = supportsCapacitorString === 'true'; // Сравниваем со строкой "true"
-  }
+    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,    
+  ) { }
 
   // Инициализация при старте модуля
   onModuleInit() {
@@ -64,6 +53,8 @@ export class AuthController {
     // Генерация JWT
     const payload = { sub: userId };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '30d' });
+
+    console.log('accessToken', accessToken)
 
     // ✅ Используем Express Response для редиректа
     return res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);
@@ -98,6 +89,7 @@ export class AuthController {
       res.clearCookie('accessToken');
       
       // Удаляем информацию о текущем пользователе из сессии
+      // @ts-expect-error 123
       req.session = null;
 
       // Отправляем успешный ответ

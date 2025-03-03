@@ -16,6 +16,9 @@ export class GraphModel extends TimeStamps {
     @prop()
     name: string
 
+    @prop ({ index: true, maxlength: 200 })
+    about?: string
+
     @prop({ ref: () => UserModel, index: true })
     ownerUserId: Ref<UserModel>; 
 
@@ -28,6 +31,9 @@ export class GraphModel extends TimeStamps {
 
     @prop({ default: 0 })
     childGraphNum: number;
+
+    @prop ()
+    imgPath?: string
 }
 
 

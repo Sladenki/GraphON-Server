@@ -1,18 +1,18 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { GraphController } from './graph.controller';
 import { GraphModel } from './graph.model';
 import { GraphService } from './graph.service';
 import { JwtStrategy } from 'src/user/jwt.strategy';
-import { GoogleStrategy } from 'src/strategies/google.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModel } from 'src/user/user.model';
 import { JwtModule } from '@nestjs/jwt';
 import { getJwtConfig } from 'src/config/jwt.config';
+import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
 
 @Module({
   controllers: [GraphController],
-  providers: [JwtStrategy, GoogleStrategy, GraphService],
+  providers: [JwtStrategy, GraphService],
   imports: [
     ConfigModule,
 
@@ -37,6 +37,7 @@ import { getJwtConfig } from 'src/config/jwt.config';
         schemaOptions: { collection: 'User' },
       },
     ]),
+    forwardRef(() => GraphSubsModule)
         
   ],
   exports: [GraphService],

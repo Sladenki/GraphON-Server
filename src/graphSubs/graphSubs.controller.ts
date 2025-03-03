@@ -27,16 +27,6 @@ export class GraphSubsController {
         return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
     }
 
-    // Получение постов из подписанных графов
-    @Get('getSubsPosts')
-    @Auth()
-    async getSubsPosts(
-        @Query('skip') skip,
-        @CurrentUser('_id') userId: Types.ObjectId,
-    ) {
-        return this.graphSubsService.getSubsPosts(skip, userId)
-    }
-
     // Получение расписания из подписанных графов
     @Get('getSubsSchedule')
     @Auth()

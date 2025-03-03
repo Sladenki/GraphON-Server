@@ -6,7 +6,6 @@ import { GraphSubsService } from "./graphSubs.service";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { getJwtConfig } from "src/config/jwt.config";
-import { PostModule } from "src/post/post.module";
 import { ScheduleModule } from "src/schedule/schedule.module";
 import { GraphModel } from "src/graph/graph.model";
 
@@ -32,7 +31,6 @@ import { GraphModel } from "src/graph/graph.model";
         schemaOptions: { collection: 'Graph' }
       },
     ]),
-    forwardRef(() => PostModule),
     ScheduleModule
   ],
   exports: [GraphSubsService]

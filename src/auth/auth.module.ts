@@ -6,12 +6,11 @@ import { getJwtConfig } from 'src/config/jwt.config';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { UserModel } from 'src/user/user.model';
-import { GoogleStrategy } from 'src/strategies/google.strategy';
 import { TelegramBotModule } from 'src/telegram/telegram.module';
 
 @Module({
   controllers: [AuthController],
-  providers: [JwtStrategy, GoogleStrategy],
+  providers: [JwtStrategy],
   imports: [
     // для JWT
     ConfigModule,

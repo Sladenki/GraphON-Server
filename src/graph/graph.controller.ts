@@ -1,4 +1,4 @@
-import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param } from "@nestjs/common";
+import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query } from "@nestjs/common";
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
@@ -32,8 +32,21 @@ export class GraphController {
   // --- Получение главных родительских графов --- 
   @Get('getParentGraphs')
   async getParentGraphs(
+     @Query('skip') skip,
   ) {
-    return this.graphService.getParentGraphs()
+    console.log('called - conroller')
+    return this.graphService.getParentGraphs(skip)
+  }
+
+  // --- Получение главных родительских графов для авторизованных пользователей--- 
+  @Get('getParentGraphsAuth')
+  @Auth()
+  async getParentGraphsAuth(
+    @Query('skip') skip,
+    @CurrentUser('_id') userId: Types.ObjectId,
+  ) {
+    console.log('called - conroller')
+    return this.graphService.getParentGraphsAuth(skip, userId)
   }
 
   // --- Получение всех дочерних графов по Id родительскому --- 

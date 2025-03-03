@@ -3,7 +3,6 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphSubsModel } from './graphSubs.model';
 import { Types } from 'mongoose';
-import { PostService } from 'src/post/post.service';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { GraphModel } from 'src/graph/graph.model';
 
@@ -15,9 +14,6 @@ export class GraphSubsService {
 
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
-
-    @Inject(forwardRef(() => PostService)) // Используем forwardRef
-    private readonly postService: PostService,
 
     private readonly scheduleService: ScheduleService
   ) {}
@@ -41,22 +37,6 @@ export class GraphSubsService {
         this.graphSubsModel.create({ user, graph })
       ]);
     }
-  }
-
-
-  // --- Получение постов из подписанных графов ---
-  async getSubsPosts(skip: any, userId: Types.ObjectId): Promise<any[]> {
-    const skipPosts = skip ? Number(skip) : 0;
-  
-    // Получаем массив графов, на которые подписан пользователь
-    const subscribedGraphs = await this.graphSubsModel
-      .find({ user: userId }) // Фильтруем по userId
-      .distinct('graph');
-
-    // Получаем посты из полученного массива id графов 
-    const posts = await this.postService.getPostsFromSubscribedGraphs(skipPosts, subscribedGraphs, userId)
-
-    return posts
   }
 
   // --- Получение расписания из подписанных графов ---

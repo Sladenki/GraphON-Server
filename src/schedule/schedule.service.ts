@@ -12,7 +12,7 @@ export class ScheduleService {
     private readonly ScheduleModel: ModelType<ScheduleModel>,
   ) {}
 
-  // --- Создание --- 
+  // --- Создание расписания --- 
   async createSchedule(scheduleDto: CreateScheduleDto) {
     const newSchedule = new this.ScheduleModel(scheduleDto);
     return newSchedule.save();

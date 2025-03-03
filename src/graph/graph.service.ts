@@ -4,12 +4,15 @@ import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphModel } from './graph.model';
 import { CreateGraphDto } from './dto/create-graph.dto';
 import { Types } from 'mongoose';
+import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
 
 @Injectable()
 export class GraphService {
   constructor(
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
+
+    private readonly graphSubsService: GraphSubsService,
   ) {}
 
   // --- Создание графа ---
@@ -28,13 +31,52 @@ export class GraphService {
   }
 
   // --- Получение (главных) родительских графов ---
-  async getParentGraphs() {
-    return this.GraphModel.find({ parentGraphId: { $exists: false } }).exec();
+  async getParentGraphs(skip: any) {
+    console.log('called')
+
+    const graphs =  this.GraphModel
+      // .find({ parentGraphId: { $exists: false } })
+      .find()
+      .skip(skip)
+      .exec();
+
+    console.log('graphs', graphs)
+
+    return graphs
   }
 
-  // --- Получение всех дочерних графов по Id родительскому ---
+  async getParentGraphsAuth(skip: any, userId: Types.ObjectId) {
+    console.log('called')
+
+    const graphs = await this.GraphModel
+      // .find({ parentGraphId: { $exists: false } })
+      .find()
+      .skip(skip)
+      .exec();
+
+      const postsWithReactionsAndSubs = await Promise.all(
+        graphs.map(async (graph) => {
+
+          // Проверяем, подписан ли пользователь на граф
+          const isSubscribed = await this.graphSubsService.isUserSubsExists(
+            graph._id.toString(),
+            userId.toString()
+          );
+  
+          return {
+            ...graph.toObject(),
+            isSubscribed,
+          };
+        })
+      );
+
+    console.log('postsWithReactionsAndSubs', postsWithReactionsAndSubs)
+
+    return postsWithReactionsAndSubs
+  }
+
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
-    return this.GraphModel.find({ parentGraphId }).exec();
+    return this.GraphModel.find().exec();
   }
 
   // --- Создание дочернего графа и обновление родительского ---

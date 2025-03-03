@@ -19,22 +19,13 @@ export class ScheduleController {
     return this.scheduleService.createSchedule(body)
   }
 
-  // --- Получает расписание для одного графа с понедельника по пятницу ---    
-  @Post('weekday-by-graph')
-  async getWeeklyScheduleByGraphId(
-    @Body() body: { graphId: string },
-  ) {
-    const { graphId } = body;
-    return this.scheduleService.getWeekdaySchedulesByGraph(graphId);
-  }
-
   // --- Получает расписание для одного графа с понедельника по пятницу + мероприятия ---
   @Post("full-by-graph")
   async getFullScheduleByGraphId(@Body() body: { graphId: string }) {
-      const { graphId } = body;
-      const schedule = await this.scheduleService.getWeekdaySchedulesByGraph(graphId);
-      const events = await this.eventService.getEventsByGraphId(graphId);
-      return { schedule, events };
+    const { graphId } = body;
+    const schedule = await this.scheduleService.getWeekdaySchedulesByGraph(graphId);
+    const events = await this.eventService.getEventsByGraphId(graphId);
+    return { schedule, events };
   }
 
   // --- Получает расписания для нескольких графов с понедельника по пятницу ---   
