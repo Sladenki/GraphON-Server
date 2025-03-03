@@ -21,7 +21,9 @@ export class ScheduleController {
 
   // --- Получает расписание для одного графа с понедельника по пятницу + мероприятия ---
   @Post("full-by-graph")
-  async getFullScheduleByGraphId(@Body() body: { graphId: string }) {
+  async getFullScheduleByGraphId(
+    @Body() body: { graphId: string }
+  ) {
     const { graphId } = body;
     const schedule = await this.scheduleService.getWeekdaySchedulesByGraph(graphId);
     const events = await this.eventService.getEventsByGraphId(graphId);

@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { getJwtConfig } from "src/config/jwt.config";
 import { ScheduleModule } from "src/schedule/schedule.module";
 import { GraphModel } from "src/graph/graph.model";
+import { EventModule } from "src/event/event.module";
 
 
 @Module({
@@ -31,7 +32,8 @@ import { GraphModel } from "src/graph/graph.model";
         schemaOptions: { collection: 'Graph' }
       },
     ]),
-    ScheduleModule
+    ScheduleModule,
+    EventModule
   ],
   exports: [GraphSubsService]
 })

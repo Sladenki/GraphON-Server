@@ -5,6 +5,7 @@ import { GraphSubsModel } from './graphSubs.model';
 import { Types } from 'mongoose';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { GraphModel } from 'src/graph/graph.model';
+import { EventService } from 'src/event/event.service';
 
 @Injectable()
 export class GraphSubsService {
@@ -15,7 +16,8 @@ export class GraphSubsService {
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
 
-    private readonly scheduleService: ScheduleService
+    private readonly scheduleService: ScheduleService,
+    private readonly eventService: EventService
   ) {}
 
   // --- Переключение подписки на граф ---
@@ -40,7 +42,7 @@ export class GraphSubsService {
   }
 
   // --- Получение расписания из подписанных графов ---
-  async getSubsSchedule(userId: Types.ObjectId): Promise<any[]> {
+  async getSubsSchedule(userId: Types.ObjectId) {
   
     // Получаем массив графов, на которые подписан пользователь
     const subscribedGraphs = await this.graphSubsModel
@@ -49,9 +51,12 @@ export class GraphSubsService {
 
     // Получаем посты из полученного массива id графов 
     // @ts-expect-error ошибка массива 
-    const posts = await this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs)
+    const schedule = await this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs)
 
-    return posts
+    // @ts-expect-error ошибка массива 
+    const events = await this.eventService.getEventsByGraphsIds(subscribedGraphs);
+
+    return { schedule, events };
   }
 
   // --- Проверка подписки на граф ---

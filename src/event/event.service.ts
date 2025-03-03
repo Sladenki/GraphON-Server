@@ -26,6 +26,17 @@ export class EventService {
             .lean();
     }
 
+    // Получение мероприятий для определённого графа
+    async getEventsByGraphsIds(graphIds: string[]) {
+        return this.EventModel
+            .find({
+                graphId: { $in: graphIds },
+               
+            })
+            .populate("graphId", "name")
+            .lean();
+    }
+
     // --- Получение мероприятий на ближайшее время ---
     async getUpcomingEvents() {
         const today = new Date();

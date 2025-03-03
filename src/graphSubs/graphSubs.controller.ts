@@ -10,7 +10,7 @@ import { GraphSubsService } from "./graphSubs.service";
 export class GraphSubsController {
     constructor(private readonly graphSubsService: GraphSubsService) {}
 
-    // Подписка (отписка) на граф
+    // --- Подписка (отписка) на граф ---
     @UsePipes(new ValidationPipe())
     @HttpCode(200)
     @Post()
@@ -27,7 +27,8 @@ export class GraphSubsController {
         return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
     }
 
-    // Получение расписания из подписанных графов
+    // --- Получение расписания из подписанных графов ---
+    // Для страницы расписания
     @Get('getSubsSchedule')
     @Auth()
     async getSubsSchedule(

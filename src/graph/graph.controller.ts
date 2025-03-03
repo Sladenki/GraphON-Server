@@ -32,9 +32,8 @@ export class GraphController {
   // --- Получение главных родительских графов --- 
   @Get('getParentGraphs')
   async getParentGraphs(
-     @Query('skip') skip,
+    @Query('skip') skip,
   ) {
-    console.log('called - conroller')
     return this.graphService.getParentGraphs(skip)
   }
 
@@ -45,7 +44,6 @@ export class GraphController {
     @Query('skip') skip,
     @CurrentUser('_id') userId: Types.ObjectId,
   ) {
-    console.log('called - conroller')
     return this.graphService.getParentGraphsAuth(skip, userId)
   }
 
