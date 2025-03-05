@@ -43,21 +43,23 @@ export class GraphSubsService {
 
   // --- Получение расписания из подписанных графов ---
   async getSubsSchedule(userId: Types.ObjectId) {
-  
     // Получаем массив графов, на которые подписан пользователь
     const subscribedGraphs = await this.graphSubsModel
-      .find({ user: userId }) // Фильтруем по userId
+      .find({ user: userId })
       .distinct('graph');
+  
+    // Выполняем два запроса параллельно
+    const [schedule, events] = await Promise.all([
+      // @ts-expect-error типизация
+      this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs),
 
-    // Получаем посты из полученного массива id графов 
-    // @ts-expect-error ошибка массива 
-    const schedule = await this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs)
-
-    // @ts-expect-error ошибка массива 
-    const events = await this.eventService.getEventsByGraphsIds(subscribedGraphs);
-
+      // @ts-expect-error типизация
+      this.eventService.getEventsByGraphsIds(subscribedGraphs),
+    ]);
+  
     return { schedule, events };
   }
+  
 
   // --- Проверка подписки на граф ---
   async isUserSubsExists(graph: string, userId: string): Promise<boolean> {

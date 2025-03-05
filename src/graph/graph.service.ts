@@ -32,7 +32,6 @@ export class GraphService {
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any) {
-    console.log('called')
 
     const graphs =  this.GraphModel
       // .find({ parentGraphId: { $exists: false } })
@@ -40,16 +39,12 @@ export class GraphService {
       .skip(skip)
       .exec();
 
-    console.log('graphs', graphs)
-
     return graphs
   }
 
   async getParentGraphsAuth(skip: any, userId: Types.ObjectId) {
-    console.log('called')
 
     const graphs = await this.GraphModel
-      // .find({ parentGraphId: { $exists: false } })
       .find()
       .skip(skip)
       .exec();
@@ -69,8 +64,6 @@ export class GraphService {
           };
         })
       );
-
-    console.log('postsWithReactionsAndSubs', postsWithReactionsAndSubs)
 
     return postsWithReactionsAndSubs
   }

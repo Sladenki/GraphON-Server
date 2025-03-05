@@ -45,8 +45,6 @@ export class AuthController {
       photoUrl: photo_url,
     };
 
-    console.log('userData', userData)
-
     // Поиск или создание пользователя
     const userId = await this.findOrCreateUser(userData);
 

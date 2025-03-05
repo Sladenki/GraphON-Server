@@ -6,6 +6,7 @@ import * as fs from 'fs';
 
 async function bootstrap() {
 
+  // ---- C HTTPS ----
   // Автоматические добавление api к каждому запросу
   // Читаем SSL-сертификаты
   const httpsOptions = {
@@ -20,6 +21,14 @@ async function bootstrap() {
 
   app.use(cookieParser())
 
+  // ---- Без HTTPS ----
+  // const app = await NestFactory.create(AppModule);
+
+  // // Автоматические добавление api к каждому запросу
+  // app.setGlobalPrefix('api');
+
+  // app.use(cookieParser())
+
   app.enableCors({
     // по этому адресу - клиент
     origin: [
@@ -27,6 +36,7 @@ async function bootstrap() {
       'capacitor://localhost',
       'ionic://localhost', 
       'http://localhost', 
+      'https://localhost',
       'https://graphon.up.railway.app',  
       'http://localhost:8080',
       'https://graphon-client.onrender.com',

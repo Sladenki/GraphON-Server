@@ -6,14 +6,14 @@ import * as TelegramBot from 'node-telegram-bot-api';
 export class TelegramBotService implements OnModuleInit {
   public bot: TelegramBot;
   private WEB_APP_URL: string;
-  private AUTH_LOGIN_URL: string;
+  private SERVER_URL: string;
 
   constructor(
     private readonly configService: ConfigService,
   ) {
     // Подключаем бота
-    // const token = this.configService.get<string>('BOT_TOKEN');
-    const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
+    const token = this.configService.get<string>('BOT_TOKEN');
+    // const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
     this.bot = new TelegramBot(token, { polling: true });
 
     console.log('Bot instance created');
@@ -23,8 +23,8 @@ export class TelegramBotService implements OnModuleInit {
     this.WEB_APP_URL = webAppString
 
     // Ссылка на авторизацию
-    const authLoginString = this.configService.get<string>('AUTH_LOGIN_URL');
-    this.AUTH_LOGIN_URL = authLoginString
+    const authLoginString = this.configService.get<string>('SERVER_URL');
+    this.SERVER_URL = authLoginString
   }
 
   onModuleInit() {
@@ -71,10 +71,10 @@ export class TelegramBotService implements OnModuleInit {
               {
                 text: '🔐 Авторизоваться',
                 login_url: {
-                  url: this.AUTH_LOGIN_URL,
+                  url: `${this.SERVER_URL}/auth/telegram/callback`, 
                 },
               },
-            ],
+            ],            
             [
               {
                 text: '📢 Telegram канал',
