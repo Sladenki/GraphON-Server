@@ -89,7 +89,6 @@ export class AuthController {
       res.clearCookie('accessToken');
       
       // Удаляем информацию о текущем пользователе из сессии
-      // @ts-expect-error 123
       req.session = null;
 
       // Отправляем успешный ответ

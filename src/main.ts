@@ -1,9 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
+import * as fs from 'fs';
+
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+
+  // Автоматические добавление api к каждому запросу
+  // Читаем SSL-сертификаты
+  const httpsOptions = {
+    key: fs.readFileSync('./ssl/key.pem'),  // Укажи правильный путь
+    cert: fs.readFileSync('./ssl/cert.pem'),
+  };
+
+  const app = await NestFactory.create(AppModule, { httpsOptions });
 
   // Автоматические добавление api к каждому запросу
   app.setGlobalPrefix('api');
