@@ -10,8 +10,8 @@ async function bootstrap() {
   // Автоматические добавление api к каждому запросу
   // Читаем SSL-сертификаты
   const httpsOptions = {
-    key: fs.readFileSync('./ssl/key.pem'),  // Укажи правильный путь
-    cert: fs.readFileSync('./ssl/cert.pem'),
+    key: fs.readFileSync(process.env.KEY),  // Укажи правильный путь
+    cert: fs.readFileSync(process.env.CERT),
   };
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
