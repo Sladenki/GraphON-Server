@@ -55,7 +55,10 @@ export class AuthController {
     console.log('accessToken', accessToken)
 
     // ✅ Используем Express Response для редиректа
-    return res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);
+    // return res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);
+    const callbackUrl = `${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`;
+    const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
+    return res.redirect(deepLink);
   }
 
   // Поиск или создание пользователя в БД
