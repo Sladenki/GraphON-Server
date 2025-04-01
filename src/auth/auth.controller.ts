@@ -54,11 +54,22 @@ export class AuthController {
 
     console.log('accessToken', accessToken)
 
-    // ✅ Используем Express Response для редиректа
-    // return res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);
+    // Определение платформы
+    const userAgent = req.headers['user-agent'] || '';
+    const mobileAppUserAgent = process.env.USER_AGENT_MOBILE_APP
+
+    const isMobileApp = new RegExp(mobileAppUserAgent, 'i').test(userAgent);
+
     const callbackUrl = `${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`;
-    const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
-    return res.redirect(deepLink);
+
+    if (isMobileApp) {
+      // Если приложение
+      const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
+      return res.redirect(deepLink);
+    } else {
+      // Если веб
+      return res.redirect(callbackUrl);
+    }
   }
 
   // Поиск или создание пользователя в БД
