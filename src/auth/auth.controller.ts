@@ -46,39 +46,28 @@ export class AuthController {
     };
 
     // Поиск или создание пользователя
-    const userId = await this.findOrCreateUser(userData);
+    const user = await this.findOrCreateUser(userData);
+    const userId = user._id.toString();
 
     // Генерация JWT
-    const payload = { sub: userId };
+    const payload = { sub: userId, role: user.role };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '30d' });
 
     console.log('accessToken', accessToken)
 
     // Определение платформы
-    const userAgent = req.headers['user-agent'] || '';
-    const mobileAppUserAgent = process.env.USER_AGENT_MOBILE_APP
-
-    const isMobileApp = new RegExp(mobileAppUserAgent, 'i').test(userAgent);
-
     const callbackUrl = `${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`;
-
-    if (isMobileApp) {
-      // Если приложение
-      const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
-      return res.redirect(deepLink);
-    } else {
-      // Если веб
-      return res.redirect(callbackUrl);
-    }
+    const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
+    return res.redirect(deepLink);
   }
 
   // Поиск или создание пользователя в БД
-  private async findOrCreateUser(user: any): Promise<string> {
+  private async findOrCreateUser(user: any): Promise<any> {
     console.log('user', user);
 
     const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
     if (existingUser) {
-      return existingUser._id.toString();
+      return existingUser
     }
 
     const newUser = new this.UserModel({
@@ -90,7 +79,7 @@ export class AuthController {
     });
 
     const savedUser = await newUser.save();
-    return savedUser._id.toString();
+    return savedUser;
   }
 
   // Серверный метод для выхода

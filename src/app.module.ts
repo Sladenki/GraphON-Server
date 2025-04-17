@@ -14,6 +14,8 @@ import { GraphSubsModule } from './graphSubs/graphSubs.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { EventModule } from './event/event.module';
 import { TelegramBotModule } from './telegram/telegram.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './user/roles.guard';
 
 @Module({
   imports: [
@@ -41,7 +43,13 @@ import { TelegramBotModule } from './telegram/telegram.module';
     TelegramBotModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 
 

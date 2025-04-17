@@ -11,6 +11,10 @@ export interface UserModel extends Base {}
   },
 })
 export class UserModel extends TimeStamps {
+
+  @prop({ enum: ['create', 'admin', 'editor', 'user'], default: 'user' })
+  role: 'create' | 'admin' | 'editor' | 'user';
+
   @prop ({ unique: false })
   email: string
 
