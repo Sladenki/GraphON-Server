@@ -63,8 +63,6 @@ export class AuthController {
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<any> {
-    console.log('user', user);
-
     const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
     if (existingUser) {
       return existingUser
