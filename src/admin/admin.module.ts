@@ -6,6 +6,7 @@ import { UserModel } from "src/user/user.model";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { getJwtConfig } from "src/config/jwt.config";
+import { GraphModule } from "src/graph/graph.module";
 
 
 @Module({
@@ -28,6 +29,7 @@ import { getJwtConfig } from "src/config/jwt.config";
         schemaOptions: { collection: 'User' },
       },
     ]),
+    GraphModule
   ],
   exports: [AdminService]
 })
