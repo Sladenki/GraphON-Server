@@ -2,6 +2,8 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { RoleHierarchy, UserRole } from 'src/admin/role.enum';
+
 
 @Injectable()
 export class AuthWithRolesGuard implements CanActivate {
@@ -12,37 +14,46 @@ export class AuthWithRolesGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromHeader(request);
 
+    // Извлекаем токен из заголовков запроса
+    const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException('Missing token');
+      throw new UnauthorizedException('Отсутствует токен');
     }
 
     let payload: any;
     try {
+      // Проверяем JWT и декодируем payload
       payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET
       });
+
+      // Сохраняем payload в request.user для использования в других местах
       request['user'] = payload;
-    } catch (err) {
-      throw new UnauthorizedException('Invalid token');
+    } catch {
+      throw new UnauthorizedException('Неверный токен');
     }
 
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
+    // Извлекаем требуемые роли из метаданных маршрута (установлены через @AuthRoles)
+    const requiredRoles = this.reflector.get<UserRole[]>('roles', context.getHandler());
 
-    console.log('requiredRoles', requiredRoles)
-
+    // Если роли не указаны — маршрут доступен для всех авторизованных пользователей
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
     const user = request.user;
-
-
-
     if (!user || !user.role) return false;
 
-    return requiredRoles.includes(user.role);
+    // Получаем "уровень доступа" текущего пользователя
+    const userLevel = RoleHierarchy[user.role as UserRole] ?? -1;
+
+    // Получаем максимальный необходимый уровень доступа для маршрута
+    const maxRequiredLevel = Math.max(...requiredRoles.map(role => RoleHierarchy[role]));
+
+    // Разрешаем доступ, если уровень пользователя >= необходимого
+    return userLevel >= maxRequiredLevel;
   }
 
+  // Вспомогательная функция: извлечение токена из заголовков запроса
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
