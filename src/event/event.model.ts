@@ -29,4 +29,7 @@ export class EventModel extends TimeStamps {
 
     @prop()
     timeTo: string; // Время окончания
+
+    @prop({ default: 0 })
+    regedUsers: number
 }

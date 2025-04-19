@@ -17,6 +17,7 @@ import { TelegramBotModule } from './telegram/telegram.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
 import { AuthWithRolesGuard } from './decorators/AuthWithRoles.decorator';
+import { EventRegsModule } from './eventRegs/eventRegs.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { AuthWithRolesGuard } from './decorators/AuthWithRoles.decorator';
     ScheduleModule,
     EventModule,
     TelegramBotModule,
+    EventRegsModule,
     AdminModule
   ],
   controllers: [AppController],

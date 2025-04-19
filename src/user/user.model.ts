@@ -39,4 +39,7 @@ export class UserModel extends TimeStamps {
 
   @prop({ default: 0 })
   postsNum: number 
+
+  @prop({ default: 0 })
+  attentedEventsNum: number
 }

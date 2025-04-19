@@ -8,7 +8,6 @@ import { Types } from 'mongoose';
 import { GraphService } from 'src/graph/graph.service';
 
 @Controller('admin')
-
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
@@ -22,7 +21,6 @@ export class AdminController {
         @Param('id') userId: string, 
         @Body('role') role: UserRole
     ) {
-        console.log('userId', userId, 'role', role)
         return this.adminService.assignRole(userId, role);
     }
 
