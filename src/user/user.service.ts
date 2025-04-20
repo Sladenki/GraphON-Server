@@ -39,12 +39,6 @@ export class UserService {
     // @ts-ignore
     const mainData = user?._doc;
 
-    // const www = {
-    //   ...mainData,
-    //   // Вшиваем в токен id пользователя
-    //   token: this.jwtService.sign({ _id: mainData._id }),
-    // };
-
     return {
       ...mainData,
       // Вшиваем в токен id пользователя
@@ -61,4 +55,14 @@ export class UserService {
 
     return user;
   }
+
+  // --- Получение всех пользователей ---
+  async getAllUsers(limit: number = 100) {
+    return this.UserModel
+      .find({})
+      .limit(limit)
+      .lean()
+      .select({ createdAt: 0, updatedAt: 0 });
+  }
+
 }

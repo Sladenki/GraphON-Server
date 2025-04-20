@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   Request,
   UnauthorizedException,
@@ -25,22 +26,31 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-
-    // Обращаемся к БД модели user
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
   ) {}
 
   // Авторизация \ регистрация
   @Post('auth')
-  auth(@Body() dto: AuthUserDto) {
+  auth(
+    @Body() dto: AuthUserDto
+  ) {
     return this.userService.auth(dto);
   }
 
   // Получение данных пользователя по его ID
   @Get('getById/:id')
-  // @UseInterceptors(CacheInterceptor) // Для Redis
-  async getUser(@Param('id') id: string) {
+  async getUser(
+    @Param('id') id: string
+  ) {
     return this.userService.getUserById(new Types.ObjectId(id));
+  }
+
+  // Получение всех пользователей
+  @Get('allUsers')
+  async getAllUsers(
+    @Query('limit') limit?: string
+  ) {
+    const parsedLimit = parseInt(limit, 10);
+    return this.userService.getAllUsers(isNaN(parsedLimit) ? 100 : parsedLimit);
   }
 
   @UseGuards(JwtAuthGuard)
