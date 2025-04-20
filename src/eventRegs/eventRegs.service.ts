@@ -42,6 +42,15 @@ export class EventRegsService {
         }
     }
 
+    // Получаем мероприятия, на которые подписан пользователь (для профиля)
+    async getEventsByUserId(userId: string | Types.ObjectId) {
+        const events = await this.EventRegsModel
+            .find({ userId })
+            .populate('eventId')
+
+        return events
+    }
+
 
 
 }

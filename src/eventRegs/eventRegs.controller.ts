@@ -1,4 +1,4 @@
-import { Controller, HttpCode, Param, Patch, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, HttpCode, Param, Patch, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
@@ -21,5 +21,12 @@ export class EventRegsController {
         return this.eventRegsService.toggleEvent(currentUserId, eventId)
     }
 
-
+    // Получаем мероприятия, на которые подписан пользователь
+    @Get('getEventsByUserId')
+    @Auth()
+    async getEventsByUserId(
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.eventRegsService.getEventsByUserId(userId)
+    }
 }
