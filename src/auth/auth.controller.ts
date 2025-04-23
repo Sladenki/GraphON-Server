@@ -63,21 +63,15 @@ export class AuthController {
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<any> {
-    const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
-    if (existingUser) {
-      return existingUser
-    }
-
-    const newUser = new this.UserModel({
-      telegramId: user.telegramId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      avaPath: user.photoUrl, // Если есть
-    });
-
-    const savedUser = await newUser.save();
-    return savedUser;
+    return this.UserModel.findOneAndUpdate(
+      { telegramId: user.telegramId },
+      user,
+      { 
+        upsert: true,
+        new: true,
+        lean: true
+      }
+    );
   }
 
   // Серверный метод для выхода
