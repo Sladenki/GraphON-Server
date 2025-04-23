@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { EventModel } from "./event.model";
 import { ModelType } from "@typegoose/typegoose/lib/types";
-
+import { CreateEventDto } from "./dto/event.dto";
 
 @Injectable()
 export class EventService {
@@ -12,9 +12,10 @@ export class EventService {
     ) {}
 
     // --- Создание мероприятия ---
-    async createEvent(graphId: string, name: string, description: string, eventDate: Date, timeFrom: string, timeTo: string) {
+    async createEvent(dto: CreateEventDto) {
         return this.EventModel.create({ 
-            graphId, name, description, eventDate, timeFrom, timeTo 
+            ...dto,
+            eventDate: new Date(dto.eventDate)
         });
     }
 
@@ -26,7 +27,7 @@ export class EventService {
             .lean();
     }
 
-    // Получение мероприятий для определённого графа
+    // Получение мероприятий массива графов
     async getEventsByGraphsIds(graphIds: string[]) {
         return this.EventModel
             .find({

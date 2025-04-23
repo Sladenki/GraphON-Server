@@ -42,14 +42,23 @@ export class EventRegsService {
         }
     }
 
+    // Проверяем, участвует ли пользователь в мероприятии
+    async isUserAttendingEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) {
+        const eventReg = await this.EventRegsModel.findOne({ userId, eventId }).exec();
+        return !!eventReg;
+    }
+
     // Получаем мероприятия, на которые подписан пользователь (для профиля)
     async getEventsByUserId(userId: string | Types.ObjectId) {
         const events = await this.EventRegsModel
             .find({ userId })
             .populate('eventId')
+            .lean();
 
-        return events
+        // Добавляем поле isAttended для каждого мероприятия
+        return events.map(event => ({
+            ...event,
+            isAttended: true
+        }));
     }
-
-
 }

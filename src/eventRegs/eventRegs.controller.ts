@@ -29,4 +29,14 @@ export class EventRegsController {
     ) {
         return this.eventRegsService.getEventsByUserId(userId)
     }
+
+    // Проверяем, участвует ли пользователь в мероприятии
+    // @Get('isAttending/:eventId')
+    // @Auth()
+    // async isUserAttendingEvent(
+    //     @CurrentUser('_id') userId: Types.ObjectId,
+    //     @Param('eventId') eventId: Types.ObjectId,
+    // ) {
+    //     return this.eventRegsService.isUserAttendingEvent(userId, eventId)
+    // }
 }
