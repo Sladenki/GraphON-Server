@@ -43,21 +43,35 @@ export class GraphSubsService {
 
   // --- Получение расписания из подписанных графов ---
   async getSubsSchedule(userId: Types.ObjectId) {
-    // Получаем массив графов, на которые подписан пользователь
-    const subscribedGraphs = await this.graphSubsModel
-      .find({ user: userId })
-      .distinct('graph');
-  
-    // Выполняем два запроса параллельно
-    const [schedule, events] = await Promise.all([
-      // @ts-expect-error типизация
-      this.scheduleService.getWeekdaySchedulesByGraphs(subscribedGraphs),
+    try {
+      // Получаем массив графов, на которые подписан пользователь
+      const subscribedGraphs = await this.graphSubsModel
+        .find({ user: userId })
+        .distinct('graph')
+        .exec();
 
-      // @ts-expect-error типизация
-      this.eventService.getEventsByGraphsIds(subscribedGraphs),
-    ]);
-  
-    return { schedule, events };
+      // Если пользователь не подписан ни на один граф, возвращаем пустые массивы
+      if (!subscribedGraphs || subscribedGraphs.length === 0) {
+        return { schedule: [], events: [] };
+      }
+
+      // Преобразуем ObjectId в строки
+      const graphIds = subscribedGraphs.map(graphId => graphId.toString());
+
+      // Выполняем два запроса параллельно
+      const [schedule, events] = await Promise.all([
+        this.scheduleService.getWeekdaySchedulesByGraphs(graphIds),
+        this.eventService.getEventsByGraphsIds(graphIds),
+      ]);
+
+      return { 
+        schedule: schedule || [], 
+        events: events || [] 
+      };
+    } catch (error) {
+      console.error('Error in getSubsSchedule:', error);
+      throw new InternalServerErrorException('Ошибка при получении расписания подписок');
+    }
   }
   
 
