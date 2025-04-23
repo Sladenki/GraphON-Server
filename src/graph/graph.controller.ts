@@ -22,12 +22,12 @@ export class GraphController {
   }
 
   // --- Получение графа по id ---
-  @Get('getById/:id')
-  async getGraphById(
-      @Param('id') id:string
-  ) {
-    return this.graphService.getGraphById(new Types.ObjectId(id))
-  }
+  // @Get('getById/:id')
+  // async getGraphById(
+  //     @Param('id') id:string
+  // ) {
+  //   return this.graphService.getGraphById(new Types.ObjectId(id))
+  // }
 
   // --- Получение главных родительских графов --- 
   @Get('getParentGraphs')

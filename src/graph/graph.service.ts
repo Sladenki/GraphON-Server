@@ -17,18 +17,26 @@ export class GraphService {
 
   // --- Создание графа ---
   async createGraph(dto: CreateGraphDto, userId: Types.ObjectId) {
+    // Создаем новый граф
     const graph = await this.GraphModel.create({
       ...dto, 
       ownerUserId: userId, 
     });
+
+    // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
+    if (dto.parentGraphId) {
+      await this.GraphModel.findByIdAndUpdate(dto.parentGraphId, {
+        $inc: { childGraphNum: 1 },
+      }).exec();
+    }
   
     return graph;
   }  
 
   // --- Получение графа по id ---
-  async getGraphById(id: Types.ObjectId) {
-    return this.GraphModel.findById(id).populate('parentGraphId', 'name');
-  }
+  // async getGraphById(id: Types.ObjectId) {
+  //   return this.GraphModel.findById(id).populate('parentGraphId', 'name');
+  // }
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any) {
@@ -70,19 +78,5 @@ export class GraphService {
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
     return this.GraphModel.find().exec();
-  }
-
-  // --- Создание дочернего графа и обновление родительского ---
-  async createChildGraph(name: string, parentGraphId: Types.ObjectId) {
-    // Создаем новый дочерний граф
-    const childGraph = await this.GraphModel.create({ name, parentGraphId });
-
-    // Обновляем родительский граф, увеличивая childGraphNum на 1
-    await this.GraphModel.findByIdAndUpdate(parentGraphId, {
-      $inc: { childGraphNum: 1 },
-    }).exec();
-
-    // Возвращаем созданный дочерний граф
-    return childGraph;
   }
 }
