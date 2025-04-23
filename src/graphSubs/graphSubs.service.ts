@@ -76,16 +76,26 @@ export class GraphSubsService {
   
 
   // --- Проверка подписки на граф ---
+  // --- Нужна для гланой страницы для отображения подписок пользователя ---
   async isUserSubsExists(graph: string, userId: string): Promise<boolean> {
+    try {
+      // Используем select только нужных полей и lean() для оптимизации
+      const exists = await this.graphSubsModel
+        .findOne(
+          {
+            graph: new Types.ObjectId(graph),
+            user: new Types.ObjectId(userId),
+          },
+          { _id: 1 } // Выбираем только ID для оптимизации
+        )
+        .lean() // Возвращаем простой объект вместо документа Mongoose
+        .exec();
 
-    const reaction = await this.graphSubsModel
-      .findOne({
-        graph: new Types.ObjectId(graph),
-        user: new Types.ObjectId(userId),
-      });
-
-
-    return !!reaction; // true, если реакция найдена; иначе false
+      return !!exists;
+    } catch (error) {
+      console.error('Error in isUserSubsExists:', error);
+      return false;
+    }
   }
 
 }
