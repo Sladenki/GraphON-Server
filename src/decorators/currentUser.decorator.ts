@@ -8,9 +8,12 @@ export const CurrentUser = createParamDecorator(
     (data: keyof UserModel, ctx: ExecutionContext) => {
         const request = ctx.switchToHttp().getRequest()
         const user = request.user
-      
-        const objectId = new Types.ObjectId(user.sub); 
-        return objectId;
+        if (!user) return undefined;
+        
+        if (data === '_id') {
+            return new Types.ObjectId(user.sub);
+        }
+        return data ? user[data] : user;
     }
 )
 

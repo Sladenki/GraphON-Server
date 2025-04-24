@@ -1,7 +1,10 @@
-import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query } from "@nestjs/common";
+import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
+import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
+import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
+import { JwtAuthGuard } from "../guards/jwt-auth.guard";
 import { CreateGraphDto } from "./dto/create-graph.dto";
 import { GraphService } from "./graph.service";
 
@@ -31,20 +34,13 @@ export class GraphController {
 
   // --- Получение главных родительских графов --- 
   @Get('getParentGraphs')
+  @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+  @OptionalAuth()
   async getParentGraphs(
     @Query('skip') skip,
+    @CurrentUser('_id') userId?: Types.ObjectId,
   ) {
-    return this.graphService.getParentGraphs(skip)
-  }
-
-  // --- Получение главных родительских графов для авторизованных пользователей--- 
-  @Get('getParentGraphsAuth')
-  @Auth()
-  async getParentGraphsAuth(
-    @Query('skip') skip,
-    @CurrentUser('_id') userId: Types.ObjectId,
-  ) {
-    return this.graphService.getParentGraphsAuth(skip, userId)
+    return this.graphService.getParentGraphs(skip, userId)
   }
 
   // --- Получение всех дочерних графов по Id родительскому --- 
@@ -53,7 +49,7 @@ export class GraphController {
     @Param('parentGraphId') parentGraphId: string
   ) {
     return this.graphService.getAllChildrenGraphs(new Types.ObjectId(parentGraphId))
-    }
+  }
 
 
 }

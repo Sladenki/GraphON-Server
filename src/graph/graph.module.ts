@@ -6,13 +6,30 @@ import { GraphService } from './graph.service';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModel } from 'src/user/user.model';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { getJwtConfig } from 'src/config/jwt.config';
 import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
+import { OptionalAuthGuard } from 'src/guards/optionalAuth.guard';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 
 @Module({
   controllers: [GraphController],
-  providers: [JwtStrategy, GraphService],
+  providers: [
+    JwtStrategy, 
+    GraphService, 
+    OptionalAuthGuard, 
+    JwtAuthGuard,
+    {
+      provide: JwtService,
+      useFactory: (configService: ConfigService) => {
+        return new JwtService({
+          secret: configService.get('JWT_SECRET'),
+          signOptions: { expiresIn: '30d' }
+        });
+      },
+      inject: [ConfigService]
+    }
+  ],
   imports: [
     ConfigModule,
 

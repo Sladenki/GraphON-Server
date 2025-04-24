@@ -39,41 +39,34 @@ export class GraphService {
   // }
 
   // --- Получение (главных) родительских графов ---
-  async getParentGraphs(skip: any) {
+  async getParentGraphs(skip: any, userId?: Types.ObjectId) {
 
-    const graphs =  this.GraphModel
-      // .find({ parentGraphId: { $exists: false } })
-      .find()
-      .skip(skip)
-      .exec();
-
-    return graphs
-  }
-
-  async getParentGraphsAuth(skip: any, userId: Types.ObjectId) {
+    console.log('userId', userId)
 
     const graphs = await this.GraphModel
       .find()
       .skip(skip)
       .exec();
 
-      const postsWithReactionsAndSubs = await Promise.all(
-        graphs.map(async (graph) => {
+    if (!userId) {
+      return graphs;
+    }
 
-          // Проверяем, подписан ли пользователь на граф
-          const isSubscribed = await this.graphSubsService.isUserSubsExists(
-            graph._id.toString(),
-            userId.toString()
-          );
-  
-          return {
-            ...graph.toObject(),
-            isSubscribed,
-          };
-        })
-      );
+    const postsWithReactionsAndSubs = await Promise.all(
+      graphs.map(async (graph) => {
+        const isSubscribed = await this.graphSubsService.isUserSubsExists(
+          graph._id.toString(),
+          userId.toString()
+        );
 
-    return postsWithReactionsAndSubs
+        return {
+          ...graph.toObject(),
+          isSubscribed,
+        };
+      })
+    );
+
+    return postsWithReactionsAndSubs;
   }
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
