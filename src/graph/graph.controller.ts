@@ -3,10 +3,12 @@ import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
 import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
+import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
 import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
 import { CreateGraphDto } from "./dto/create-graph.dto";
 import { GraphService } from "./graph.service";
+import { OptionalAuthContext } from "../interfaces/optional-auth.interface";
 
 @Controller('graph')
 export class GraphController {
@@ -38,9 +40,9 @@ export class GraphController {
   @OptionalAuth()
   async getParentGraphs(
     @Query('skip') skip,
-    @CurrentUser('_id') userId?: Types.ObjectId,
+    @GetOptionalAuthContext() authContext: OptionalAuthContext,
   ) {
-    return this.graphService.getParentGraphs(skip, userId)
+    return this.graphService.getParentGraphs(skip, authContext.userId)
   }
 
   // --- Получение всех дочерних графов по Id родительскому --- 

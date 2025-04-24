@@ -18,6 +18,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module';
 import { AuthWithRolesGuard } from './decorators/AuthWithRoles.decorator';
 import { EventRegsModule } from './eventRegs/eventRegs.module';
+import { JwtGlobalModule } from './jwt/jwt.module';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { EventRegsModule } from './eventRegs/eventRegs.module';
     EventModule,
     TelegramBotModule,
     EventRegsModule,
-    AdminModule
+    AdminModule,
+    JwtGlobalModule
   ],
   controllers: [AppController],
   providers: [

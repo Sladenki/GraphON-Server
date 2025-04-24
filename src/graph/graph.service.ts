@@ -40,16 +40,16 @@ export class GraphService {
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
-
-    console.log('userId', userId)
-
     const graphs = await this.GraphModel
       .find()
       .skip(skip)
       .exec();
 
     if (!userId) {
-      return graphs;
+      return graphs.map(graph => ({
+        ...graph.toObject(),
+        isSubscribed: false
+      }));
     }
 
     const postsWithReactionsAndSubs = await Promise.all(

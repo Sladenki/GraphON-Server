@@ -18,7 +18,6 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-    console.log('Token:', token);
 
     if (!token) {
       if (isOptionalAuth) {
@@ -29,11 +28,9 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token);
-      console.log('Payload:', payload);
       request.user = payload;
       return true;
-    } catch (error) {
-      console.log('JWT verification error:', error);
+    } catch {
       if (isOptionalAuth) {
         return true;
       }
