@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from 'src/config/jwt.config';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Reflector } from '@nestjs/core';
+import { JwtAuthService } from './jwt.service';
 
 @Global()
 @Module({
@@ -27,8 +28,9 @@ import { Reflector } from '@nestjs/core';
       inject: [ConfigService]
     },
     Reflector,
-    JwtAuthGuard
+    JwtAuthGuard,
+    JwtAuthService
   ],
-  exports: [JwtService, JwtAuthGuard],
+  exports: [JwtService, JwtAuthGuard, JwtAuthService],
 })
 export class JwtGlobalModule {} 
