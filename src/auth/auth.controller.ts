@@ -1,14 +1,10 @@
-// auth.controller.ts
 import {
   Controller,
   Get,
-  UseGuards,
   Req,
   Res,
-  UnauthorizedException,
   Post,
   Query,
-  OnModuleInit,
 } from '@nestjs/common';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from 'src/user/user.model';
