@@ -20,12 +20,11 @@ export class ScheduleService {
 
   // --- Получает расписание для одного графа с понедельника по пятницу ---    
   async getWeekdaySchedulesByGraph(graphId: string) {
-    const schedule = this.ScheduleModel
-    .find({ graphId: graphId })
-    .populate('graphId', 'name')
-    .exec();
-
-    return schedule
+    return this.ScheduleModel
+      .find({ graphId: graphId })
+      .populate('graphId', 'name')
+      .lean()
+      .exec();
   }
 
   // --- Получает расписания для нескольких графов с понедельника по пятницу ---    
