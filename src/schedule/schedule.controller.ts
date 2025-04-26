@@ -57,6 +57,4 @@ export class ScheduleController {
     const { graphIds } = body;
     return this.scheduleService.getWeekdaySchedulesByGraphs(graphIds);
   }
-
-
 }

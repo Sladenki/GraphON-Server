@@ -6,7 +6,6 @@ import { ScheduleModel } from "./schedule.model";
 import { EventService } from "src/event/event.service";
 import { EventModule } from "src/event/event.module";
 
-
 @Module({
   controllers: [ScheduleController],
   providers: [ScheduleService],

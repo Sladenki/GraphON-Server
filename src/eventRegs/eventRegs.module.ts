@@ -38,6 +38,7 @@ import { getJwtConfig } from "src/config/jwt.config";
         schemaOptions: { collection: 'Event' }
       },
     ]),
-  ]
+  ],
+  exports: [EventRegsService]
 })
 export class EventRegsModule {}

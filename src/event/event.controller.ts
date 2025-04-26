@@ -1,10 +1,19 @@
-import { Controller, Post, Body, Get, Query } from "@nestjs/common";
+import { Controller, Post, Body, Get, Query, UseGuards } from "@nestjs/common";
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
+import { EventRegsService } from "src/eventRegs/eventRegs.service";
+import { JwtAuthGuard } from "src/jwt/jwt-auth.guard";
+import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
+import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
+import { OptionalAuthContext } from "src/interfaces/optional-auth.interface";
+import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
 
 @Controller("event")
 export class EventController {
-    constructor(private readonly eventService: EventService) {}
+    constructor(
+        private readonly eventService: EventService,
+        private readonly eventRegsService: EventRegsService
+    ) {}
 
      // --- Создание мероприятия ---
     @Post("create")
@@ -24,7 +33,28 @@ export class EventController {
 
     // --- Получение мероприятий на ближайшее время ---
     @Get("upcoming")
-    async getUpcomingEvents() {
-        return this.eventService.getUpcomingEvents();
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
+    async getUpcomingEvents(
+        @GetOptionalAuthContext() authContext: OptionalAuthContext
+    ) {
+        const events = await this.eventService.getUpcomingEvents();
+        
+        // Если пользователь авторизован, проверяем посещаемость
+        if (authContext.isAuthenticated) {
+            const eventsWithAttendance = await Promise.all(
+                events.map(async (event) => {
+                    const isAttended = await this.eventRegsService.isUserAttendingEvent(authContext.userId, event._id);
+                    return {
+                        ...event,
+                        isAttended
+                    };
+                })
+            );
+            return eventsWithAttendance;
+        }
+
+        // Если пользователь не авторизован, возвращаем мероприятия без проверки посещаемости
+        return events;
     }
 }

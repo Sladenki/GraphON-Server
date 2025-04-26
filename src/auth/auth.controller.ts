@@ -43,6 +43,8 @@ export class AuthController {
     const user = await this.findOrCreateUser(userData);
     const accessToken = this.jwtAuthService.generateToken(user._id, user.role);
 
+    console.log('accessToken', accessToken)
+
     const callbackUrl = `${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`;
     const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
     return res.redirect(deepLink);
