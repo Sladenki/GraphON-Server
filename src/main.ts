@@ -29,7 +29,7 @@ async function bootstrap() {
 
   app.use(cookieParser())
 
-  // -----
+  // // -----
 
   app.enableCors({
     // по этому адресу - клиент

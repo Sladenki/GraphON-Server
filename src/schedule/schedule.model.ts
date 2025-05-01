@@ -8,8 +8,6 @@ export interface ScheduleModel extends Base {}
 export enum ScheduleType {
     LECTURE = 'lecture',
     PRACTICE = 'practice',
-    REHEARSAL = 'rehearsal',
-    FIELD_EVENT = 'field_event',
 }
 
 @modelOptions({
