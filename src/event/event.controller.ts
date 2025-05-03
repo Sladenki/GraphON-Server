@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param } from "@nestjs/common";
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
 import { EventRegsService } from "src/eventRegs/eventRegs.service";
@@ -7,6 +7,7 @@ import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
 import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
 import { OptionalAuthContext } from "src/interfaces/optional-auth.interface";
 import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
+import { Auth } from "src/decorators/auth.decorator";
 
 @Controller("event")
 export class EventController {
@@ -56,5 +57,14 @@ export class EventController {
 
         // Если пользователь не авторизован, возвращаем мероприятия без проверки посещаемости
         return events;
+    }
+
+    // --- Удаление мероприятия ---
+    @Delete(":eventId")
+    @Auth()
+    async deleteEvent(
+        @Param("eventId") eventId: string
+    ) {
+        return this.eventService.deleteEvent(eventId);
     }
 }

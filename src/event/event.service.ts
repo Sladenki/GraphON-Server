@@ -3,6 +3,7 @@ import { InjectModel } from '@m8a/nestjs-typegoose';
 import { EventModel } from "./event.model";
 import { ModelType } from "@typegoose/typegoose/lib/types";
 import { CreateEventDto } from "./dto/event.dto";
+import { Types } from "mongoose";
 
 @Injectable()
 export class EventService {
@@ -46,5 +47,10 @@ export class EventService {
             .sort({ eventDate: 1 })
             .populate("graphId", "name")
             .lean();
+    }
+
+    // --- Удаление мероприятия ---
+    async deleteEvent(eventId: string | Types.ObjectId) {
+        return this.EventModel.findByIdAndDelete(eventId).lean();
     }
 }
