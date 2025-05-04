@@ -53,4 +53,19 @@ export class EventService {
     async deleteEvent(eventId: string | Types.ObjectId) {
         return this.EventModel.findByIdAndDelete(eventId).lean();
     }
+
+    // --- Редактирование мероприятия ---
+    async updateEvent(eventId: string | Types.ObjectId, dto: CreateEventDto) {
+        return this.EventModel
+            .findByIdAndUpdate(
+                eventId,
+                { 
+                    ...dto,
+                    eventDate: new Date(dto.eventDate)
+                },
+                { new: true }
+            )
+            .populate("graphId", "name")
+            .lean();
+    }
 }

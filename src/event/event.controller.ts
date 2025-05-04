@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param } from "@nestjs/common";
+import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param, Put } from "@nestjs/common";
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
 import { EventRegsService } from "src/eventRegs/eventRegs.service";
@@ -17,6 +17,7 @@ export class EventController {
     ) {}
 
      // --- Создание мероприятия ---
+    @UseGuards(JwtAuthGuard)
     @Post("create")
     async createEvent(
         @Body() body: CreateEventDto
@@ -25,9 +26,9 @@ export class EventController {
     }
 
     // --- Получение мероприятий для определённого графа ---
-    @Get("by-graph")
+    @Get("by-graph/:graphId")
     async getEventsByGraphId(
-        @Query("graphId") graphId: string
+        @Param("graphId") graphId: string
     ) {
         return this.eventService.getEventsByGraphId(graphId);
     }
@@ -60,11 +61,22 @@ export class EventController {
     }
 
     // --- Удаление мероприятия ---
+    @UseGuards(JwtAuthGuard)
     @Delete(":eventId")
     @Auth()
     async deleteEvent(
         @Param("eventId") eventId: string
     ) {
         return this.eventService.deleteEvent(eventId);
+    }
+
+    // --- Редактирование мероприятия ---
+    @UseGuards(JwtAuthGuard)
+    @Put(":eventId")
+    async updateEvent(
+        @Param("eventId") eventId: string,
+        @Body() dto: CreateEventDto
+    ) {
+        return this.eventService.updateEvent(eventId, dto);
     }
 }
