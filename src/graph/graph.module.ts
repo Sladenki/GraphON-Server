@@ -8,12 +8,14 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModel } from 'src/user/user.model';
 import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
 import { OptionalAuthGuard } from 'src/guards/optionalAuth.guard';
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   controllers: [GraphController],
   providers: [JwtStrategy, GraphService, OptionalAuthGuard],
   imports: [
     ConfigModule,
+    S3Module,
     TypegooseModule.forFeature([
       {
         typegooseClass: GraphModel,
@@ -29,7 +31,6 @@ import { OptionalAuthGuard } from 'src/guards/optionalAuth.guard';
       },
     ]),
     forwardRef(() => GraphSubsModule)
-        
   ],
   exports: [GraphService],
 })

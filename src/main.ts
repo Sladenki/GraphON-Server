@@ -7,8 +7,8 @@ import * as fs from 'fs';
 async function bootstrap() {
 
   // ---- C HTTPS ----
-  // // Автоматические добавление api к каждому запросу
-  // // Читаем SSL-сертификаты
+  // Автоматические добавление api к каждому запросу
+  // Читаем SSL-сертификаты
   // const httpsOptions = {
   //   key: fs.readFileSync(process.env.KEY),  // Укажи правильный путь
   //   cert: fs.readFileSync(process.env.CERT),

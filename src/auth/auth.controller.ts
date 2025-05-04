@@ -70,9 +70,6 @@ export class AuthController {
       // Удаляем токен из кук или сессии
       res.clearCookie('accessToken');
       
-      // Удаляем информацию о текущем пользователе из сессии
-      req.session = null;
-
       // Отправляем успешный ответ
       res.status(200).json({ message: 'Вы успешно вышли из системы' });
     } catch (error) {

@@ -1,4 +1,4 @@
-import { Controller, Patch, Param, Body, UseGuards, Post } from '@nestjs/common';
+import { Controller, Patch, Param, Body, UseGuards, Post, HttpCode, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { UserRole } from './role.enum';
 import { AuthRoles } from 'src/decorators/auth.decorator';
@@ -6,6 +6,7 @@ import { CurrentUser } from 'src/decorators/currentUser.decorator';
 import { CreateGraphDto } from 'src/graph/dto/create-graph.dto';
 import { Types } from 'mongoose';
 import { GraphService } from 'src/graph/graph.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('admin')
 export class AdminController {
@@ -25,12 +26,16 @@ export class AdminController {
     }
 
     // --- Создание графа --- 
+    @UsePipes(new ValidationPipe())
+    @HttpCode(200)
     @AuthRoles(UserRole.Editor)
     @Post('createGraph')
+    @UseInterceptors(FileInterceptor('image'))
     createGraph(
         @Body() dto: CreateGraphDto,
         @CurrentUser('_id') userId: Types.ObjectId,
+        @UploadedFile() image: Express.Multer.File
     ) {
-        return this.graphService.createGraph(dto, userId)
+        return this.graphService.createGraph(dto, userId, image)
     }
 }

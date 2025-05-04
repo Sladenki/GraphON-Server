@@ -16,11 +16,11 @@ export class S3Service {
     });
   }
 
-  async uploadFile(file: any): Promise<any> {
+  async uploadFile(file: any, customPath?: string): Promise<any> {
     const uploadResult = await this.s3.Upload(
       {
         buffer: file.buffer,
-        name: `uploads/${Date.now()}_${file.originalname}`,
+        name: customPath || `uploads/${Date.now()}_${file.originalname}`,
       },
       '/images'  // Замените на путь, куда вы хотите загружать файлы в бакет
     );

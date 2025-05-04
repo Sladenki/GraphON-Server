@@ -5,6 +5,7 @@ import { GraphModel } from './graph.model';
 import { CreateGraphDto } from './dto/create-graph.dto';
 import { Types } from 'mongoose';
 import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
+import { S3Service } from 'src/s3/s3.service';
 
 @Injectable()
 export class GraphService {
@@ -13,14 +14,31 @@ export class GraphService {
     private readonly GraphModel: ModelType<GraphModel>,
 
     private readonly graphSubsService: GraphSubsService,
+    private readonly s3Service: S3Service,
   ) {}
 
   // --- Создание графа ---
-  async createGraph(dto: CreateGraphDto, userId: Types.ObjectId) {
+  async createGraph(dto: CreateGraphDto, userId: Types.ObjectId, image?: Express.Multer.File) {
+    console.log('createGraph', dto, userId, image);
+
+    let imgPath: string | undefined;
+
+    if (image) {
+      // Get file extension from original filename
+      const fileExtension = image.originalname.split('.').pop();
+      // Create filename using graph name and original file extension
+      const fileName = `${dto.name}.${fileExtension}`;
+      // Create the desired path format for S3
+      const s3Path = `graphAva/${fileName}`;
+      const uploadResult = await this.s3Service.uploadFile(image, s3Path);
+      imgPath = `images/${s3Path}`;
+    }
+
     // Создаем новый граф
     const graph = await this.GraphModel.create({
       ...dto, 
       ownerUserId: userId, 
+      imgPath
     });
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа

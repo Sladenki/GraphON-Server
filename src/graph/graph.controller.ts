@@ -1,4 +1,5 @@
-import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query, UseGuards } from "@nestjs/common";
+import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query, UseGuards, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
@@ -9,22 +10,25 @@ import { JwtAuthGuard } from "../jwt/jwt-auth.guard";
 import { CreateGraphDto } from "./dto/create-graph.dto";
 import { GraphService } from "./graph.service";
 import { OptionalAuthContext } from "../interfaces/optional-auth.interface";
+import { Express } from 'express';
 
 @Controller('graph')
 export class GraphController {
   constructor(private readonly graphService: GraphService) {}
 
   // --- Создание графа --- 
-  @UsePipes(new ValidationPipe())
-  @HttpCode(200)
-  @Post()
-  @Auth()
-  async createGraph(
-    @CurrentUser('_id') userId: Types.ObjectId,
-    @Body() dto: CreateGraphDto
-  ) {
-     return this.graphService.createGraph(dto, userId)
-  }
+  // @UsePipes(new ValidationPipe())
+  // @HttpCode(200)
+  // @Post()
+  // @Auth()
+  // @UseInterceptors(FileInterceptor('image'))
+  // async createGraph(
+  //   @CurrentUser('_id') userId: Types.ObjectId,
+  //   @Body() dto: CreateGraphDto,
+  //   @UploadedFile() image: Express.Multer.File
+  // ) {
+  //   return this.graphService.createGraph(dto, userId, image)
+  // }
 
   // --- Получение графа по id ---
   // @Get('getById/:id')
