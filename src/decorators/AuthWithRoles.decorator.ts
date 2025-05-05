@@ -4,12 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { RoleHierarchy, UserRole } from 'src/admin/role.enum';
 
-declare module 'express' {
-  interface Request {
-    user?: any;
-  }
-}
-
 @Injectable()
 export class AuthWithRolesGuard implements CanActivate {
   constructor(

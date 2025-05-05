@@ -39,7 +39,7 @@ export class ScheduleController {
         this.eventService.getEventsByGraphId(body.graphId)
       ]);
 
-      return { schedule, events };
+    return { schedule, events };
     } catch (error) {
       throw new HttpException(
         'Failed to fetch schedule data',

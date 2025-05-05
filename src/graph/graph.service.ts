@@ -6,6 +6,7 @@ import { CreateGraphDto } from './dto/create-graph.dto';
 import { Types } from 'mongoose';
 import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
 import { S3Service } from 'src/s3/s3.service';
+import type { Express } from 'express';
 
 @Injectable()
 export class GraphService {

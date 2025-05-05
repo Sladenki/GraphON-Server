@@ -7,6 +7,7 @@ import { CreateGraphDto } from 'src/graph/dto/create-graph.dto';
 import { Types } from 'mongoose';
 import { GraphService } from 'src/graph/graph.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Express } from 'express';
 
 @Controller('admin')
 export class AdminController {
