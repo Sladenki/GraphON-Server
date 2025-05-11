@@ -6,28 +6,28 @@ import * as fs from 'fs';
 
 async function bootstrap() {
 
-  // ---- C HTTPS ----
-  // Автоматические добавление api к каждому запросу
-  // Читаем SSL-сертификаты
-  const httpsOptions = {
-    key: fs.readFileSync(process.env.KEY),  // Укажи правильный путь
-    cert: fs.readFileSync(process.env.CERT),
-  };
+  // // ---- C HTTPS ----
+  // // Автоматические добавление api к каждому запросу
+  // // Читаем SSL-сертификаты
+  // const httpsOptions = {
+  //   key: fs.readFileSync(process.env.KEY),  // Укажи правильный путь
+  //   cert: fs.readFileSync(process.env.CERT),
+  // };
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
-
-  // Автоматические добавление api к каждому запросу
-  app.setGlobalPrefix('api');
-
-  app.use(cookieParser())
-
-  // ---- Без HTTPS ----
-  // const app = await NestFactory.create(AppModule);
+  // const app = await NestFactory.create(AppModule, { httpsOptions });
 
   // // Автоматические добавление api к каждому запросу
   // app.setGlobalPrefix('api');
 
   // app.use(cookieParser())
+
+  // ---- Без HTTPS ----
+  const app = await NestFactory.create(AppModule);
+
+  // Автоматические добавление api к каждому запросу
+  app.setGlobalPrefix('api');
+
+  app.use(cookieParser())
 
   // // -----
 
