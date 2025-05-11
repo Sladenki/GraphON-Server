@@ -39,4 +39,14 @@ export class AdminController {
     ) {
         return this.graphService.createGraph(dto, userId, image)
     }
+
+    // --- Передача прав администратора графа ---
+    @AuthRoles(UserRole.Admin)
+    @Patch('transferGraphOwnership/:graphId')
+    transferGraphOwnership(
+        @Param('graphId') graphId: string,
+        @Body('newOwnerId') newOwnerId: string
+    ) {
+        return this.adminService.transferGraphOwnership(graphId, newOwnerId);
+    }
 }

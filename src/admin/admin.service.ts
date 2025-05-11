@@ -3,13 +3,15 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { ModelType } from "@typegoose/typegoose/lib/types";
 import { UserModel } from "src/user/user.model";
 import { UserRole } from "./role.enum";
-
+import { GraphModel } from "src/graph/graph.model";
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectModel(UserModel) 
     private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(GraphModel)
+    private readonly GraphModel: ModelType<GraphModel>,
   ) {}
 
   // --- Передача роли --- 
@@ -20,4 +22,15 @@ export class AdminService {
     return user.save();
   }
 
+  // --- Передача прав администратора графа ---
+  async transferGraphOwnership(graphId: string, newOwnerId: string) {
+    const graph = await this.GraphModel.findById(graphId);
+    if (!graph) throw new NotFoundException('Graph not found');
+
+    const newOwner = await this.UserModel.findById(newOwnerId);
+    if (!newOwner) throw new NotFoundException('New owner not found');
+
+    graph.ownerUserId = newOwner._id;
+    return graph.save();
+  }
 }

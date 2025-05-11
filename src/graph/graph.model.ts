@@ -34,6 +34,16 @@ export class GraphModel extends TimeStamps {
 
     @prop ()
     imgPath?: string
+
+    @prop()
+    directorName?: string
+
+    @prop()
+    directorVkLink?: string
+    
+    // Ссылка на страницу в VK
+    @prop()
+    vkLink?: string
 }
 
 

@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { getJwtConfig } from "src/config/jwt.config";
 import { GraphModule } from "src/graph/graph.module";
-
+import { GraphModel } from "src/graph/graph.model";
 
 @Module({
   controllers: [AdminController],
@@ -27,6 +27,12 @@ import { GraphModule } from "src/graph/graph.module";
         typegooseClass: UserModel,
         // Название коллекции в БД
         schemaOptions: { collection: 'User' },
+      },
+      {
+        // Ссылка на модель графа
+        typegooseClass: GraphModel,
+        // Название коллекции в БД
+        schemaOptions: { collection: 'Graph' },
       },
     ]),
     GraphModule
