@@ -1,4 +1,4 @@
-import { Controller, Patch, Param, Body, UseGuards, Post, HttpCode, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Patch, Param, Body, UseGuards, Post, HttpCode, UploadedFile, UseInterceptors, UsePipes, ValidationPipe, Get } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { UserRole } from './role.enum';
 import { AuthRoles } from 'src/decorators/auth.decorator';
@@ -48,5 +48,12 @@ export class AdminController {
         @Body('newOwnerId') newOwnerId: string
     ) {
         return this.adminService.transferGraphOwnership(graphId, newOwnerId);
+    }
+
+    // --- Получение статистики приложения ---
+    @AuthRoles(UserRole.Create)
+    @Get('stats')
+    getApplicationStats() {
+        return this.adminService.getApplicationStats();
     }
 }
