@@ -52,8 +52,15 @@ export class AdminController {
 
     // --- Получение статистики приложения ---
     @AuthRoles(UserRole.Create)
-    @Get('stats')
+    @Get('user-stats')
     getApplicationStats() {
         return this.adminService.getApplicationStats();
+    }
+
+    // --- Получение статистики использования ресурсов сервера ---
+    @AuthRoles(UserRole.Create)
+    @Get('server-stats')
+    getServerResourceStats() {
+        return this.adminService.getServerResourceStats();
     }
 }
