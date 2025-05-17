@@ -60,35 +60,30 @@ export class GraphService {
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
-    // Базовый pipeline для получения родительских графов
     const pipeline: PipelineStage[] = [
-      // Фильтруем только родительские графы (без parentGraphId)
       // {
       //   $match: {
       //     parentGraphId: { $exists: false }
       //   }
       // },
-      // Применяем пагинацию
       {
         $skip: Number(skip) || 0
       }
     ];
 
-    // Если передан userId, добавляем информацию о подписке
     if (userId) {
       pipeline.push(
-        // Объединяем с коллекцией подписок
         {
           $lookup: {
-            from: 'graphsubs',
+            from: 'GraphSubs',
             let: { graphId: '$_id' },
             pipeline: [
               {
                 $match: {
                   $expr: {
                     $and: [
-                      { $eq: ['$graphId', '$$graphId'] },
-                      { $eq: ['$userId', userId] }
+                      { $eq: ['$graph', '$$graphId'] },
+                      { $eq: ['$user', userId] }
                     ]
                   }
                 }
@@ -97,13 +92,11 @@ export class GraphService {
             as: 'subscription'
           }
         },
-        // Добавляем поле isSubscribed на основе наличия подписки
         {
           $addFields: {
             isSubscribed: { $gt: [{ $size: '$subscription' }, 0] }
           }
         },
-        // Удаляем временное поле subscription из результата
         {
           $project: {
             subscription: 0
