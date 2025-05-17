@@ -7,6 +7,7 @@ import { Types } from 'mongoose';
 import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
 import { S3Service } from 'src/s3/s3.service';
 import type { Express } from 'express';
+import { PipelineStage } from 'mongoose';
 
 @Injectable()
 export class GraphService {
@@ -59,36 +60,65 @@ export class GraphService {
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
-    const graphs = await this.GraphModel
-      .find()
-      .skip(skip)
-      .exec();
+    // Базовый pipeline для получения родительских графов
+    const pipeline: PipelineStage[] = [
+      // Фильтруем только родительские графы (без parentGraphId)
+      // {
+      //   $match: {
+      //     parentGraphId: { $exists: false }
+      //   }
+      // },
+      // Применяем пагинацию
+      {
+        $skip: Number(skip) || 0
+      }
+    ];
 
-    if (!userId) {
-      return graphs.map(graph => ({
-        ...graph.toObject(),
-        isSubscribed: false
-      }));
+    // Если передан userId, добавляем информацию о подписке
+    if (userId) {
+      pipeline.push(
+        // Объединяем с коллекцией подписок
+        {
+          $lookup: {
+            from: 'graphsubs',
+            let: { graphId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$graphId', '$$graphId'] },
+                      { $eq: ['$userId', userId] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: 'subscription'
+          }
+        },
+        // Добавляем поле isSubscribed на основе наличия подписки
+        {
+          $addFields: {
+            isSubscribed: { $gt: [{ $size: '$subscription' }, 0] }
+          }
+        },
+        // Удаляем временное поле subscription из результата
+        {
+          $project: {
+            subscription: 0
+          }
+        }
+      );
     }
 
-    const postsWithReactionsAndSubs = await Promise.all(
-      graphs.map(async (graph) => {
-        const isSubscribed = await this.graphSubsService.isUserSubsExists(
-          graph._id.toString(),
-          userId.toString()
-        );
-
-        return {
-          ...graph.toObject(),
-          isSubscribed,
-        };
-      })
-    );
-
-    return postsWithReactionsAndSubs;
+    return this.GraphModel.aggregate(pipeline).exec();
   }
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
-    return this.GraphModel.find().exec();
+    return this.GraphModel
+      .find()
+      .lean()
+      .exec();
   }
 }

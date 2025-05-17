@@ -29,10 +29,10 @@ export class GraphModel extends TimeStamps {
     @prop({ ref: () => GraphModel, index: true })
     parentGraphId?: Ref<GraphModel>; 
 
-    @prop({ default: 0 })
+    @prop({ default: 0, index: true })
     childGraphNum: number;
 
-    @prop ()
+    @prop()
     imgPath?: string
 
     @prop()
