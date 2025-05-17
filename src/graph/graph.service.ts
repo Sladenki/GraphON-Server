@@ -54,9 +54,9 @@ export class GraphService {
   }  
 
   // --- Получение графа по id ---
-  // async getGraphById(id: Types.ObjectId) {
-  //   return this.GraphModel.findById(id).populate('parentGraphId', 'name');
-  // }
+  async getGraphById(id: Types.ObjectId) {
+    return this.GraphModel.findById(id).populate('parentGraphId', 'name');
+  }
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
