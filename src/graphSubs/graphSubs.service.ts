@@ -21,59 +21,69 @@ export class GraphSubsService {
   ) {}
 
   // --- Переключение подписки на граф ---
-  async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId) { 
+  async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId) {
+    try {
+      // Проверяем существование подписки
+      const existingSub = await this.graphSubsModel
+        .findOne({ user, graph })
+        .lean()
+        .exec();
 
-    // Проверяем, существует ли уже объект 
-    const isSubExists = await this.graphSubsModel.findOne({ user, graph }).exec();
-
-    if (isSubExists) {
-      // Если существует, то удаляем его и обновляем счётчики
-      await Promise.all([
-        this.GraphModel.findOneAndUpdate({ _id: graph }, { $inc: { subsNum: -1 } }).exec(),
-        this.graphSubsModel.deleteOne({ user, graph })
-      ]);
-    } else {
-      // Создаём новый объект, если его ещё нет, и обновляем счётчики
-      await Promise.all([
-        this.GraphModel.findOneAndUpdate({ _id: graph }, { $inc: { subsNum: 1 } }).exec(),
-        this.graphSubsModel.create({ user, graph })
-      ]);
+      if (existingSub) {
+        // Если подписка существует, удаляем её и уменьшаем счетчик
+        await Promise.all([
+          this.GraphModel.findOneAndUpdate(
+            { _id: graph },
+            { $inc: { subsNum: -1 } },
+            { lean: true }
+          ).exec(),
+          this.graphSubsModel.deleteOne({ user, graph }).exec()
+        ]);
+      } else {
+        // Если подписки нет, создаем её и увеличиваем счетчик
+        await Promise.all([
+          this.GraphModel.findOneAndUpdate(
+            { _id: graph },
+            { $inc: { subsNum: 1 } },
+            { lean: true }
+          ).exec(),
+          this.graphSubsModel.create({ user, graph })
+        ]);
+      }
+    } catch (error) {
+      console.error('Error in toggleSub:', error);
+      throw new InternalServerErrorException('Ошибка при переключении подписки');
     }
   }
 
   // --- Получение расписания из подписанных графов ---
   async getSubsSchedule(userId: Types.ObjectId) {
     try {
-      // Получаем массив графов, на которые подписан пользователь
-      const subscribedGraphs = await this.graphSubsModel
-        .find({ user: userId })
-        .distinct('graph')
-        .exec();
-
-      // Если пользователь не подписан ни на один граф, возвращаем пустые массивы
+      const subscribedGraphs = await this.graphSubsModel.aggregate([
+        { $match: { user: userId } },
+        { $group: { _id: '$graph' } },
+        { $project: { _id: 1 } }
+      ]).exec();
+  
       if (!subscribedGraphs || subscribedGraphs.length === 0) {
         return { schedule: [], events: [] };
       }
-
-      // Преобразуем ObjectId в строки
-      const graphIds = subscribedGraphs.map(graphId => graphId.toString());
-
-      // Выполняем два запроса параллельно
+  
+      const graphIds = subscribedGraphs.map(graph => graph._id.toString());
+  
+      // Используем lean() для оптимизации
       const [schedule, events] = await Promise.all([
         this.scheduleService.getWeekdaySchedulesByGraphs(graphIds),
-        this.eventService.getEventsByGraphsIds(graphIds),
+        this.eventService.getEventsByGraphsIds(graphIds)
       ]);
-
-      return { 
-        schedule: schedule || [], 
-        events: events || [] 
-      };
+  
+      return { schedule: schedule || [], events: events || [] };
     } catch (error) {
       console.error('Error in getSubsSchedule:', error);
       throw new InternalServerErrorException('Ошибка при получении расписания подписок');
     }
   }
-  
+
 
   // --- Проверка подписки на граф ---
   // --- Нужна для гланой страницы для отображения подписок пользователя ---
