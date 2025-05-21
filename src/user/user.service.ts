@@ -5,6 +5,7 @@ import { UserModel } from './user.model';
 import { JwtAuthService } from '../jwt/jwt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { Types } from 'mongoose';
+import { USER_CONSTANTS } from '../constants/user.constants';
 
 @Injectable()
 export class UserService {
@@ -57,12 +58,24 @@ export class UserService {
   }
 
   // --- Получение всех пользователей ---
-  async getAllUsers(limit: number = 100) {
-    return this.UserModel
-      .find({})
+  async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
+    const query: any = {};
+    
+    if (lastId) {
+      query._id = { $gt: new Types.ObjectId(lastId) };
+    }
+
+    const users = await this.UserModel
+      .find(query)
+      .sort({ _id: 1 })
       .limit(limit)
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
+
+    return {
+      users,
+      hasMore: users.length === limit
+    };
   }
 
   async generateToken(userId: string, role: string): Promise<string> {

@@ -62,52 +62,35 @@ export class AdminService {
 
   // --- Получение статистики использования ресурсов сервера ---
   async getServerResourceStats() {
-    const cpus = os.cpus();
+    const cpus = await this.getCpuUsage();
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
     const usedMemory = totalMemory - freeMemory;
     const memoryUsage = process.memoryUsage();
     const uptime = os.uptime();
 
-    // Расчет загрузки CPU
-    const cpuUsage = cpus.map(cpu => {
-      const total = Object.values(cpu.times).reduce((acc, tv) => acc + tv, 0);
-      const idle = cpu.times.idle;
-      return {
-        model: cpu.model,
-        speed: cpu.speed,
-        usage: ((total - idle) / total * 100).toFixed(2) + '%'
-      };
-    });
-
-    // Расчет средней загрузки CPU
-    const avgCpuUsage = cpuUsage.reduce((acc, cpu) => {
-      return acc + parseFloat(cpu.usage);
-    }, 0) / cpuUsage.length;
-
-    // Расчет использования памяти в процентах
+    const avgCpuUsage = cpus.reduce((acc, cpu) => acc + parseFloat(cpu.usage), 0) / cpus.length;
     const memoryUsagePercentage = (usedMemory / totalMemory) * 100;
     const heapUsagePercentage = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
 
-    // Оценка нагрузки системы
     const systemLoad = this.assessSystemLoad(avgCpuUsage, memoryUsagePercentage, heapUsagePercentage);
 
     return {
       cpu: {
         model: cpus[0].model,
         cores: cpus.length,
-        usage: cpuUsage,
-        averageUsage: avgCpuUsage.toFixed(2) + '%'
+        usage: cpus,
+        averageUsage: this.formatPercentage(avgCpuUsage)
       },
       memory: {
         total: this.formatBytes(totalMemory),
         used: this.formatBytes(usedMemory),
         free: this.formatBytes(freeMemory),
-        usagePercentage: memoryUsagePercentage.toFixed(2) + '%',
+        usagePercentage: this.formatPercentage(memoryUsagePercentage),
         processMemory: {
           heapUsed: this.formatBytes(memoryUsage.heapUsed),
           heapTotal: this.formatBytes(memoryUsage.heapTotal),
-          heapUsagePercentage: heapUsagePercentage.toFixed(2) + '%',
+          heapUsagePercentage: this.formatPercentage(heapUsagePercentage),
           rss: this.formatBytes(memoryUsage.rss),
           external: this.formatBytes(memoryUsage.external)
         }
@@ -121,20 +104,47 @@ export class AdminService {
         release: os.release(),
         hostname: os.hostname()
       },
-      systemLoad: {
-        level: systemLoad.level,
-        description: systemLoad.description,
-        recommendations: systemLoad.recommendations
-      }
+      systemLoad
     };
   }
 
-  // Вспомогательные методы для форматирования
+  private async getCpuUsage(): Promise<{ model: string; speed: number; usage: string; }[]> {
+    const snapshot = () =>
+      os.cpus().map(cpu => ({
+        model: cpu.model,
+        speed: cpu.speed,
+        times: { ...cpu.times }
+      }));
+
+    const start = snapshot();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const end = snapshot();
+
+    return start.map((startCpu, i) => {
+      const endCpu = end[i];
+      const totalDiff = Object.keys(startCpu.times).reduce((acc, key) => {
+        const k = key as keyof typeof startCpu.times;
+        return acc + (endCpu.times[k] - startCpu.times[k]);
+      }, 0);
+      const idleDiff = endCpu.times.idle - startCpu.times.idle;
+      const usage = ((1 - idleDiff / totalDiff) * 100);
+      return {
+        model: startCpu.model,
+        speed: startCpu.speed,
+        usage: this.formatPercentage(usage)
+      };
+    });
+  }
+
   private formatBytes(bytes: number): string {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return '0 Byte';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
+    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+  }
+
+  private formatPercentage(value: number): string {
+    return value.toFixed(2) + '%';
   }
 
   private formatUptime(seconds: number): string {
@@ -142,56 +152,59 @@ export class AdminService {
     const hours = Math.floor((seconds % (3600 * 24)) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-
     return `${days}д ${hours}ч ${minutes}м ${secs}с`;
   }
 
-  // Оценка нагрузки системы
   private assessSystemLoad(cpuUsage: number, memoryUsage: number, heapUsage: number) {
-    // Определяем уровень нагрузки на основе CPU и памяти
-    const getLoadLevel = (cpu: number, mem: number, heap: number) => {
-      if (cpu > 80 || mem > 85 || heap > 90) {
-        return {
-          level: 'critical',
-          description: 'Критическая нагрузка',
-          recommendations: [
-            'Необходимо немедленное вмешательство',
-            'Рассмотрите возможность масштабирования',
-            'Проверьте наличие утечек памяти',
-            'Оптимизируйте запросы к базе данных'
-          ]
-        };
-      } else if (cpu > 60 || mem > 70 || heap > 80) {
-        return {
-          level: 'high',
-          description: 'Высокая нагрузка',
-          recommendations: [
-            'Рекомендуется мониторинг',
-            'Подготовьте план масштабирования',
-            'Проверьте оптимизацию кода'
-          ]
-        };
-      } else if (cpu > 40 || mem > 50 || heap > 60) {
-        return {
-          level: 'medium',
-          description: 'Средняя нагрузка',
-          recommendations: [
-            'Система работает в нормальном режиме',
-            'Продолжайте мониторинг'
-          ]
-        };
-      } else {
-        return {
-          level: 'low',
-          description: 'Низкая нагрузка',
-          recommendations: [
-            'Система работает оптимально',
-            'Ресурсы используются эффективно'
-          ]
-        };
-      }
+    const thresholds = {
+      critical: { cpu: 80, mem: 85, heap: 90 },
+      high:     { cpu: 60, mem: 70, heap: 80 },
+      medium:   { cpu: 40, mem: 50, heap: 60 }
     };
 
-    return getLoadLevel(cpuUsage, memoryUsage, heapUsage);
+    if (cpuUsage > thresholds.critical.cpu || memoryUsage > thresholds.critical.mem || heapUsage > thresholds.critical.heap) {
+      return {
+        level: 'critical',
+        description: 'Критическая нагрузка',
+        recommendations: [
+          'Необходимо немедленное вмешательство',
+          'Рассмотрите возможность масштабирования',
+          'Проверьте наличие утечек памяти',
+          'Оптимизируйте запросы к базе данных'
+        ]
+      };
+    }
+
+    if (cpuUsage > thresholds.high.cpu || memoryUsage > thresholds.high.mem || heapUsage > thresholds.high.heap) {
+      return {
+        level: 'high',
+        description: 'Высокая нагрузка',
+        recommendations: [
+          'Рекомендуется мониторинг',
+          'Подготовьте план масштабирования',
+          'Проверьте оптимизацию кода'
+        ]
+      };
+    }
+
+    if (cpuUsage > thresholds.medium.cpu || memoryUsage > thresholds.medium.mem || heapUsage > thresholds.medium.heap) {
+      return {
+        level: 'medium',
+        description: 'Средняя нагрузка',
+        recommendations: [
+          'Система работает в нормальном режиме',
+          'Продолжайте мониторинг'
+        ]
+      };
+    }
+
+    return {
+      level: 'low',
+      description: 'Низкая нагрузка',
+      recommendations: [
+        'Система работает оптимально',
+        'Ресурсы используются эффективно'
+      ]
+    };
   }
 }

@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from './user.model';
 import { ModelType } from '@typegoose/typegoose/lib/types';
+import { USER_CONSTANTS } from '../constants/user.constants';
 
 @Controller('user')
 export class UserController {
@@ -47,10 +48,13 @@ export class UserController {
   // Получение всех пользователей
   @Get('allUsers')
   async getAllUsers(
+    @Query('lastId') lastId?: string,
     @Query('limit') limit?: string
   ) {
     const parsedLimit = parseInt(limit, 10);
-    return this.userService.getAllUsers(isNaN(parsedLimit) ? 100 : parsedLimit);
+    const size = isNaN(parsedLimit) ? USER_CONSTANTS.DEFAULT_USERS_LIMIT : parsedLimit;
+    
+    return this.userService.getAllUsers(lastId, size);
   }
 
   @UseGuards(JwtAuthGuard)
