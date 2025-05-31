@@ -44,6 +44,10 @@ export class GraphModel extends TimeStamps {
     // Ссылка на страницу в VK
     @prop()
     vkLink?: string
+
+    // Ссылка на страницу в VK
+    @prop()
+    websiteLink?: string
 }
 
 
