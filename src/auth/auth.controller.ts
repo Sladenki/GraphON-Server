@@ -11,6 +11,7 @@ import { UserModel } from 'src/user/user.model';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { Request, Response } from 'express';
 import { JwtAuthService } from '../jwt/jwt.service';
+import * as crypto from 'crypto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,23 +29,49 @@ export class AuthController {
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
     console.log('called TG')
-    const { id, first_name, last_name, username, photo_url } = query;
-
-    console.log('Из query', id, first_name, last_name, username, photo_url)
-
-    const userData = {
-      telegramId: id,
-      firstName: first_name,
-      lastName: last_name,
-      username: username,
-      photoUrl: photo_url,
-    };
+    
+    // Проверяем, откуда пришел запрос - из приложения или веб-виджета
+    const isWebAuth = query.hash !== undefined;
+    
+    let userData;
+    
+    if (isWebAuth) {
+      // Валидация данных от веб-виджета
+      const isValid = this.validateTelegramWebData(query);
+      if (!isValid) {
+        return res.status(401).json({ message: 'Invalid authentication data' });
+      }
+      
+      userData = {
+        telegramId: query.id,
+        firstName: query.first_name,
+        lastName: query.last_name,
+        username: query.username,
+        photoUrl: query.photo_url,
+      };
+    } else {
+      // Обработка данных из приложения
+      const { id, first_name, last_name, username, photo_url } = query;
+      userData = {
+        telegramId: id,
+        firstName: first_name,
+        lastName: last_name,
+        username: username,
+        photoUrl: photo_url,
+      };
+    }
 
     const user = await this.findOrCreateUser(userData);
     const accessToken = this.jwtAuthService.generateToken(user._id, user.role);
 
     console.log('accessToken', accessToken)
 
+    if (isWebAuth) {
+      // Для веб-авторизации делаем прямой редирект
+      return res.redirect(`${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`);
+    }
+
+    // Для мобильного приложения оставляем текущую логику
     return res.send(`
       <!DOCTYPE html>
       <html lang="en">
@@ -72,13 +99,32 @@ export class AuthController {
           <h1>Redirecting...</h1>
       </body>
       </html>
-      `);
-    // const callbackUrl = `${process.env.CLIENT_URL}/profile?accessToken=${accessToken}`;
-    // const deepLink = `graphon://auth?callback_url=${encodeURIComponent(callbackUrl)}`;
-    // return res.redirect(deepLink);
+    `);
   }
 
+  // Метод для валидации данных от Telegram Web Widget
+  private validateTelegramWebData(data: any): boolean {
+    const botToken = process.env.BOT_TOKEN;
+    if (!botToken) {
+      throw new Error('BOT_TOKEN is not defined in environment variables');
+    }
 
+    const secret = crypto.createHash('sha256')
+      .update(botToken)
+      .digest();
+
+    const dataCheckString = Object.keys(data)
+      .filter(key => key !== 'hash')
+      .sort()
+      .map(key => `${key}=${data[key]}`)
+      .join('\n');
+
+    const hash = crypto.createHmac('sha256', secret)
+      .update(dataCheckString)
+      .digest('hex');
+
+    return data.hash === hash;
+  }
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<any> {
