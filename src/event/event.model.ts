@@ -15,6 +15,9 @@ export class EventModel extends TimeStamps {
     @prop({ ref: () => GraphModel, required: true, index: true })
     graphId: Ref<GraphModel>;
 
+    @prop({ ref: () => GraphModel, required: true, index: true })
+    globalGraphId: Ref<GraphModel>;
+
     @prop({ required: true })
     name: string;
 

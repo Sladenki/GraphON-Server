@@ -155,4 +155,18 @@ export class GraphService {
 
     return this.GraphModel.aggregate(pipeline).exec();
   }
+
+  // --- Получение графов-тематик ---
+  async getTopicGraphs(parentGraphId: Types.ObjectId) {
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          graphType: 'topic',
+          parentGraphId: parentGraphId
+        }
+      },
+    ];
+
+    return this.GraphModel.aggregate(pipeline).exec();
+  }
 }
