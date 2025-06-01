@@ -13,8 +13,17 @@ export interface GraphModel extends Base {}
     }
 })
 export class GraphModel extends TimeStamps {
+    @prop({ enum: ["global", "topic", "default"], required: true, index: true })
+    graphType: "global" | "topic" | "default";
+
+    @prop({ ref: () => GraphModel, index: true })
+    globalGraphId?: Ref<GraphModel>;
+
     @prop()
     name: string
+
+    @prop()
+    city?: string
 
     @prop ({ index: true, maxlength: 200 })
     about?: string

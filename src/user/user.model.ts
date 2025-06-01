@@ -1,5 +1,6 @@
-import { modelOptions, prop } from "@typegoose/typegoose";
+import { modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { GraphModel } from "src/graph/graph.model";
 
 // Base - уникальные id 
 export interface UserModel extends Base {}
@@ -15,8 +16,8 @@ export class UserModel extends TimeStamps {
   @prop({ enum: ['create', 'admin', 'editor', 'sysadmin', 'user'], default: 'user' })
   role: 'create' | 'admin' | 'editor' | 'sysadmin' | 'user';
 
-  @prop ({ unique: false })
-  email: string
+  @prop ({ ref: () => GraphModel, index: true })
+  selectedGraphId: Ref<GraphModel>; 
 
   @prop()
   firstName: string
@@ -42,4 +43,6 @@ export class UserModel extends TimeStamps {
 
   @prop({ default: 0 })
   attentedEventsNum: number
+
+
 }

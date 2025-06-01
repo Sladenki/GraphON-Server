@@ -61,11 +61,6 @@ export class GraphService {
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
     const pipeline: PipelineStage[] = [
-      // {
-      //   $match: {
-      //     parentGraphId: { $exists: false }
-      //   }
-      // },
       {
         $skip: Number(skip) || 0
       }
