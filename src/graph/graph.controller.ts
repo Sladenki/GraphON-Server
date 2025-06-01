@@ -51,10 +51,14 @@ export class GraphController {
 
   // --- Получение всех дочерних графов по Id родительскому --- 
   @Get('getAllChildrenGraphs/:parentGraphId')
+  @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+  @OptionalAuth()
   async getAllChildrenGraphs(
-    @Param('parentGraphId') parentGraphId: string
+    @Param('parentGraphId') parentGraphId: string,
+    @Query('skip') skip,
+    @GetOptionalAuthContext() authContext: OptionalAuthContext,
   ) {
-    return this.graphService.getAllChildrenGraphs(new Types.ObjectId(parentGraphId))
+    return this.graphService.getAllChildrenGraphs(new Types.ObjectId(parentGraphId), skip, authContext.userId)
   }
 
 

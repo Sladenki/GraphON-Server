@@ -103,10 +103,56 @@ export class GraphService {
     return this.GraphModel.aggregate(pipeline).exec();
   }
 
-  async getAllChildrenGraphs(parentGraphId: Types.ObjectId) {
-    return this.GraphModel
-      .find()
-      .lean()
-      .exec();
+  async getAllChildrenGraphs(parentGraphId: Types.ObjectId, skip: any, userId?: Types.ObjectId) {
+
+    console.log('getAllChildrenGraphs', parentGraphId, skip, userId);
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          globalGraphId: parentGraphId,
+          graphType: 'default'
+        }
+      },
+      {
+        $skip: Number(skip) || 0
+      }
+    ];
+
+    if (userId) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'GraphSubs',
+            let: { graphId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$graph', '$$graphId'] },
+                      { $eq: ['$user', userId] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: 'subscription'
+          }
+        },
+        {
+          $addFields: {
+            isSubscribed: { $gt: [{ $size: '$subscription' }, 0] }
+          }
+        },
+        {
+          $project: {
+            subscription: 0
+          }
+        }
+      );
+    }
+
+    return this.GraphModel.aggregate(pipeline).exec();
   }
 }
