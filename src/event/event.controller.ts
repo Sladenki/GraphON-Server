@@ -34,13 +34,14 @@ export class EventController {
     }
 
     // --- Получение мероприятий на ближайшее время ---
-    @Get("upcoming")
+    @Get("upcoming/:selectedGraphId")
     @UseGuards(JwtAuthGuard, OptionalAuthGuard)
     @OptionalAuth()
     async getUpcomingEvents(
-        @GetOptionalAuthContext() authContext: OptionalAuthContext
+        @GetOptionalAuthContext() authContext: OptionalAuthContext,
+        @Param("selectedGraphId") globalGraphId: string
     ) {
-        const events = await this.eventService.getUpcomingEvents();
+        const events = await this.eventService.getUpcomingEvents(globalGraphId);
         
         // Если пользователь авторизован, проверяем посещаемость
         if (authContext.isAuthenticated) {
