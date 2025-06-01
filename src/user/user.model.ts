@@ -16,7 +16,7 @@ export class UserModel extends TimeStamps {
   @prop({ enum: ['create', 'admin', 'editor', 'sysadmin', 'user'], default: 'user' })
   role: 'create' | 'admin' | 'editor' | 'sysadmin' | 'user';
 
-  @prop ({ ref: () => GraphModel, index: true })
+  @prop ({ ref: () => GraphModel, index: true, default: null })
   selectedGraphId: Ref<GraphModel>; 
 
   @prop()

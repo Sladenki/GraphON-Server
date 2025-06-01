@@ -13,6 +13,7 @@ import {
   UnauthorizedException,
   UseGuards,
   UseInterceptors,
+  Patch,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthUserDto } from './dto/auth-user.dto';
@@ -22,6 +23,8 @@ import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from './user.model';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { USER_CONSTANTS } from '../constants/user.constants';
+import { Auth } from "src/decorators/auth.decorator";
+import { CurrentUser } from 'src/decorators/currentUser.decorator';
 
 @Controller('user')
 export class UserController {
@@ -61,5 +64,22 @@ export class UserController {
   @Get('me')
   async getMe(@Req() req) {
     return req.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('selected-graph')
+  @Auth()
+  async updateSelectedGraph(
+    @CurrentUser('_id') userId: Types.ObjectId,
+    @Body('selectedGraphId') selectedGraphId: string
+  ) {
+    if (!selectedGraphId) {
+      throw new UnauthorizedException('ID графа не указан');
+    }
+    
+    return this.userService.updateSelectedGraph(
+      userId,
+      selectedGraphId
+    );
   }
 }

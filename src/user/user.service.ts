@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from './user.model';
@@ -80,6 +80,27 @@ export class UserService {
 
   async generateToken(userId: string, role: string): Promise<string> {
     return this.jwtAuthService.generateToken(new Types.ObjectId(userId), role);
+  }
+
+  async updateSelectedGraph(userId: Types.ObjectId, selectedGraphId: string) {
+    try {
+      const updatedUser = await this.UserModel.findByIdAndUpdate(
+        userId,
+        { selectedGraphId },
+        { new: true }
+      ).lean();
+
+      if (!updatedUser) {
+        throw new NotFoundException('Пользователь не найден');
+      }
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Ошибка при обновлении выбранного графа');
+    }
   }
 
 }
