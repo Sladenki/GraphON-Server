@@ -40,7 +40,8 @@ export class GraphService {
     const graph = await this.GraphModel.create({
       ...dto, 
       ownerUserId: userId, 
-      imgPath
+      imgPath,
+      graphType: "default"
     });
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
