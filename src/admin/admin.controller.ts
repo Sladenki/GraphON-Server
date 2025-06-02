@@ -8,6 +8,8 @@ import { Types } from 'mongoose';
 import { GraphService } from 'src/graph/graph.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
+import { CreateGlobalGraphDto } from 'src/graph/dto/create-global-graph.dto';
+import { CreateTopicGraphDto } from 'src/graph/dto/create-topic-graph.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -24,6 +26,34 @@ export class AdminController {
         @Body('role') role: UserRole
     ) {
         return this.adminService.assignRole(userId, role);
+    }
+
+    // --- Создание глобального графа ---
+    @UsePipes(new ValidationPipe())
+    @HttpCode(200)
+    @AuthRoles(UserRole.Editor)
+    @Post('createGlobalGraph')
+    @UseInterceptors(FileInterceptor('image'))
+    createGlobalGraph(
+        @Body() dto: CreateGlobalGraphDto,
+        @CurrentUser('_id') userId: Types.ObjectId,
+        @UploadedFile() image: Express.Multer.File
+    ) {
+        return this.graphService.createGlobalGraph(dto, userId, image);
+    }
+
+    // --- Создание графа-тематики ---
+    @UsePipes(new ValidationPipe())
+    @HttpCode(200)
+    @AuthRoles(UserRole.Editor)
+    @Post('createTopicGraph')
+    @UseInterceptors(FileInterceptor('image'))
+    createTopicGraph(
+        @Body() dto: CreateTopicGraphDto,
+        @CurrentUser('_id') userId: Types.ObjectId,
+        @UploadedFile() image: Express.Multer.File
+    ) {
+        return this.graphService.createTopicGraph(dto, userId, image);
     }
 
     // --- Создание графа --- 
@@ -63,4 +93,7 @@ export class AdminController {
     getServerResourceStats() {
         return this.adminService.getServerResourceStats();
     }
+
+
+
 }

@@ -3,6 +3,8 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphModel } from './graph.model';
 import { CreateGraphDto } from './dto/create-graph.dto';
+import { CreateGlobalGraphDto } from './dto/create-global-graph.dto';
+import { CreateTopicGraphDto } from './dto/create-topic-graph.dto';
 import { Types } from 'mongoose';
 import { GraphSubsService } from 'src/graphSubs/graphSubs.service';
 import { S3Service } from 'src/s3/s3.service';
@@ -169,5 +171,56 @@ export class GraphService {
     ];
 
     return this.GraphModel.aggregate(pipeline).exec();
+  }
+
+  // --- Создание глобального графа ---
+  async createGlobalGraph(dto: CreateGlobalGraphDto, userId: Types.ObjectId, image?: Express.Multer.File) {
+    let imgPath: string | undefined;
+
+    if (image) {
+      const fileExtension = image.originalname.split('.').pop();
+      const fileName = `${dto.name}.${fileExtension}`;
+      const s3Path = `graphAva/${fileName}`;
+      const uploadResult = await this.s3Service.uploadFile(image, s3Path);
+      imgPath = `images/${s3Path}`;
+    }
+
+    const graph = await this.GraphModel.create({
+      name: dto.name,
+      city: dto.city,
+      ownerUserId: userId,
+      imgPath,
+      graphType: "global"
+    });
+
+    return graph;
+  }
+
+  // --- Создание графа-тематики ---
+  async createTopicGraph(dto: CreateTopicGraphDto, userId: Types.ObjectId, image?: Express.Multer.File) {
+    let imgPath: string | undefined;
+
+    if (image) {
+      const fileExtension = image.originalname.split('.').pop();
+      const fileName = `${dto.name}.${fileExtension}`;
+      const s3Path = `graphAva/${fileName}`;
+      const uploadResult = await this.s3Service.uploadFile(image, s3Path);
+      imgPath = `images/${s3Path}`;
+    }
+
+    // Создаем новый граф-тематику
+    const graph = await this.GraphModel.create({
+      ...dto,
+      ownerUserId: userId,
+      imgPath,
+      graphType: "topic"
+    });
+
+    // Обновляем счетчик родительского графа
+    await this.GraphModel.findByIdAndUpdate(dto.parentGraphId, {
+      $inc: { childGraphNum: 1 },
+    }).exec();
+
+    return graph;
   }
 }
