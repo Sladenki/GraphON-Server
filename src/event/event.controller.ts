@@ -42,6 +42,8 @@ export class EventController {
         @Param("selectedGraphId") globalGraphId: string
     ) {
         const events = await this.eventService.getUpcomingEvents(globalGraphId);
+
+        console.log(events);
         
         // Если пользователь авторизован, проверяем посещаемость
         if (authContext.isAuthenticated) {

@@ -43,7 +43,10 @@ export class EventService {
     async getUpcomingEvents(globalGraphId: string) {
         const today = new Date();
         return this.EventModel
-            .find({ eventDate: { $gte: today }, globalGraphId: globalGraphId })
+            .find({ 
+                eventDate: { $gte: today }, 
+                globalGraphId: new Types.ObjectId(globalGraphId) 
+            })
             .sort({ eventDate: 1 })
             .populate("graphId", "name")
             .lean();
