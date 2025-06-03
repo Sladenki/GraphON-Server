@@ -31,7 +31,7 @@ export class AdminController {
     // --- Создание глобального графа ---
     @UsePipes(new ValidationPipe())
     @HttpCode(200)
-    @AuthRoles(UserRole.Editor)
+    @AuthRoles(UserRole.Create)
     @Post('createGlobalGraph')
     @UseInterceptors(FileInterceptor('image'))
     createGlobalGraph(
@@ -45,7 +45,7 @@ export class AdminController {
     // --- Создание графа-тематики ---
     @UsePipes(new ValidationPipe())
     @HttpCode(200)
-    @AuthRoles(UserRole.Editor)
+    @AuthRoles(UserRole.Create)
     @Post('createTopicGraph')
     @UseInterceptors(FileInterceptor('image'))
     createTopicGraph(

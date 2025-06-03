@@ -223,4 +223,23 @@ export class GraphService {
 
     return graph;
   }
+
+  // --- Получение глобальных графов ---
+  async getGlobalGraphs() {
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          graphType: 'global'
+        }
+      },
+      {
+        $sort: {
+          name: 1 // сортировка по имени по возрастанию
+        }
+      }
+    ];
+
+    return this.GraphModel.aggregate(pipeline).exec();
+  }
+
 }

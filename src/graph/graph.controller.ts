@@ -69,4 +69,10 @@ export class GraphController {
     return this.graphService.getTopicGraphs(new Types.ObjectId(parentGraphId))
   }
 
+  // --- Получение всех глобальных графов ---
+  @Get('getGlobalGraphs')
+  async getGlobalGraphs() {
+    return this.graphService.getGlobalGraphs();
+  }
+
 }
