@@ -69,10 +69,20 @@ export class GraphController {
     return this.graphService.getTopicGraphs(new Types.ObjectId(parentGraphId))
   }
 
+  // --- Получение глобального графа с его графами-тематиками ---
+  @Get('getTopicGraphsWithGlobal/:globalGraphId')
+  async getTopicGraphsWithMain(
+    @Param('globalGraphId') globalGraphId: string,
+  ) {
+    return this.graphService.getTopicGraphsWithMain(new Types.ObjectId(globalGraphId));
+  }
+
   // --- Получение всех глобальных графов ---
   @Get('getGlobalGraphs')
   async getGlobalGraphs() {
     return this.graphService.getGlobalGraphs();
   }
+
+
 
 }

@@ -242,4 +242,26 @@ export class GraphService {
     return this.GraphModel.aggregate(pipeline).exec();
   }
 
+  // --- Получение глобального графа с его графами-тематиками ---
+  async getTopicGraphsWithMain(globalGraphId: Types.ObjectId) {
+    const [globalGraph, topicGraphs] = await Promise.all([
+      // Получаем информацию о глобальном графе
+      this.GraphModel.findOne({
+        _id: globalGraphId,
+        graphType: 'global'
+      }).lean(),
+
+      // Получаем все графы-тематики для этого глобального графа
+      this.GraphModel.find({
+        parentGraphId: globalGraphId,
+        graphType: 'topic'
+      }).sort({ name: 1 }).lean()
+    ]);
+
+    return {
+      globalGraph,
+      topicGraphs
+    };
+  }
+
 }
