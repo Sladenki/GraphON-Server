@@ -14,10 +14,6 @@ export class CreateTopicGraphDto {
 
     @IsString()
     @IsOptional()
-    city?: string;
-
-    @IsString()
-    @IsOptional()
     directorName?: string;
 
     @IsString()

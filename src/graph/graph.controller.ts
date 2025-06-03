@@ -61,6 +61,14 @@ export class GraphController {
     return this.graphService.getAllChildrenGraphs(new Types.ObjectId(parentGraphId), skip, authContext.userId)
   }
 
+  // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 
+  @Get('getAllChildrenByTopic/:parentGraphId')
+  async getAllChildrenByTopic(
+    @Param('parentGraphId') parentGraphId: string,
+  ) {
+    return this.graphService.getAllChildrenByTopic(new Types.ObjectId(parentGraphId))
+  }
+
   // --- Получение графов-тематик ---
   @Get('getTopicGraphs/:parentGraphId')
   async getTopicGraphs(

@@ -43,7 +43,7 @@ export class GraphService {
       ...dto, 
       ownerUserId: userId, 
       imgPath,
-      graphType: "default"
+      graphType: "default",
     });
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
@@ -159,6 +159,17 @@ export class GraphService {
     return this.GraphModel.aggregate(pipeline).exec();
   }
 
+  // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 
+  async getAllChildrenByTopic(parentGraphId: Types.ObjectId) {
+
+    const childrenGraphs = this.GraphModel.find({
+      parentGraphId: parentGraphId,
+      graphType: 'default'
+    }).lean()
+  
+    return childrenGraphs
+  }
+
   // --- Получение графов-тематик ---
   async getTopicGraphs(parentGraphId: Types.ObjectId) {
     const pipeline: PipelineStage[] = [
@@ -213,6 +224,7 @@ export class GraphService {
       ...dto,
       ownerUserId: userId,
       imgPath,
+      globalGraphId: dto.parentGraphId,
       graphType: "topic"
     });
 
@@ -226,20 +238,10 @@ export class GraphService {
 
   // --- Получение глобальных графов ---
   async getGlobalGraphs() {
-    const pipeline: PipelineStage[] = [
-      {
-        $match: {
-          graphType: 'global'
-        }
-      },
-      {
-        $sort: {
-          name: 1 // сортировка по имени по возрастанию
-        }
-      }
-    ];
-
-    return this.GraphModel.aggregate(pipeline).exec();
+    return this.GraphModel.find({ graphType: 'global' })
+      .sort({ name: 1 })
+      .lean()
+      .exec();
   }
 
   // --- Получение глобального графа с его графами-тематиками ---
