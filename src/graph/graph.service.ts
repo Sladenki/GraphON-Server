@@ -108,9 +108,6 @@ export class GraphService {
   }
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId, skip: any, userId?: Types.ObjectId) {
-
-    console.log('getAllChildrenGraphs', parentGraphId, skip, userId);
-
     const pipeline: PipelineStage[] = [
       {
         $match: {
@@ -165,6 +162,17 @@ export class GraphService {
 
     const childrenGraphs = this.GraphModel.find({
       parentGraphId: parentGraphId,
+      graphType: 'default'
+    }).lean()
+  
+    return childrenGraphs
+  }
+
+  // --- Получение всех дочерних графов по Id глобального графа --- 
+  async getAllChildrenByGlobal(globalGraphId: Types.ObjectId) {
+
+    const childrenGraphs = this.GraphModel.find({
+      globalGraphId: globalGraphId,
       graphType: 'default'
     }).lean()
   
