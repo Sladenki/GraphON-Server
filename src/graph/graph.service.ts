@@ -44,6 +44,7 @@ export class GraphService {
       ownerUserId: userId, 
       imgPath,
       graphType: "default",
+      globalGraphId: dto.globalGraphId
     });
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
