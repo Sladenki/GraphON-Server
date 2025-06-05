@@ -88,7 +88,7 @@ export class AdminController {
     }
 
     // --- Получение статистики использования ресурсов сервера ---
-    @AuthRoles(UserRole.Create)
+    @AuthRoles(UserRole.SysAdmin)
     @Get('server-stats')
     getServerResourceStats() {
         return this.adminService.getServerResourceStats();
