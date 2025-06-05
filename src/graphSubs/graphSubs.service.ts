@@ -6,6 +6,7 @@ import { Types } from 'mongoose';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { GraphModel } from 'src/graph/graph.model';
 import { EventService } from 'src/event/event.service';
+import { EventRegsService } from 'src/eventRegs/eventRegs.service';
 
 @Injectable()
 export class GraphSubsService {
@@ -17,7 +18,8 @@ export class GraphSubsService {
     private readonly GraphModel: ModelType<GraphModel>,
 
     private readonly scheduleService: ScheduleService,
-    private readonly eventService: EventService
+    private readonly eventService: EventService,
+    private readonly eventRegsService: EventRegsService
   ) {}
 
   // --- Переключение подписки на граф ---
@@ -57,32 +59,63 @@ export class GraphSubsService {
   }
 
   // --- Получение расписания из подписанных графов ---
-  async getSubsSchedule(userId: Types.ObjectId) {
-    try {
-      const subscribedGraphs = await this.graphSubsModel.aggregate([
-        { $match: { user: userId } },
-        { $group: { _id: '$graph' } },
-        { $project: { _id: 1 } }
-      ]).exec();
-  
-      if (!subscribedGraphs || subscribedGraphs.length === 0) {
-        return { schedule: [], events: [] };
-      }
-  
-      const graphIds = subscribedGraphs.map(graph => graph._id.toString());
-  
-      // Используем lean() для оптимизации
-      const [schedule, events] = await Promise.all([
-        this.scheduleService.getWeekdaySchedulesByGraphs(graphIds),
-        this.eventService.getEventsByGraphsIds(graphIds)
-      ]);
-  
-      return { schedule: schedule || [], events: events || [] };
-    } catch (error) {
-      console.error('Error in getSubsSchedule:', error);
-      throw new InternalServerErrorException('Ошибка при получении расписания подписок');
+async getSubsSchedule(userId: Types.ObjectId) {
+  try {
+    const subscribedGraphs = await this.graphSubsModel.aggregate([
+      { $match: { user: userId } },
+      { $group: { _id: '$graph' } },
+      { $project: { _id: 1 } }
+    ]).exec();
+
+    if (!subscribedGraphs || subscribedGraphs.length === 0) {
+      return { schedule: [], events: [] };
     }
+
+    const graphIds = subscribedGraphs.map(graph => graph._id.toString());
+
+    const [schedule, graphEvents, userEvents] = await Promise.all([
+      this.scheduleService.getWeekdaySchedulesByGraphs(graphIds),
+      this.eventService.getEventsByGraphsIds(graphIds),
+      this.eventRegsService.getEventsByUserId(userId)
+    ]);
+
+    const graphEventIdsSet = new Set(graphEvents.map(e => e._id.toString()));
+    const allUserEventObjs = userEvents.map((reg: any) => ({
+      ...reg.eventId,
+      isAttended: true
+    }));
+
+    const combinedEventsMap = new Map<string, any>();
+
+    for (const event of graphEvents) {
+      combinedEventsMap.set(event._id.toString(), {
+        ...event,
+        isAttended: false
+      });
+    }
+
+    for (const userEvent of allUserEventObjs) {
+      const id = userEvent._id.toString();
+      combinedEventsMap.set(id, {
+        ...userEvent,
+        isAttended: true // override if already present
+      });
+    }
+
+    const mergedEvents = Array.from(combinedEventsMap.values());
+
+    console.log('mergedEvents', mergedEvents);
+
+    return {
+      schedule: schedule || [],
+      events: mergedEvents
+    };
+  } catch (error) {
+    console.error('Error in getSubsSchedule:', error);
+    throw new InternalServerErrorException('Ошибка при получении расписания подписок');
   }
+}
+
 
 
   // --- Проверка подписки на граф ---

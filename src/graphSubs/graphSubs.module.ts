@@ -9,6 +9,7 @@ import { getJwtConfig } from "src/config/jwt.config";
 import { ScheduleModule } from "src/schedule/schedule.module";
 import { GraphModel } from "src/graph/graph.model";
 import { EventModule } from "src/event/event.module";
+import { EventRegsModule } from "src/eventRegs/eventRegs.module";
 
 
 @Module({
@@ -33,7 +34,8 @@ import { EventModule } from "src/event/event.module";
       },
     ]),
     ScheduleModule,
-    EventModule
+    EventModule,
+    EventRegsModule
   ],
   exports: [GraphSubsService]
 })
