@@ -7,6 +7,7 @@ import { ScheduleService } from 'src/schedule/schedule.service';
 import { GraphModel } from 'src/graph/graph.model';
 import { EventService } from 'src/event/event.service';
 import { EventRegsService } from 'src/eventRegs/eventRegs.service';
+import { UserModel } from 'src/user/user.model';
 
 @Injectable()
 export class GraphSubsService {
@@ -17,6 +18,9 @@ export class GraphSubsService {
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
 
+    @InjectModel(UserModel)
+    private readonly UserModel: ModelType<UserModel>,
+
     private readonly scheduleService: ScheduleService,
     private readonly eventService: EventService,
     private readonly eventRegsService: EventRegsService
@@ -24,6 +28,9 @@ export class GraphSubsService {
 
   // --- Переключение подписки на граф ---
   async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId) {
+
+    console.log('toggleSub', user, graph)
+
     try {
       // Проверяем существование подписки
       const existingSub = await this.graphSubsModel
@@ -39,7 +46,8 @@ export class GraphSubsService {
             { $inc: { subsNum: -1 } },
             { lean: true }
           ).exec(),
-          this.graphSubsModel.deleteOne({ user, graph }).exec()
+          this.graphSubsModel.deleteOne({ user, graph }).exec(),
+          this.UserModel.findOneAndUpdate({ _id: user }, { $inc: { graphSubsNum: -1 } }).exec()
         ]);
       } else {
         // Если подписки нет, создаем её и увеличиваем счетчик
@@ -49,7 +57,8 @@ export class GraphSubsService {
             { $inc: { subsNum: 1 } },
             { lean: true }
           ).exec(),
-          this.graphSubsModel.create({ user, graph })
+          this.graphSubsModel.create({ user, graph }),
+          this.UserModel.findOneAndUpdate({ _id: user }, { $inc: { graphSubsNum: 1 } }).exec()
         ]);
       }
     } catch (error) {

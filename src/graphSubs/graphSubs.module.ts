@@ -10,6 +10,7 @@ import { ScheduleModule } from "src/schedule/schedule.module";
 import { GraphModel } from "src/graph/graph.model";
 import { EventModule } from "src/event/event.module";
 import { EventRegsModule } from "src/eventRegs/eventRegs.module";
+import { UserModel } from "src/user/user.model";
 
 
 @Module({
@@ -31,6 +32,10 @@ import { EventRegsModule } from "src/eventRegs/eventRegs.module";
       {
         typegooseClass: GraphModel,
         schemaOptions: { collection: 'Graph' }
+      },
+      {
+        typegooseClass: UserModel,
+        schemaOptions: { collection: 'User' }
       },
     ]),
     ScheduleModule,
