@@ -22,8 +22,12 @@ export class EventService {
 
     // --- Получение мероприятий для определённого графа ---
     async getEventsByGraphId(graphId: string) {
+        const now = new Date();
         return this.EventModel
-            .find({ graphId })
+            .find({ 
+                graphId,
+                eventDate: { $gte: now }
+            })
             .populate("graphId", "name")
             .lean();
     }
