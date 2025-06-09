@@ -50,15 +50,24 @@ export class EventRegsService {
 
     // Получаем мероприятия, на которые подписан пользователь (для профиля)
     async getEventsByUserId(userId: string | Types.ObjectId) {
-        const events = await this.EventRegsModel
-            .find({ userId })
-            .populate('eventId')
-            .lean();
+        const now = new Date();
 
-        // Добавляем поле isAttended для каждого мероприятия
-        return events.map(event => ({
-            ...event,
-            isAttended: true
-        }));
+        const regs = await this.EventRegsModel
+            .find({ userId })
+            .populate({
+                path: 'eventId',
+                model: 'EventModel', // имя модели, если необходимо явно
+            })
+            .lean<{ eventId: EventModel }[]>(); 
+
+        // Фильтруем по дате события
+        const upcomingEvents = regs
+            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
+            .map(reg => ({
+                ...reg,
+                isAttended: true
+            }));
+
+        return upcomingEvents;
     }
 }
