@@ -52,7 +52,7 @@ export class EventService {
                 globalGraphId: new Types.ObjectId(globalGraphId) 
             })
             .sort({ eventDate: 1 })
-            .populate("graphId", "name")
+            .populate("graphId", "name imgPath")
             .lean();
     }
 

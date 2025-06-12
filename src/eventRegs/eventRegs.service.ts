@@ -56,7 +56,11 @@ export class EventRegsService {
             .find({ userId })
             .populate({
                 path: 'eventId',
-                model: 'EventModel', // имя модели, если необходимо явно
+                model: 'EventModel',
+                populate: {
+                    path: 'graphId',
+                    select: 'name imgPath'
+                }
             })
             .lean<{ eventId: EventModel }[]>(); 
 
