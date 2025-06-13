@@ -34,7 +34,17 @@ export class GraphSubsController {
     async getSubsSchedule(
         @CurrentUser('_id') userId: Types.ObjectId,
     ) {
+        console.log('Controller getSubsSchedule вызван для userId:', userId);
         return this.graphSubsService.getSubsSchedule(userId)
+    }
+
+    // --- Получение событий из подписок ---
+    @Get('getSubsEvents')
+    @Auth()
+    async getSubsEvents(
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.graphSubsService.getSubsEvents(userId)
     }
 
 }

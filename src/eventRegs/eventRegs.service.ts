@@ -24,6 +24,8 @@ export class EventRegsService {
     
         // Проверяем, существует ли уже объект 
         const isAttendedEvent = await this.EventRegsModel.findOne({ userId, eventId }).exec();
+
+        console.log(!!isAttendedEvent)
     
         if (isAttendedEvent) {
             // Если существует, то удаляем его и обновляем счётчики
@@ -50,6 +52,7 @@ export class EventRegsService {
 
     // Получаем мероприятия, на которые подписан пользователь (для профиля)
     async getEventsByUserId(userId: string | Types.ObjectId) {
+        console.log('userId', userId)
         const now = new Date();
 
         const regs = await this.EventRegsModel
@@ -64,9 +67,11 @@ export class EventRegsService {
             })
             .lean<{ eventId: EventModel }[]>(); 
 
+        console.log(regs)
+
         // Фильтруем по дате события
         const upcomingEvents = regs
-            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
+            // .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
             .map(reg => ({
                 ...reg,
                 isAttended: true

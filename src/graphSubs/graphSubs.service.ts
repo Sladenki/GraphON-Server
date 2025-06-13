@@ -68,63 +68,59 @@ export class GraphSubsService {
   }
 
   // --- Получение расписания из подписанных графов ---
-async getSubsSchedule(userId: Types.ObjectId) {
-  try {
+  // --- Для страницы расписания - стабильное расписание и записанные мероприяти ---
+  async getSubsSchedule(userId: Types.ObjectId) {
+    try {
+      const subscribedGraphs = await this.graphSubsModel.aggregate([
+        { $match: { user: userId } },
+        { $group: { _id: '$graph' } },
+        { $project: { _id: 1 } }
+      ]).exec();
+
+      const graphIds = subscribedGraphs?.length > 0 
+      ? subscribedGraphs.map(graph => graph._id.toString()) 
+      : [];
+
+      const [schedule, userEvents] = await Promise.all([
+        graphIds.length > 0 
+          ? this.scheduleService.getWeekdaySchedulesByGraphs(graphIds)
+          : Promise.resolve([]),
+        this.eventRegsService.getEventsByUserId(userId)
+      ]);
+
+      const mergedEvents = userEvents.map((reg: any) => ({
+        ...reg.eventId,
+        isAttended: true
+      }));
+
+
+      return {
+        schedule: schedule || [],
+        events: mergedEvents
+      };
+    } catch (error) {
+      console.error('Error in getSubsSchedule:', error);
+      throw new InternalServerErrorException('Ошибка при получении расписания подписок');
+    }
+  }
+
+  // --- Подписки ---
+  // --- Получение событий из подписок ---
+  async getSubsEvents(userId: Types.ObjectId) {
     const subscribedGraphs = await this.graphSubsModel.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$graph' } },
       { $project: { _id: 1 } }
     ]).exec();
 
-    if (!subscribedGraphs || subscribedGraphs.length === 0) {
-      return { schedule: [], events: [] };
-    }
+    const graphIds = subscribedGraphs?.length > 0 
+    ? subscribedGraphs.map(graph => graph._id.toString()) 
+    : [];
 
-    const graphIds = subscribedGraphs.map(graph => graph._id.toString());
+    const events = await this.eventService.getEventsByGraphsIds(graphIds);
 
-    const [schedule, graphEvents, userEvents] = await Promise.all([
-      this.scheduleService.getWeekdaySchedulesByGraphs(graphIds),
-      this.eventService.getEventsByGraphsIds(graphIds),
-      this.eventRegsService.getEventsByUserId(userId)
-    ]);
-
-    const graphEventIdsSet = new Set(graphEvents.map(e => e._id.toString()));
-    const allUserEventObjs = userEvents.map((reg: any) => ({
-      ...reg.eventId,
-      isAttended: true
-    }));
-
-    const combinedEventsMap = new Map<string, any>();
-
-    for (const event of graphEvents) {
-      combinedEventsMap.set(event._id.toString(), {
-        ...event,
-        isAttended: false
-      });
-    }
-
-    for (const userEvent of allUserEventObjs) {
-      const id = userEvent._id.toString();
-      combinedEventsMap.set(id, {
-        ...userEvent,
-        isAttended: true // override if already present
-      });
-    }
-
-    const mergedEvents = Array.from(combinedEventsMap.values());
-
-    console.log('mergedEvents', mergedEvents);
-
-    return {
-      schedule: schedule || [],
-      events: mergedEvents
-    };
-  } catch (error) {
-    console.error('Error in getSubsSchedule:', error);
-    throw new InternalServerErrorException('Ошибка при получении расписания подписок');
+    return events;
   }
-}
-
 
 
   // --- Проверка подписки на граф ---
