@@ -71,7 +71,7 @@ export class EventRegsService {
 
         // Фильтруем по дате события
         const upcomingEvents = regs
-            // .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
+            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
             .map(reg => ({
                 ...reg,
                 isAttended: true
