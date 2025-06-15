@@ -119,7 +119,18 @@ export class GraphSubsService {
 
     const events = await this.eventService.getEventsByGraphsIds(graphIds);
 
-    return events;
+    // Добавляем информацию о записи пользователя на каждое событие
+    const eventsWithAttendance = await Promise.all(
+      events.map(async (event) => {
+        const isAttended = await this.eventRegsService.isUserAttendingEvent(userId, event._id);
+        return {
+          ...event,
+          isAttended
+        };
+      })
+    );
+
+    return eventsWithAttendance;
   }
 
 

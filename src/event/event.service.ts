@@ -22,11 +22,14 @@ export class EventService {
 
     // --- Получение мероприятий для определённого графа ---
     async getEventsByGraphId(graphId: string) {
-        const now = new Date();
+        // Получаем начало текущего дня (00:00:00)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         return this.EventModel
             .find({ 
                 graphId,
-                eventDate: { $gte: now }
+                eventDate: { $gte: today }
             })
             .populate("graphId", "name")
             .lean();
@@ -34,10 +37,14 @@ export class EventService {
 
     // Получение мероприятий массива графов
     async getEventsByGraphsIds(graphIds: string[]) {
+        // Получаем начало текущего дня (00:00:00)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         return this.EventModel
             .find({
                 graphId: { $in: graphIds },
-               
+                eventDate: { $gte: today }
             })
             .populate("graphId", "name")
             .lean();
@@ -45,7 +52,10 @@ export class EventService {
 
     // --- Получение мероприятий на ближайшее время ---
     async getUpcomingEvents(globalGraphId: string) {
+        // Получаем начало текущего дня (00:00:00)
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         return this.EventModel
             .find({ 
                 eventDate: { $gte: today }, 

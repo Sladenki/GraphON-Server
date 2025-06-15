@@ -53,7 +53,9 @@ export class EventRegsService {
     // Получаем мероприятия, на которые подписан пользователь (для профиля)
     async getEventsByUserId(userId: string | Types.ObjectId) {
         console.log('userId', userId)
-        const now = new Date();
+        // Получаем начало текущего дня (00:00:00)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         const regs = await this.EventRegsModel
             .find({ userId })
@@ -71,7 +73,7 @@ export class EventRegsService {
 
         // Фильтруем по дате события
         const upcomingEvents = regs
-            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= now)
+            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= today)
             .map(reg => ({
                 ...reg,
                 isAttended: true
