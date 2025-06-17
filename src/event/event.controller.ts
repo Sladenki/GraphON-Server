@@ -2,18 +2,24 @@ import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param, Put } fro
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
 import { EventRegsService } from "src/eventRegs/eventRegs.service";
+import { EventRegsModel } from "src/eventRegs/eventRegs.model";
 import { JwtAuthGuard } from "src/jwt/jwt-auth.guard";
 import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
 import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
 import { OptionalAuthContext } from "src/interfaces/optional-auth.interface";
 import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
 import { Auth } from "src/decorators/auth.decorator";
+import { InjectModel } from "@m8a/nestjs-typegoose";
+import { ModelType } from "@typegoose/typegoose/lib/types";
 
 @Controller("event")
 export class EventController {
     constructor(
         private readonly eventService: EventService,
-        private readonly eventRegsService: EventRegsService
+        private readonly eventRegsService: EventRegsService,
+
+        @InjectModel(EventRegsModel)
+        private readonly eventRegsModel: ModelType<EventRegsModel>
     ) {}
 
      // --- Создание мероприятия ---
@@ -41,26 +47,36 @@ export class EventController {
         @GetOptionalAuthContext() authContext: OptionalAuthContext,
         @Param("selectedGraphId") globalGraphId: string
     ) {
-        const events = await this.eventService.getUpcomingEvents(globalGraphId);
-
-        // console.log(events);
-        
-        // Если пользователь авторизован, проверяем посещаемость
-        if (authContext.isAuthenticated) {
-            const eventsWithAttendance = await Promise.all(
-                events.map(async (event) => {
-                    const isAttended = await this.eventRegsService.isUserAttendingEvent(authContext.userId, event._id);
-                    return {
-                        ...event,
-                        isAttended
-                    };
-                })
-            );
-            return eventsWithAttendance;
+        // Если пользователь не авторизован, возвращаем события без проверки посещаемости
+        if (!authContext.isAuthenticated) {
+            return this.eventService.getUpcomingEvents(globalGraphId);
         }
 
-        // Если пользователь не авторизован, возвращаем мероприятия без проверки посещаемости
-        return events;
+        // Оптимизированный подход для авторизованных пользователей
+        const [events, userEventRegs] = await Promise.all([
+            // Получаем все события
+            this.eventService.getUpcomingEvents(globalGraphId),
+            
+            // Получаем все записи пользователя на события одним запросом
+            this.eventRegsModel
+                .find({ userId: authContext.userId })
+                .select('eventId')
+                .lean()
+                .exec()
+        ]);
+
+        // Создаем Set для быстрого поиска записей на события
+        const attendedEventIds = new Set(
+            userEventRegs.map(reg => reg.eventId.toString())
+        );
+
+        // Добавляем поле isAttended к каждому событию
+        const eventsWithAttendance = events.map(event => ({
+            ...event,
+            isAttended: attendedEventIds.has(event._id.toString())
+        }));
+
+        return eventsWithAttendance;
     }
 
     // --- Удаление мероприятия ---

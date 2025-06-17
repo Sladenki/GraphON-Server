@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundE
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphSubsModel } from './graphSubs.model';
+import { EventRegsModel } from 'src/eventRegs/eventRegs.model';
 import { Types } from 'mongoose';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { GraphModel } from 'src/graph/graph.model';
@@ -20,6 +21,9 @@ export class GraphSubsService {
 
     @InjectModel(UserModel)
     private readonly UserModel: ModelType<UserModel>,
+
+    @InjectModel(EventRegsModel)
+    private readonly eventRegsModel: ModelType<EventRegsModel>,
 
     private readonly scheduleService: ScheduleService,
     private readonly eventService: EventService,
@@ -107,28 +111,44 @@ export class GraphSubsService {
   // --- Подписки ---
   // --- Получение событий из подписок ---
   async getSubsEvents(userId: Types.ObjectId) {
-    const subscribedGraphs = await this.graphSubsModel.aggregate([
-      { $match: { user: userId } },
-      { $group: { _id: '$graph' } },
-      { $project: { _id: 1 } }
-    ]).exec();
+    // Оптимизированный подход: параллельно получаем все необходимые данные
+    const [subscribedGraphs, userEventRegs] = await Promise.all([
+      // Получаем подписанные графы пользователя
+      this.graphSubsModel.aggregate([
+        { $match: { user: userId } },
+        { $group: { _id: '$graph' } },
+        { $project: { _id: 1 } }
+      ]).exec(),
+      
+      // Получаем все записи пользователя на события одним запросом
+      this.eventRegsModel
+        .find({ userId })
+        .select('eventId')
+        .lean()
+        .exec()
+    ]);
 
     const graphIds = subscribedGraphs?.length > 0 
-    ? subscribedGraphs.map(graph => graph._id.toString()) 
-    : [];
+      ? subscribedGraphs.map(graph => graph._id.toString()) 
+      : [];
 
+    if (graphIds.length === 0) {
+      return [];
+    }
+
+    // Получаем события из подписанных графов
     const events = await this.eventService.getEventsByGraphsIds(graphIds);
 
-    // Добавляем информацию о записи пользователя на каждое событие
-    const eventsWithAttendance = await Promise.all(
-      events.map(async (event) => {
-        const isAttended = await this.eventRegsService.isUserAttendingEvent(userId, event._id);
-        return {
-          ...event,
-          isAttended
-        };
-      })
+    // Создаем Set для быстрого поиска записей на события
+    const attendedEventIds = new Set(
+      userEventRegs.map(reg => reg.eventId.toString())
     );
+
+    // Добавляем поле isAttended к каждому событию
+    const eventsWithAttendance = events.map(event => ({
+      ...event,
+      isAttended: attendedEventIds.has(event._id.toString())
+    }));
 
     return eventsWithAttendance;
   }
