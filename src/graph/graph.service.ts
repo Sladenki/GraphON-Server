@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphModel } from './graph.model';
+import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
 import { CreateGraphDto } from './dto/create-graph.dto';
 import { CreateGlobalGraphDto } from './dto/create-global-graph.dto';
 import { CreateTopicGraphDto } from './dto/create-topic-graph.dto';
@@ -16,6 +17,9 @@ export class GraphService {
   constructor(
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
+
+    @InjectModel(GraphSubsModel)
+    private readonly graphSubsModel: ModelType<GraphSubsModel>,
 
     private readonly graphSubsService: GraphSubsService,
     private readonly s3Service: S3Service,
@@ -64,97 +68,91 @@ export class GraphService {
 
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
-    const pipeline: PipelineStage[] = [
-      {
-        $skip: Number(skip) || 0
-      }
-    ];
-
-    if (userId) {
-      pipeline.push(
-        {
-          $lookup: {
-            from: 'GraphSubs',
-            let: { graphId: '$_id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$graph', '$$graphId'] },
-                      { $eq: ['$user', userId] }
-                    ]
-                  }
-                }
-              }
-            ],
-            as: 'subscription'
-          }
-        },
-        {
-          $addFields: {
-            isSubscribed: { $gt: [{ $size: '$subscription' }, 0] }
-          }
-        },
-        {
-          $project: {
-            subscription: 0
-          }
-        }
-      );
+    if (!userId) {
+      // Если пользователь не авторизован, просто возвращаем графы без проверки подписки
+      return this.GraphModel
+        .find()
+        .skip(Number(skip) || 0)
+        .lean()
+        .exec();
     }
 
-    return this.GraphModel.aggregate(pipeline).exec();
+    // Оптимизированный подход: сначала получаем все подписки пользователя
+    const [graphs, userSubscriptions] = await Promise.all([
+      // Получаем все родительские графы
+      this.GraphModel
+        .find()
+        .skip(Number(skip) || 0)
+        .lean()
+        .exec(),
+      
+      // Получаем все подписки пользователя одним запросом
+      this.graphSubsModel
+        .find({ user: userId })
+        .select('graph')
+        .lean()
+        .exec()
+    ]);
+
+    // Создаем Set для быстрого поиска подписок
+    const subscribedGraphIds = new Set(
+      userSubscriptions.map(sub => sub.graph.toString())
+    );
+
+    // Добавляем поле isSubscribed к каждому графу
+    const graphsWithSubscription = graphs.map(graph => ({
+      ...graph,
+      isSubscribed: subscribedGraphIds.has(graph._id.toString())
+    }));
+
+    return graphsWithSubscription;
   }
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId, skip: any, userId?: Types.ObjectId) {
-    const pipeline: PipelineStage[] = [
-      {
-        $match: {
+    if (!userId) {
+      // Если пользователь не авторизован, просто возвращаем графы без проверки подписки
+      return this.GraphModel
+        .find({
           globalGraphId: parentGraphId,
           graphType: 'default'
-        }
-      },
-      {
-        $skip: Number(skip) || 0
-      }
-    ];
-
-    if (userId) {
-      pipeline.push(
-        {
-          $lookup: {
-            from: 'GraphSubs',
-            let: { graphId: '$_id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$graph', '$$graphId'] },
-                      { $eq: ['$user', userId] }
-                    ]
-                  }
-                }
-              }
-            ],
-            as: 'subscription'
-          }
-        },
-        {
-          $addFields: {
-            isSubscribed: { $gt: [{ $size: '$subscription' }, 0] }
-          }
-        },
-        {
-          $project: {
-            subscription: 0
-          }
-        }
-      );
+        })
+        .skip(Number(skip) || 0)
+        .lean()
+        .exec();
     }
 
-    return this.GraphModel.aggregate(pipeline).exec();
+    // Оптимизированный подход: сначала получаем все подписки пользователя
+    const [graphs, userSubscriptions] = await Promise.all([
+      // Получаем все дочерние графы
+      this.GraphModel
+        .find({
+          globalGraphId: parentGraphId,
+          graphType: 'default'
+        })
+        .skip(Number(skip) || 0)
+        .lean()
+        .exec(),
+      
+      // Получаем все подписки пользователя одним запросом
+      this.graphSubsModel
+        .find({ user: userId })
+        .select('graph')
+        .lean()
+        .exec()
+    ]);
+
+    // Создаем Set для быстрого поиска подписок
+    const subscribedGraphIds = new Set(
+      userSubscriptions.map(sub => sub.graph.toString())
+    );
+
+    // Добавляем поле isSubscribed к каждому графу
+    const graphsWithSubscription = graphs.map(graph => ({
+      ...graph,
+      isSubscribed: subscribedGraphIds.has(graph._id.toString())
+    }));
+
+    return graphsWithSubscription;
   }
 
   // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 

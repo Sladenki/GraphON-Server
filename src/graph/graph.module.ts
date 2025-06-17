@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { GraphController } from './graph.controller';
 import { GraphModel } from './graph.model';
+import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
 import { GraphService } from './graph.service';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { ConfigModule } from '@nestjs/config';
@@ -21,8 +22,10 @@ import { S3Module } from 'src/s3/s3.module';
         typegooseClass: GraphModel,
         schemaOptions: { collection: 'Graph' },
       },
-    ]),
-    TypegooseModule.forFeature([
+      {
+        typegooseClass: GraphSubsModel,
+        schemaOptions: { collection: 'GraphSubs' },
+      },
       {
         // Ссылка на модель пользователя
         typegooseClass: UserModel,
