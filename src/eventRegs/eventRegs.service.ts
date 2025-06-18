@@ -21,24 +21,22 @@ export class EventRegsService {
 
     // Подписываемся на мероприятие
     async toggleEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) { 
-    
-        // Проверяем, существует ли уже объект 
-        const isAttendedEvent = await this.EventRegsModel.findOne({ userId, eventId }).exec();
+        // Оптимизированный подход: пытаемся удалить запись, если она есть
+        const deletedEvent = await this.EventRegsModel.findOneAndDelete({ userId, eventId }).lean();
 
-        console.log(!!isAttendedEvent)
+        console.log(!!deletedEvent)
     
-        if (isAttendedEvent) {
-            // Если существует, то удаляем его и обновляем счётчики
+        if (deletedEvent) {
+            // Если запись была найдена и удалена, уменьшаем счётчики
             await Promise.all([
-                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: -1 } }).exec(),
-                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: -1 } }).exec(),
-                this.EventRegsModel.deleteOne({ userId, eventId })
+                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
+                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: -1 } })
             ]);
         } else {
-            // Создаём новый объект, если его ещё нет, и обновляем счётчики
+            // Если записи не было, создаём её и увеличиваем счётчики
             await Promise.all([
-                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: 1 } }).exec(),
-                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: 1 } }).exec(),
+                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
+                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: 1 } }),
                 this.EventRegsModel.create({ userId, eventId })
             ]);
         }
