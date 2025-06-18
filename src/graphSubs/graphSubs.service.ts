@@ -75,31 +75,33 @@ export class GraphSubsService {
   // --- Для страницы расписания - стабильное расписание и записанные мероприяти ---
   async getSubsSchedule(userId: Types.ObjectId) {
     try {
-      const subscribedGraphs = await this.graphSubsModel.aggregate([
-        { $match: { user: userId } },
-        { $group: { _id: '$graph' } },
-        { $project: { _id: 1 } }
-      ]).exec();
+      // Быстро получаем ID подписанных графов (упрощенный aggregate)
+      const subscribedGraphs = await this.graphSubsModel
+        .find({ user: userId })
+        .select('graph')
+        .lean()
+        .exec();
+      
+      const subscribedGraphIds = [...new Set(subscribedGraphs.map(sub => sub.graph))];
 
-      const graphIds = subscribedGraphs?.length > 0 
-      ? subscribedGraphs.map(graph => graph._id.toString()) 
-      : [];
-
+      // Теперь параллельно получаем расписание и события
       const [schedule, userEvents] = await Promise.all([
-        graphIds.length > 0 
-          ? this.scheduleService.getWeekdaySchedulesByGraphs(graphIds)
+        subscribedGraphIds.length > 0 
+          ? this.scheduleService.getWeekdaySchedulesByGraphs(
+              subscribedGraphIds.map(id => id.toString())
+            )
           : Promise.resolve([]),
         this.eventRegsService.getEventsByUserId(userId)
       ]);
 
+      // Упрощенная обработка событий
       const mergedEvents = userEvents.map((reg: any) => ({
         ...reg.eventId,
         isAttended: true
       }));
 
-
       return {
-        schedule: schedule || [],
+        schedule,
         events: mergedEvents
       };
     } catch (error) {
