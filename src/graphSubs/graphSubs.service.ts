@@ -32,8 +32,6 @@ export class GraphSubsService {
 
   // --- Переключение подписки на граф ---
   async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
-    console.log('toggleSub', user, graph);
-
     const session = await this.graphSubsModel.db.startSession();
     
     try {
@@ -199,8 +197,6 @@ export class GraphSubsService {
   // --- Альтернативная высокопроизводительная версия ---
   // --- Использует MongoDB bulk operations для максимальной производительности ---
   async toggleSubBulk(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
-    console.log('toggleSubBulk', user, graph);
-
     const session = await this.graphSubsModel.db.startSession();
     
     try {

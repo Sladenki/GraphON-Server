@@ -23,8 +23,6 @@ export class EventRegsService {
     async toggleEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) { 
         // Оптимизированный подход: пытаемся удалить запись, если она есть
         const deletedEvent = await this.EventRegsModel.findOneAndDelete({ userId, eventId }).lean();
-
-        console.log(!!deletedEvent)
     
         if (deletedEvent) {
             // Если запись была найдена и удалена, уменьшаем счётчики
@@ -50,7 +48,6 @@ export class EventRegsService {
 
     // Получаем мероприятия, на которые подписан пользователь (для профиля)
     async getEventsByUserId(userId: string | Types.ObjectId) {
-        console.log('userId', userId)
         // Получаем начало текущего дня (00:00:00)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -66,8 +63,6 @@ export class EventRegsService {
                 }
             })
             .lean<{ eventId: EventModel }[]>(); 
-
-        console.log(regs)
 
         // Фильтруем по дате события
         const upcomingEvents = regs

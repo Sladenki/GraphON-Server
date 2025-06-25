@@ -27,8 +27,6 @@ export class GraphService {
 
   // --- Создание графа ---
   async createGraph(dto: CreateGraphDto, userId: Types.ObjectId, image?: Express.Multer.File) {
-    console.log('createGraph', dto, userId, image);
-
     let imgPath: string | undefined;
 
     if (image) {
