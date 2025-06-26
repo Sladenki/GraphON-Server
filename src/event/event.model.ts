@@ -24,7 +24,7 @@ export class EventModel extends TimeStamps {
     @prop({ maxlength: 150 })
     place: string;
 
-    @prop({ maxlength: 150 })
+    @prop({ maxlength: 300 })
     description: string;
 
     @prop({ required: true })

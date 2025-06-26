@@ -167,12 +167,22 @@ export class GraphService {
   // --- Получение всех дочерних графов по Id глобального графа --- 
   async getAllChildrenByGlobal(globalGraphId: Types.ObjectId) {
 
-    const childrenGraphs = this.GraphModel.find({
-      globalGraphId: globalGraphId,
-      graphType: 'default'
-    }).lean()
+    const [globalGraph, childrenGraphs] = await Promise.all([
+      // Получаем сам глобальный граф
+      this.GraphModel.findOne({
+        _id: globalGraphId,
+        graphType: 'global'
+      }).lean(),
+
+      // Получаем все дочерние графы
+      this.GraphModel.find({
+        globalGraphId: globalGraphId,
+        graphType: 'default'
+      }).lean()
+    ]);
   
-    return childrenGraphs
+    // Возвращаем массив, где первый элемент - глобальный граф, остальные - дочерние
+    return globalGraph ? [globalGraph, ...childrenGraphs] : childrenGraphs;
   }
 
   // --- Получение графов-тематик ---
