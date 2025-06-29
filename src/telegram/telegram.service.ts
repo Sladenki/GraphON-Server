@@ -34,6 +34,7 @@ export class TelegramBotService implements OnModuleInit {
       this.setupBotCommands();
       this.handleStartCommand();
       this.handleAuthCommand();
+      this.handleSupportCommand();
     }, 1000); // 1 секунда задержки
   }
 
@@ -53,6 +54,10 @@ export class TelegramBotService implements OnModuleInit {
         {
           command: 'auth',
           description: '🔐 Авторизация'
+        },
+        {
+          command: 'support',
+          description: '🛠 Техподдержка'
         }
       ]);
     } catch (error) {
@@ -75,10 +80,7 @@ export class TelegramBotService implements OnModuleInit {
       // Обычное приветствие без параметров
       this.bot.sendMessage(chatId, 
         '🌟 *Добро пожаловать в GraphON!* 🌟\n\n' +
-        'Ваш личный гид по менеджменту внеучебных мероприятий.\n\n' +
-        'Используйте команды:\n' +
-        '• `/auth` - для авторизации\n' +
-        '• Кнопку ниже - для открытия приложения', 
+        'Ваш личный гид по менеджменту внеучебных мероприятий.\n\n', 
         {
         parse_mode: "Markdown",
         reply_markup: {
@@ -112,6 +114,14 @@ export class TelegramBotService implements OnModuleInit {
     });
   }
 
+  // Метод для обработки команды /support
+  handleSupportCommand() {
+    this.bot.onText(/\/support/, (msg) => {
+      const chatId = msg.chat.id;
+      this.sendSupportMessage(chatId);
+    });
+  }
+
   // Отдельный метод для отправки сообщения об авторизации
   sendAuthMessage(chatId: number) {
     this.bot.sendMessage(chatId, 
@@ -134,6 +144,28 @@ export class TelegramBotService implements OnModuleInit {
               login_url: {
                 url: `${this.SERVER_URL}/auth/telegram/callback`, 
               },
+            },
+          ],
+        ],
+      },
+    });
+  }
+
+  // Отдельный метод для отправки сообщения о техподдержке
+  sendSupportMessage(chatId: number) {
+    this.bot.sendMessage(chatId, 
+      '🛠 *Техподдержка GraphON*\n\n' +
+      '📞 *Как получить помощь?*\n\n' +
+      '• Посетите наш канал для новостей\n' +
+      '• Или опишите проблему в чате поддержки\n\n', 
+      {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '💬 Чат поддержки',
+              url: 'https://t.me/graph_ON', 
             },
           ],
         ],
