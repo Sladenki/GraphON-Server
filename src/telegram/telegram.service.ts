@@ -7,6 +7,7 @@ export class TelegramBotService implements OnModuleInit {
   public bot: TelegramBot;
   private WEB_APP_URL: string;
   private SERVER_URL: string;
+  private SUPPORT_URL: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -25,6 +26,11 @@ export class TelegramBotService implements OnModuleInit {
     // Ссылка на авторизацию
     const authLoginString = this.configService.get<string>('SERVER_URL');
     this.SERVER_URL = authLoginString
+    
+    // Ссылка на поддержку
+    const supportUrlString = this.configService.get<string>('SUPPORT_URL');
+    this.SUPPORT_URL = supportUrlString
+    
   }
 
   onModuleInit() {
@@ -156,8 +162,7 @@ export class TelegramBotService implements OnModuleInit {
     this.bot.sendMessage(chatId, 
       '🛠 *Техподдержка GraphON*\n\n' +
       '📞 *Как получить помощь?*\n\n' +
-      '• Посетите наш канал для новостей\n' +
-      '• Или опишите проблему в чате поддержки\n\n', 
+      '• Опишите проблему в чате поддержки\n\n', 
       {
       parse_mode: "Markdown",
       reply_markup: {
@@ -165,7 +170,7 @@ export class TelegramBotService implements OnModuleInit {
           [
             {
               text: '💬 Чат поддержки',
-              url: 'https://t.me/graph_ON', 
+              url: this.SUPPORT_URL, 
             },
           ],
         ],
