@@ -88,9 +88,9 @@ export class GraphService {
     // Если нет в кэше, получаем из БД
     const graph = await this.GraphModel.findById(id).populate('parentGraphId', 'name');
     
-    // Сохраняем в кэш на 1 час
+    // Сохраняем в кэш на 1 день
     if (graph) {
-      await this.redisService.set(cacheKey, graph, 3600);
+      await this.redisService.set(cacheKey, graph, 86400);
     }
     
     return graph;
@@ -117,8 +117,8 @@ export class GraphService {
         .lean()
         .exec();
       
-      // Сохраняем в кэш на 30 минут для неавторизованных пользователей
-      await this.redisService.set(cacheKey, graphs, 1800);
+      // Сохраняем в кэш на 1 день для неавторизованных пользователей
+      await this.redisService.set(cacheKey, graphs, 86400);
       return graphs;
     }
 
@@ -150,8 +150,8 @@ export class GraphService {
       isSubscribed: subscribedGraphIds.has(graph._id.toString())
     }));
 
-    // Сохраняем в кэш на 15 минут для авторизованных пользователей
-    await this.redisService.set(cacheKey, graphsWithSubscription, 900);
+    // Сохраняем в кэш на 1 день для авторизованных пользователей
+    await this.redisService.set(cacheKey, graphsWithSubscription, 86400);
     return graphsWithSubscription;
   }
 
@@ -179,8 +179,8 @@ export class GraphService {
         .lean()
         .exec();
       
-      // Сохраняем в кэш на 30 минут для неавторизованных пользователей
-      await this.redisService.set(cacheKey, graphs, 1800);
+      // Сохраняем в кэш на 1 день для неавторизованных пользователей
+      await this.redisService.set(cacheKey, graphs, 86400);
       return graphs;
     }
 
@@ -215,8 +215,8 @@ export class GraphService {
       isSubscribed: subscribedGraphIds.has(graph._id.toString())
     }));
 
-    // Сохраняем в кэш на 15 минут для авторизованных пользователей
-    await this.redisService.set(cacheKey, graphsWithSubscription, 900);
+    // Сохраняем в кэш на 1 день для авторизованных пользователей
+    await this.redisService.set(cacheKey, graphsWithSubscription, 86400);
     return graphsWithSubscription;
   }
 
@@ -340,8 +340,8 @@ export class GraphService {
       .lean()
       .exec();
     
-    // Сохраняем в кэш на 1 час
-    await this.redisService.set(cacheKey, graphs, 3600);
+    // Сохраняем в кэш на 1 день
+    await this.redisService.set(cacheKey, graphs, 86400);
     
     return graphs;
   }
@@ -377,8 +377,8 @@ export class GraphService {
       topicGraphs
     };
 
-    // Сохраняем в кэш на 30 минут
-    await this.redisService.set(cacheKey, result, 1800);
+    // Сохраняем в кэш на 1 день
+    await this.redisService.set(cacheKey, result, 86400);
     
     return result;
   }

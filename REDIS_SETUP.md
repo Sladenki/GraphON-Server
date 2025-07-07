@@ -30,18 +30,17 @@ brew services start redis
 # Redis Configuration
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_TTL=3600
 ```
 
 ## Функциональность кэширования
 
 ### Кэшируемые операции:
 
-1. **getGraphById** - кэш на 1 час
-2. **getParentGraphs** - кэш на 15-30 минут (зависит от авторизации)
-3. **getAllChildrenGraphs** - кэш на 15-30 минут (зависит от авторизации)
-4. **getGlobalGraphs** - кэш на 1 час
-5. **getTopicGraphsWithMain** - кэш на 30 минут
+1. **getGraphById** - кэш на 1 день
+2. **getParentGraphs** - кэш на 1 день
+3. **getAllChildrenGraphs** - кэш на 1 день
+4. **getGlobalGraphs** - кэш на 1 день
+5. **getTopicGraphsWithMain** - кэш на 1 день
 
 ### Автоматическая инвалидация кэша:
 
@@ -81,3 +80,5 @@ FLUSHALL
 - Запросы с пагинацией
 
 Время отклика сокращается с ~100-500ms до ~1-10ms для кэшированных данных.
+
+**Внимание:** теперь все кэшированные данные хранятся 1 день (86400 секунд)!

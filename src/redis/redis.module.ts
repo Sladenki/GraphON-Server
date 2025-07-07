@@ -19,7 +19,7 @@ import { RedisService } from './redis.service';
 
         console.log('🔗 Connecting to Redis...');
         console.log(`   Host: ${configService.get('redis.host')}:${configService.get('redis.port')}`);
-        console.log(`   TTL: ${configService.get('redis.ttl')}s`);
+        console.log(`   Default TTL: 24 hours (86400s)`);
 
         await client.connect();
         console.log('✅ Redis connected successfully');
