@@ -16,20 +16,6 @@ import { Express } from 'express';
 export class GraphController {
   constructor(private readonly graphService: GraphService) {}
 
-  // --- Создание графа --- 
-  // @UsePipes(new ValidationPipe())
-  // @HttpCode(200)
-  // @Post()
-  // @Auth()
-  // @UseInterceptors(FileInterceptor('image'))
-  // async createGraph(
-  //   @CurrentUser('_id') userId: Types.ObjectId,
-  //   @Body() dto: CreateGraphDto,
-  //   @UploadedFile() image: Express.Multer.File
-  // ) {
-  //   return this.graphService.createGraph(dto, userId, image)
-  // }
-
   // --- Получение графа по id ---
   @Get('getById/:id')
   async getGraphById(
