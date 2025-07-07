@@ -15,13 +15,10 @@ import { RedisService } from './redis.service';
             host: configService.get('redis.host'),
             port: configService.get('redis.port'),
           },
-          password: configService.get('redis.password'),
-          database: configService.get('redis.db'),
         });
 
         console.log('🔗 Connecting to Redis...');
         console.log(`   Host: ${configService.get('redis.host')}:${configService.get('redis.port')}`);
-        console.log(`   Database: ${configService.get('redis.db')}`);
         console.log(`   TTL: ${configService.get('redis.ttl')}s`);
 
         await client.connect();
