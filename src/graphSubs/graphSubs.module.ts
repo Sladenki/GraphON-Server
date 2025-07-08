@@ -12,6 +12,7 @@ import { GraphModel } from "src/graph/graph.model";
 import { EventModule } from "src/event/event.module";
 import { EventRegsModule } from "src/eventRegs/eventRegs.module";
 import { UserModel } from "src/user/user.model";
+import { RedisModule } from "src/redis/redis.module";
 
 
 @Module({
@@ -45,7 +46,8 @@ import { UserModel } from "src/user/user.model";
     ]),
     ScheduleModule,
     EventModule,
-    EventRegsModule
+    EventRegsModule,
+    RedisModule
   ],
   exports: [GraphSubsService]
 })

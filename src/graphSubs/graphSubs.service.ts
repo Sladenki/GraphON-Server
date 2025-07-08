@@ -9,6 +9,7 @@ import { GraphModel } from 'src/graph/graph.model';
 import { EventService } from 'src/event/event.service';
 import { EventRegsService } from 'src/eventRegs/eventRegs.service';
 import { UserModel } from 'src/user/user.model';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class GraphSubsService {
@@ -27,8 +28,16 @@ export class GraphSubsService {
 
     private readonly scheduleService: ScheduleService,
     private readonly eventService: EventService,
-    private readonly eventRegsService: EventRegsService
+    private readonly eventRegsService: EventRegsService,
+    private readonly redisService: RedisService
   ) {}
+
+  // --- Инвалидация кэша подписок пользователя ---
+  private async invalidateUserSubscriptionsCache(userId: string | Types.ObjectId): Promise<void> {
+    const cacheKey = `userSubs:${userId.toString()}`;
+    await this.redisService.del(cacheKey);
+    console.log(`🗑️ Redis CACHE INVALIDATED: ${cacheKey}`);
+  }
 
   // --- Переключение подписки на граф ---
   async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
@@ -58,6 +67,9 @@ export class GraphSubsService {
             ).exec()
           ]);
           
+          // Инвалидируем кэш подписок пользователя
+          await this.invalidateUserSubscriptionsCache(user);
+          
           return { subscribed: false };
         } else {
           // Подписки не было - создаем и увеличиваем счетчики
@@ -74,6 +86,9 @@ export class GraphSubsService {
               { session, lean: true }
             ).exec()
           ]);
+          
+          // Инвалидируем кэш подписок пользователя
+          await this.invalidateUserSubscriptionsCache(user);
           
           return { subscribed: true };
         }
@@ -232,6 +247,9 @@ export class GraphSubsService {
             this.UserModel.bulkWrite(userBulkOps, { session })
           ]);
 
+          // Инвалидируем кэш подписок пользователя
+          await this.invalidateUserSubscriptionsCache(user);
+
           return { subscribed: false };
         } else {
           // Подписки не было - создаем новую и обновляем счетчики
@@ -258,6 +276,9 @@ export class GraphSubsService {
             this.GraphModel.bulkWrite(bulkOps, { session }),
             this.UserModel.bulkWrite(userBulkOps, { session })
           ]);
+
+          // Инвалидируем кэш подписок пользователя
+          await this.invalidateUserSubscriptionsCache(user);
 
           return { subscribed: true };
         }

@@ -15,6 +15,10 @@ import { PipelineStage } from 'mongoose';
 
 @Injectable()
 export class GraphService {
+  // Константы для TTL кэша
+  private readonly GRAPH_CACHE_TTL = 7 * 24 * 60 * 60; // 1 неделя в секундах
+  private readonly USER_SUBS_CACHE_TTL = 5 * 60; // 5 минут в секундах
+
   constructor(
     @InjectModel(GraphModel)
     private readonly GraphModel: ModelType<GraphModel>,
@@ -36,6 +40,47 @@ export class GraphService {
   private async invalidateGraphCache(): Promise<void> {
     // Инвалидируем все кэши, связанные с графами
     await this.redisService.delPattern('graph:*');
+  }
+
+  // --- Получение подписок пользователя с кэшированием ---
+  private async getUserSubscriptions(userId: Types.ObjectId): Promise<Set<string>> {
+    const cacheKey = `userSubs:${userId.toString()}`;
+    
+    // Пытаемся получить из кэша
+    const cachedSubs = await this.redisService.get(cacheKey);
+    if (cachedSubs && Array.isArray(cachedSubs)) {
+      console.log(`📖 Redis CACHE HIT: ${cacheKey} (${cachedSubs.length} подписок)`);
+      return new Set(cachedSubs as string[]);
+    }
+
+    // Если нет в кэше, получаем из БД
+    const userSubscriptions = await this.graphSubsModel
+      .find({ user: userId })
+      .select('graph')
+      .lean()
+      .exec();
+
+    const subscribedGraphIds = userSubscriptions.map(sub => sub.graph.toString());
+    
+    // Сохраняем в кэш на 5 минут (короткий TTL для подписок)
+    await this.redisService.set(cacheKey, subscribedGraphIds, this.USER_SUBS_CACHE_TTL);
+    console.log(`📝 Redis CACHE MISS: ${cacheKey} (${subscribedGraphIds.length} подписок сохранено в кэш)`);
+    
+    return new Set(subscribedGraphIds);
+  }
+
+  // --- Инвалидация кэша подписок пользователя ---
+  private async invalidateUserSubscriptionsCache(userId: Types.ObjectId): Promise<void> {
+    const cacheKey = `userSubs:${userId.toString()}`;
+    await this.redisService.del(cacheKey);
+  }
+
+  // --- Добавление информации о подписках к графам ---
+  private addSubscriptionInfo(graphs: any[], subscribedGraphIds: Set<string>): any[] {
+    return graphs.map(graph => ({
+      ...graph,
+      isSubscribed: subscribedGraphIds.has(graph._id.toString())
+    }));
   }
 
   // --- Создание графа ---
@@ -88,9 +133,9 @@ export class GraphService {
     // Если нет в кэше, получаем из БД
     const graph = await this.GraphModel.findById(id).populate('parentGraphId', 'name');
     
-    // Сохраняем в кэш на 1 день
+    // Сохраняем в кэш на 1 неделю
     if (graph) {
-      await this.redisService.set(cacheKey, graph, 86400);
+      await this.redisService.set(cacheKey, graph, this.GRAPH_CACHE_TTL);
     }
     
     return graph;
@@ -99,78 +144,48 @@ export class GraphService {
   // --- Получение (главных) родительских графов ---
   async getParentGraphs(skip: any, userId?: Types.ObjectId) {
     const cacheKey = this.generateCacheKey('getParentGraphs', { 
-      skip: Number(skip) || 0, 
-      userId: userId?.toString() || 'anonymous' 
+      skip: Number(skip) || 0
     });
     
-    // Пытаемся получить из кэша
-    const cachedGraphs = await this.redisService.get(cacheKey);
-    if (cachedGraphs) {
-      return cachedGraphs;
-    }
-
-    if (!userId) {
-      // Если пользователь не авторизован, просто возвращаем графы без проверки подписки
-      const graphs = await this.GraphModel
+    // Пытаемся получить базовые данные графов из кэша
+    let graphs = await this.redisService.get(cacheKey);
+    
+    if (!graphs || !Array.isArray(graphs)) {
+      // Если нет в кэше, получаем из БД
+      graphs = await this.GraphModel
         .find()
         .skip(Number(skip) || 0)
         .lean()
         .exec();
       
-      // Сохраняем в кэш на 1 день для неавторизованных пользователей
+      // Сохраняем базовые данные в кэш на 1 день
       await this.redisService.set(cacheKey, graphs, 86400);
-      return graphs;
     }
 
-    // Оптимизированный подход: сначала получаем все подписки пользователя
-    const [graphs, userSubscriptions] = await Promise.all([
-      // Получаем все родительские графы
-      this.GraphModel
-        .find()
-        .skip(Number(skip) || 0)
-        .lean()
-        .exec(),
-      
-      // Получаем все подписки пользователя одним запросом
-      this.graphSubsModel
-        .find({ user: userId })
-        .select('graph')
-        .lean()
-        .exec()
-    ]);
+    if (!userId) {
+      // Если пользователь не авторизован, возвращаем графы без информации о подписках
+      return graphs as any[];
+    }
 
-    // Создаем Set для быстрого поиска подписок
-    const subscribedGraphIds = new Set(
-      userSubscriptions.map(sub => sub.graph.toString())
-    );
-
-    // Добавляем поле isSubscribed к каждому графу
-    const graphsWithSubscription = graphs.map(graph => ({
-      ...graph,
-      isSubscribed: subscribedGraphIds.has(graph._id.toString())
-    }));
-
-    // Сохраняем в кэш на 1 день для авторизованных пользователей
-    await this.redisService.set(cacheKey, graphsWithSubscription, 86400);
-    return graphsWithSubscription;
+    // Получаем подписки пользователя (с отдельным кэшированием)
+    const subscribedGraphIds = await this.getUserSubscriptions(userId);
+    
+    // Добавляем информацию о подписках к графам
+    return this.addSubscriptionInfo(graphs as any[], subscribedGraphIds);
   }
 
   async getAllChildrenGraphs(parentGraphId: Types.ObjectId, skip: any, userId?: Types.ObjectId) {
     const cacheKey = this.generateCacheKey('getAllChildrenGraphs', { 
       parentGraphId: parentGraphId.toString(),
-      skip: Number(skip) || 0, 
-      userId: userId?.toString() || 'anonymous' 
+      skip: Number(skip) || 0
     });
     
-    // Пытаемся получить из кэша
-    const cachedGraphs = await this.redisService.get(cacheKey);
-    if (cachedGraphs) {
-      return cachedGraphs;
-    }
-
-    if (!userId) {
-      // Если пользователь не авторизован, просто возвращаем графы без проверки подписки
-      const graphs = await this.GraphModel
+    // Пытаемся получить базовые данные графов из кэша
+    let graphs = await this.redisService.get(cacheKey);
+    
+    if (!graphs || !Array.isArray(graphs)) {
+      // Если нет в кэше, получаем из БД
+      graphs = await this.GraphModel
         .find({
           globalGraphId: parentGraphId,
           graphType: 'default'
@@ -179,45 +194,20 @@ export class GraphService {
         .lean()
         .exec();
       
-      // Сохраняем в кэш на 1 день для неавторизованных пользователей
+      // Сохраняем базовые данные в кэш на 1 день
       await this.redisService.set(cacheKey, graphs, 86400);
-      return graphs;
     }
 
-    // Оптимизированный подход: сначала получаем все подписки пользователя
-    const [graphs, userSubscriptions] = await Promise.all([
-      // Получаем все дочерние графы
-      this.GraphModel
-        .find({
-          globalGraphId: parentGraphId,
-          graphType: 'default'
-        })
-        .skip(Number(skip) || 0)
-        .lean()
-        .exec(),
-      
-      // Получаем все подписки пользователя одним запросом
-      this.graphSubsModel
-        .find({ user: userId })
-        .select('graph')
-        .lean()
-        .exec()
-    ]);
+    if (!userId) {
+      // Если пользователь не авторизован, возвращаем графы без информации о подписках
+      return graphs as any[];
+    }
 
-    // Создаем Set для быстрого поиска подписок
-    const subscribedGraphIds = new Set(
-      userSubscriptions.map(sub => sub.graph.toString())
-    );
-
-    // Добавляем поле isSubscribed к каждому графу
-    const graphsWithSubscription = graphs.map(graph => ({
-      ...graph,
-      isSubscribed: subscribedGraphIds.has(graph._id.toString())
-    }));
-
-    // Сохраняем в кэш на 1 день для авторизованных пользователей
-    await this.redisService.set(cacheKey, graphsWithSubscription, 86400);
-    return graphsWithSubscription;
+    // Получаем подписки пользователя (с отдельным кэшированием)
+    const subscribedGraphIds = await this.getUserSubscriptions(userId);
+    
+    // Добавляем информацию о подписках к графам
+    return this.addSubscriptionInfo(graphs as any[], subscribedGraphIds);
   }
 
   // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 
