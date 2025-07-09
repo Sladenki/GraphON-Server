@@ -106,7 +106,13 @@ export class UserService {
   // --- Поиск пользователя по Telegram ID ---
   async findByTelegramId(telegramId: number) {
     try {
-      const user = await this.UserModel.findOne({ telegramId })
+      // Ищем пользователя как по числу, так и по строке
+      const user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      })
         .lean()
         .exec();
       
@@ -122,21 +128,39 @@ export class UserService {
     try {
       const now = new Date();
       
-      const user = await this.UserModel.findOneAndUpdate(
-        { telegramId },
-        {
-          $set: {
-            copyrightAgreementAccepted: true,
-            copyrightAgreementAcceptedAt: now
-          }
-        },
-        {
-          new: true,
-          upsert: true // Создает пользователя, если не найден
-        }
-      ).lean();
-
-      console.log(`User ${telegramId} accepted copyright agreement at ${now}`);
+      // Ищем пользователя как по числу, так и по строке
+      let user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      }).lean();
+      
+      if (user) {
+        // Пользователь найден - обновляем его
+        user = await this.UserModel.findByIdAndUpdate(
+          user._id,
+          {
+            $set: {
+              copyrightAgreementAccepted: true,
+              copyrightAgreementAcceptedAt: now
+            }
+          },
+          { new: true }
+        ).lean();
+        
+        console.log(`Existing user ${user._id} (telegramId: ${telegramId}) accepted copyright agreement at ${now}`);
+      } else {
+        // Пользователь не найден - создаем минимальную запись только для соглашения
+        user = await this.UserModel.create({
+          telegramId: telegramId.toString(), // Сохраняем как строку для консистентности
+          copyrightAgreementAccepted: true,
+          copyrightAgreementAcceptedAt: now,
+          role: 'user'
+        });
+        
+        console.log(`New user created for telegramId ${telegramId} with copyright agreement accepted at ${now}`);
+      }
       
       return user;
     } catch (error) {
@@ -148,7 +172,12 @@ export class UserService {
   // --- Проверка принятия соглашения об авторских правах ---
   async hasAcceptedCopyrightAgreement(telegramId: number): Promise<boolean> {
     try {
-      const user = await this.UserModel.findOne({ telegramId })
+      const user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      })
         .select('copyrightAgreementAccepted')
         .lean()
         .exec();
@@ -157,6 +186,30 @@ export class UserService {
     } catch (error) {
       console.error('Error checking copyright agreement:', error);
       return false;
+    }
+  }
+
+  // --- Миграция telegramId к строковому типу ---
+  async migrateTelegramIdsToString() {
+    try {
+      // Находим всех пользователей с числовым telegramId
+      const usersWithNumericTelegramId = await this.UserModel.find({
+        telegramId: { $type: 'number' }
+      }).lean();
+
+      console.log(`Found ${usersWithNumericTelegramId.length} users with numeric telegramId`);
+
+      for (const user of usersWithNumericTelegramId) {
+        await this.UserModel.findByIdAndUpdate(
+          user._id,
+          { telegramId: user.telegramId.toString() }
+        );
+        console.log(`Migrated user ${user._id}: telegramId ${user.telegramId} -> "${user.telegramId}"`);
+      }
+
+      console.log('TelegramId migration completed');
+    } catch (error) {
+      console.error('Error during telegramId migration:', error);
     }
   }
 

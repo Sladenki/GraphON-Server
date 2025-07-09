@@ -282,7 +282,6 @@ export class TelegramBotService implements OnModuleInit {
       
       this.bot.sendMessage(chatId, 
         '✅ *Соглашение принято!*\n\n' +
-        'Спасибо за принятие соглашения об авторских правах.\n\n' +
         'Теперь вы можете продолжить авторизацию.', 
         {
         parse_mode: "Markdown",
