@@ -44,5 +44,11 @@ export class UserModel extends TimeStamps {
   @prop({ default: 0 })
   attentedEventsNum: number
 
+  // Поля для соглашения об авторских правах
+  @prop({ default: false })
+  copyrightAgreementAccepted: boolean
+
+  @prop()
+  copyrightAgreementAcceptedAt: Date
 
 }

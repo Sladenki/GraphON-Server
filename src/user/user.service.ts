@@ -103,4 +103,61 @@ export class UserService {
     }
   }
 
+  // --- Поиск пользователя по Telegram ID ---
+  async findByTelegramId(telegramId: number) {
+    try {
+      const user = await this.UserModel.findOne({ telegramId })
+        .lean()
+        .exec();
+      
+      return user;
+    } catch (error) {
+      console.error('Error finding user by Telegram ID:', error);
+      return null;
+    }
+  }
+
+  // --- Принятие соглашения об авторских правах ---
+  async acceptCopyrightAgreement(telegramId: number) {
+    try {
+      const now = new Date();
+      
+      const user = await this.UserModel.findOneAndUpdate(
+        { telegramId },
+        {
+          $set: {
+            copyrightAgreementAccepted: true,
+            copyrightAgreementAcceptedAt: now
+          }
+        },
+        {
+          new: true,
+          upsert: true // Создает пользователя, если не найден
+        }
+      ).lean();
+
+      console.log(`User ${telegramId} accepted copyright agreement at ${now}`);
+      
+      return user;
+    } catch (error) {
+      console.error('Error accepting copyright agreement:', error);
+      throw new InternalServerErrorException('Ошибка при сохранении принятия соглашения');
+    }
+  }
+
+  // --- Проверка принятия соглашения об авторских правах ---
+  async hasAcceptedCopyrightAgreement(telegramId: number): Promise<boolean> {
+    try {
+      const user = await this.UserModel.findOne({ telegramId })
+        .select('copyrightAgreementAccepted')
+        .lean()
+        .exec();
+      
+      return user?.copyrightAgreementAccepted || false;
+    } catch (error) {
+      console.error('Error checking copyright agreement:', error);
+      return false;
+    }
+  }
+
 }
