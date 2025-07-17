@@ -51,13 +51,14 @@ export class UserController {
   // Получение всех пользователей
   @Get('allUsers')
   async getAllUsers(
-    @Query('lastId') lastId?: string,
-    @Query('limit') limit?: string
+    // @Query('lastId') lastId?: string,
+    // @Query('limit') limit?: string
   ) {
-    const parsedLimit = parseInt(limit, 10);
-    const size = isNaN(parsedLimit) ? USER_CONSTANTS.DEFAULT_USERS_LIMIT : parsedLimit;
+    // const parsedLimit = parseInt(limit, 10);
+    // const size = isNaN(parsedLimit) ? USER_CONSTANTS.DEFAULT_USERS_LIMIT : parsedLimit;
     
-    return this.userService.getAllUsers(lastId, size);
+    // return this.userService.getAllUsers(lastId, size);
+    return this.userService.getAllUsers();
   }
 
   @UseGuards(JwtAuthGuard)

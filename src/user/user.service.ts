@@ -58,25 +58,34 @@ export class UserService {
   }
 
   // --- Получение всех пользователей ---
-  async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
-    const query: any = {};
-    
-    if (lastId) {
-      query._id = { $gt: new Types.ObjectId(lastId) };
-    }
-
+  async getAllUsers() {
     const users = await this.UserModel
-      .find(query)
+      .find()
       .sort({ _id: 1 })
-      .limit(limit)
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
 
-    return {
-      users,
-      hasMore: users.length === limit
-    };
+    return users;
   }
+  // async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
+  //   const query: any = {};
+    
+  //   if (lastId) {
+  //     query._id = { $gt: new Types.ObjectId(lastId) };
+  //   }
+
+  //   const users = await this.UserModel
+  //     .find(query)
+  //     .sort({ _id: 1 })
+  //     .limit(limit)
+  //     .lean()
+  //     .select({ createdAt: 0, updatedAt: 0 });
+
+  //   return {
+  //     users,
+  //     hasMore: users.length === limit
+  //   };
+  // }
 
   async generateToken(userId: string, role: string): Promise<string> {
     return this.jwtAuthService.generateToken(new Types.ObjectId(userId), role);
