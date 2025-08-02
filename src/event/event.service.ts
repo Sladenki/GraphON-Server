@@ -57,7 +57,7 @@ export class EventService {
                 graphId,
                 eventDate: { $gte: today }
             })
-            .populate("graphId", "name")
+            .populate("graphId", "name imgPath")
             .lean();
     }
 
@@ -72,7 +72,7 @@ export class EventService {
                 graphId: { $in: graphIds },
                 eventDate: { $gte: today }
             })
-            .populate("graphId", "name")
+            .populate("graphId", "name imgPath")
             .lean();
     }
 
