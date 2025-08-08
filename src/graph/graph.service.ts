@@ -269,8 +269,7 @@ export class GraphService {
     }
 
     const graph = await this.GraphModel.create({
-      name: dto.name,
-      city: dto.city,
+      ...dto,
       ownerUserId: userId,
       imgPath,
       graphType: "global"

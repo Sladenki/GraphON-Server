@@ -7,4 +7,16 @@ export class CreateGlobalGraphDto {
     @IsString()
     @IsOptional()
     city?: string;
+    
+    @IsString()
+    @IsOptional()
+    directorName?: string;
+
+    @IsString()
+    @IsOptional()
+    directorVkLink?: string;
+
+    @IsString()
+    @IsOptional()
+    vkLink?: string;
 } 
