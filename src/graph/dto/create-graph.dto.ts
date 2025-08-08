@@ -13,6 +13,10 @@ export class CreateGraphDto {
    
    @IsString()
    @IsOptional()
+   about?: string;
+   
+   @IsString()
+   @IsOptional()
    directorName?: string;
 
    @IsString()

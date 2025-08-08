@@ -10,6 +10,10 @@ export class CreateGlobalGraphDto {
     
     @IsString()
     @IsOptional()
+    about?: string;
+    
+    @IsString()
+    @IsOptional()
     directorName?: string;
 
     @IsString()
