@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsMongoId } from 'class-validator';
+import { IsString, IsOptional, IsMongoId, MaxLength } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class CreateTopicGraphDto {
@@ -7,6 +7,7 @@ export class CreateTopicGraphDto {
 
     @IsString()
     @IsOptional()
+    @MaxLength(200, { message: 'Описание не может быть длиннее 200 символов' })
     about?: string;
 
     @IsMongoId()

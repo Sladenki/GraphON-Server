@@ -1,5 +1,5 @@
 import { Types } from "mongoose"
-import { IsString, IsOptional, IsMongoId } from 'class-validator';
+import { IsString, IsOptional, IsMongoId, MaxLength } from 'class-validator';
 
 export class CreateGraphDto {
    @IsString()
@@ -13,6 +13,7 @@ export class CreateGraphDto {
    
    @IsString()
    @IsOptional()
+   @MaxLength(200, { message: 'Описание не может быть длиннее 200 символов' })
    about?: string;
    
    @IsString()
