@@ -88,12 +88,16 @@ export class GraphService {
     let imgPath: string | undefined;
 
     if (image) {
+      // Получаем название глобального графа
+      const globalGraph = await this.GraphModel.findById(dto.globalGraphId).select('name').lean();
+      const globalGraphName = globalGraph?.name || 'unknown';
+      
       // Get file extension from original filename
       const fileExtension = image.originalname.split('.').pop();
       // Create filename using graph name and original file extension
       const fileName = `${dto.name}.${fileExtension}`;
-      // Create the desired path format for S3
-      const s3Path = `graphAva/${fileName}`;
+      // Create the desired path format for S3 with global graph name
+      const s3Path = `graphAva/${globalGraphName}/${fileName}`;
       const uploadResult = await this.s3Service.uploadFile(image, s3Path);
       imgPath = `images/${s3Path}`;
     }
@@ -263,7 +267,8 @@ export class GraphService {
     if (image) {
       const fileExtension = image.originalname.split('.').pop();
       const fileName = `${dto.name}.${fileExtension}`;
-      const s3Path = `graphAva/${fileName}`;
+      // Для глобальных графов используем их собственное название
+      const s3Path = `graphAva/${dto.name}/${fileName}`;
       const uploadResult = await this.s3Service.uploadFile(image, s3Path);
       imgPath = `images/${s3Path}`;
     }
@@ -286,9 +291,14 @@ export class GraphService {
     let imgPath: string | undefined;
 
     if (image) {
+      // Получаем название глобального графа (родительского для тематики)
+      const globalGraph = await this.GraphModel.findById(dto.parentGraphId).select('name').lean();
+      const globalGraphName = globalGraph?.name || 'unknown';
+      
       const fileExtension = image.originalname.split('.').pop();
       const fileName = `${dto.name}.${fileExtension}`;
-      const s3Path = `graphAva/${fileName}`;
+      // Для тематических графов используем название глобального графа
+      const s3Path = `graphAva/${globalGraphName}/${fileName}`;
       const uploadResult = await this.s3Service.uploadFile(image, s3Path);
       imgPath = `images/${s3Path}`;
     }
