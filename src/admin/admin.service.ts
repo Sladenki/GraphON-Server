@@ -38,25 +38,9 @@ export class AdminService {
   // --- Получение статистики приложения ---
   async getApplicationStats() {
     const totalUsers = await this.UserModel.countDocuments();
-    const totalGraphs = await this.GraphModel.countDocuments();
-    
-    // Получаем количество пользователей по ролям
-    const usersByRole = await this.UserModel.aggregate([
-      {
-        $group: {
-          _id: "$role",
-          count: { $sum: 1 }
-        }
-      }
-    ]);
 
     return {
       totalUsers,
-      totalGraphs,
-      usersByRole: usersByRole.reduce((acc, curr) => {
-        acc[curr._id] = curr.count;
-        return acc;
-      }, {})
     };
   }
 
