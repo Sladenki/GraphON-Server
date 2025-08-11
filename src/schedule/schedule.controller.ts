@@ -21,6 +21,7 @@ export class ScheduleController {
   async createSchedule(
     @Body() body: CreateScheduleDto
   ) {
+    console.log(body);
     return this.scheduleService.createSchedule(body)
   }
 
