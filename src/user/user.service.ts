@@ -52,7 +52,8 @@ export class UserService {
     const user = await this.UserModel.findById(_id)
       .lean()
       // Убираем поля
-      .select({ _id: 0, email: 0, __v: 0, createdAt: 0, updatedAt: 0 });
+      .select({ _id: 0, email: 0, __v: 0, createdAt: 0, updatedAt: 0 })
+      .populate('selectedGraphId', 'name');
 
     return user;
   }
