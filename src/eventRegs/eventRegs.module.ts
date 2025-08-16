@@ -5,6 +5,7 @@ import { EventRegsController } from "./eventRegs.controller";
 import { EventRegsService } from "./eventRegs.service";
 import { EventRegsModel } from "./eventRegs.model";
 import { EventModel } from "src/event/event.model";
+import { GraphModel } from "src/graph/graph.model";
 import { TypegooseModule } from "@m8a/nestjs-typegoose";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
@@ -36,6 +37,10 @@ import { getJwtConfig } from "src/config/jwt.config";
       {
         typegooseClass: EventModel,
         schemaOptions: { collection: 'Event' }
+      },
+      {
+        typegooseClass: GraphModel,
+        schemaOptions: { collection: 'Graph' }
       },
     ]),
   ],
