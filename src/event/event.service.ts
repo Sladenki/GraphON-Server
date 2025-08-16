@@ -88,7 +88,7 @@ export class EventService {
                 globalGraphId: new Types.ObjectId(globalGraphId) 
             })
             .sort({ eventDate: 1 })
-            .populate("graphId", "name imgPath")
+            .populate("graphId", "name imgPath ownerUserId")
             .lean();
     }
 
