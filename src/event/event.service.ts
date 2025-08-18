@@ -3,6 +3,7 @@ import { InjectModel } from '@m8a/nestjs-typegoose';
 import { EventModel } from "./event.model";
 import { ModelType } from "@typegoose/typegoose/lib/types";
 import { CreateEventDto } from "./dto/event.dto";
+import { UpdateEventDto } from "./dto/update-event.dto";
 import { Types } from "mongoose";
 
 @Injectable()
@@ -98,15 +99,17 @@ export class EventService {
     }
 
     // --- Редактирование мероприятия ---
-    async updateEvent(eventId: string | Types.ObjectId, dto: CreateEventDto) {
+    async updateEvent(eventId: string | Types.ObjectId, dto: UpdateEventDto) {
         try {
+            const update: any = { ...dto };
+            if (dto.eventDate) {
+                update.eventDate = new Date(dto.eventDate);
+            }
+
             const updatedEvent = await this.EventModel
                 .findByIdAndUpdate(
                     eventId,
-                    { 
-                        ...dto,
-                        eventDate: new Date(dto.eventDate)
-                    },
+                    update,
                     { new: true, runValidators: true }
                 )
                 .populate("graphId", "name")
