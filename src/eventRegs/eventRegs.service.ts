@@ -92,7 +92,7 @@ export class EventRegsService {
         }
 
         // Если у пользователя роль 'create', разрешаем доступ без дополнительных проверок
-        if (requestingUser.role === 'create') {
+        if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
             const registrations = await this.EventRegsModel
                 .find({ eventId })
                 .populate({
