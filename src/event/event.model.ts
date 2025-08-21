@@ -27,11 +27,14 @@ export class EventModel extends TimeStamps {
     @prop({ maxlength: 300 })
     description: string;
 
-    @prop({ required: true })
-    eventDate: Date; // Дата мероприятия
+    @prop()
+    eventDate?: Date; // Дата мероприятия
 
-    @prop({ required: true })
-    timeFrom: string; // Время начала
+    @prop({ default: false })
+    isDateTbd: boolean; // Статус: дата уточняется
+
+    @prop()
+    timeFrom?: string; // Время начала
 
     @prop()
     timeTo: string; // Время окончания

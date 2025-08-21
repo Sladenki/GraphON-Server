@@ -16,10 +16,23 @@ export class EventService {
     // --- Создание мероприятия ---
     async createEvent(dto: CreateEventDto) {
         try {
-            return await this.EventModel.create({ 
-                ...dto,
-                eventDate: new Date(dto.eventDate)
-            });
+            if (!dto.eventDate && !dto.isDateTbd) {
+                throw new HttpException(
+                    'Укажите дату события или установите флаг isDateTbd=true',
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            const payload: any = { ...dto };
+            if (dto.eventDate) {
+                payload.eventDate = new Date(dto.eventDate);
+                payload.isDateTbd = false;
+            } else if (dto.isDateTbd) {
+                payload.isDateTbd = true;
+                payload.eventDate = null;
+            }
+
+            return await this.EventModel.create(payload);
         } catch (error) {
             // Обработка ошибок валидации MongoDB
             if (error.name === 'ValidationError') {
@@ -56,8 +69,12 @@ export class EventService {
         return this.EventModel
             .find({ 
                 graphId,
-                eventDate: { $gte: today }
+                $or: [
+                    { eventDate: { $gte: today } },
+                    { isDateTbd: true }
+                ]
             })
+            .sort({ isDateTbd: 1, eventDate: 1 })
             .populate("graphId", "name imgPath")
             .lean();
     }
@@ -71,8 +88,12 @@ export class EventService {
         return this.EventModel
             .find({
                 graphId: { $in: graphIds },
-                eventDate: { $gte: today }
+                $or: [
+                    { eventDate: { $gte: today } },
+                    { isDateTbd: true }
+                ]
             })
+            .sort({ isDateTbd: 1, eventDate: 1 })
             .populate("graphId", "name imgPath")
             .lean();
     }
@@ -85,10 +106,13 @@ export class EventService {
         
         return this.EventModel
             .find({ 
-                eventDate: { $gte: today }, 
-                globalGraphId: new Types.ObjectId(globalGraphId) 
+                globalGraphId: new Types.ObjectId(globalGraphId),
+                $or: [
+                    { eventDate: { $gte: today } },
+                    { isDateTbd: true }
+                ]
             })
-            .sort({ eventDate: 1 })
+            .sort({ isDateTbd: 1, eventDate: 1 })
             .populate("graphId", "name imgPath ownerUserId")
             .lean();
     }
@@ -104,6 +128,10 @@ export class EventService {
             const update: any = { ...dto };
             if (dto.eventDate) {
                 update.eventDate = new Date(dto.eventDate);
+                update.isDateTbd = false;
+            } else if (dto.isDateTbd === true) {
+                update.isDateTbd = true;
+                update.eventDate = null;
             }
 
             const updatedEvent = await this.EventModel
