@@ -95,6 +95,7 @@ export class EventRegsService {
         if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
             const registrations = await this.EventRegsModel
                 .find({ eventId })
+                .sort({ _id: -1 })
                 .populate({
                     path: 'userId',
                     select: 'firstName lastName username avaPath telegramId'
@@ -129,6 +130,7 @@ export class EventRegsService {
         // Если проверка прошла успешно, получаем список пользователей
         const registrations = await this.EventRegsModel
             .find({ eventId })
+            .sort({ _id: -1 })
             .populate({
                 path: 'userId',
                 select: 'firstName lastName username avaPath telegramId'
