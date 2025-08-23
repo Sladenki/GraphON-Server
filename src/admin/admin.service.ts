@@ -5,6 +5,7 @@ import { UserModel } from "src/user/user.model";
 import { UserRole } from "./role.enum";
 import { GraphModel } from "src/graph/graph.model";
 import * as os from 'os';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class AdminService {
@@ -39,8 +40,20 @@ export class AdminService {
   async getApplicationStats() {
     const totalUsers = await this.UserModel.countDocuments();
 
+    const kgtuGraphId = new Types.ObjectId('67a499dd08ac3c0df94d6ab7');
+    const kbkGraphId = new Types.ObjectId('6896447465255a1c4ed48eaf');
+
+    const [usersKgtu, usersKbk, usersNoGraph] = await Promise.all([
+      this.UserModel.countDocuments({ selectedGraphId: kgtuGraphId }),
+      this.UserModel.countDocuments({ selectedGraphId: kbkGraphId }),
+      this.UserModel.countDocuments({ selectedGraphId: null })
+    ]);
+
     return {
       totalUsers,
+      usersKgtu,
+      usersKbk,
+      usersNoGraph,
     };
   }
 
