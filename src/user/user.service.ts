@@ -62,7 +62,7 @@ export class UserService {
   async getAllUsers() {
     const users = await this.UserModel
       .find()
-      .sort({ _id: 1 })
+      .sort({ _id: -1 })
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
 
