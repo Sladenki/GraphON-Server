@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param, Put } from "@nestjs/common";
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
+import { UpdateEventDto } from "./dto/update-event.dto";
 import { EventRegsService } from "src/eventRegs/eventRegs.service";
 import { EventRegsModel } from "src/eventRegs/eventRegs.model";
 import { JwtAuthGuard } from "src/jwt/jwt-auth.guard";
@@ -94,7 +95,7 @@ export class EventController {
     @Put(":eventId")
     async updateEvent(
         @Param("eventId") eventId: string,
-        @Body() dto: CreateEventDto
+        @Body() dto: UpdateEventDto
     ) {
         return this.eventService.updateEvent(eventId, dto);
     }

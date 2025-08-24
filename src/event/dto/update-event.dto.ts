@@ -1,14 +1,15 @@
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsDateString, IsBoolean, ValidateIf } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsDateString, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class CreateEventDto {
+export class UpdateEventDto {
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     graphId: string;
 
+    @Transform(({ value }) => value === '' ? undefined : value)
     @IsString()
-    @IsNotEmpty()
-    name: string;
+    @IsOptional()
+    name?: string;
 
     @Transform(({ value }) => value === '' ? undefined : value)
     @IsString()
@@ -23,18 +24,17 @@ export class CreateEventDto {
     place?: string;
 
     @Transform(({ value }) => value === '' ? undefined : value)
-    @IsOptional()
     @IsDateString({}, { message: 'Неверный формат даты события' })
+    @IsOptional()
     eventDate?: string;
 
-    @IsOptional()
     @IsBoolean()
+    @IsOptional()
     isDateTbd?: boolean;
 
     @Transform(({ value }) => value === '' ? undefined : value)
-    @ValidateIf(o => !o.isDateTbd)
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     timeFrom?: string;
 
     @Transform(({ value }) => value === '' ? undefined : value)
@@ -42,7 +42,10 @@ export class CreateEventDto {
     @IsOptional()
     timeTo?: string;
 
+    @Transform(({ value }) => value === '' ? undefined : value)
     @IsString()
-    @IsNotEmpty()
-    globalGraphId: string;
+    @IsOptional()
+    globalGraphId?: string;
 }
+
+

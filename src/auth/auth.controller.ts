@@ -37,7 +37,7 @@ export class AuthController {
       firstName: first_name,
       lastName: last_name,
       username: username,
-      photoUrl: photo_url,
+      avaPath: photo_url,
     };
 
     const user = await this.findOrCreateUser(userData);

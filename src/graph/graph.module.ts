@@ -10,6 +10,7 @@ import { UserModel } from 'src/user/user.model';
 import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
 import { OptionalAuthGuard } from 'src/guards/optionalAuth.guard';
 import { S3Module } from 'src/s3/s3.module';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   controllers: [GraphController],
@@ -17,6 +18,7 @@ import { S3Module } from 'src/s3/s3.module';
   imports: [
     ConfigModule,
     S3Module,
+    RedisModule,
     TypegooseModule.forFeature([
       {
         typegooseClass: GraphModel,

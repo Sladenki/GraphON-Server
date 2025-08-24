@@ -5,6 +5,7 @@ import { Types } from "mongoose";
 import { EventModel } from "src/event/event.model";
 import { InjectModel } from "@m8a/nestjs-typegoose";
 import { EventRegsModel } from "./eventRegs.model";
+import { GraphModel } from "src/graph/graph.model";
 
 @Injectable()
 export class EventRegsService {
@@ -17,6 +18,9 @@ export class EventRegsService {
 
         @InjectModel(EventRegsModel)
         private readonly EventRegsModel: ModelType<EventRegsModel>,
+
+        @InjectModel(GraphModel)
+        private readonly GraphModel: ModelType<GraphModel>,
     ) {}
 
     // Подписываемся на мероприятие
@@ -73,5 +77,66 @@ export class EventRegsService {
             }));
 
         return upcomingEvents;
+    }
+
+    // Получаем всех пользователей, записанных на мероприятие
+    async getUsersByEventId(eventId: string | Types.ObjectId, requestingUserId: string | Types.ObjectId) {
+        // Получаем информацию о запрашивающем пользователе
+        const requestingUser = await this.UserModel
+            .findById(requestingUserId)
+            .select('role')
+            .lean();
+
+        if (!requestingUser) {
+            throw new Error('Пользователь не найден');
+        }
+
+        // Если у пользователя роль 'create', разрешаем доступ без дополнительных проверок
+        if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
+            const registrations = await this.EventRegsModel
+                .find({ eventId })
+                .sort({ _id: -1 })
+                .populate({
+                    path: 'userId',
+                    select: 'firstName lastName username avaPath telegramId'
+                })
+                .lean();
+
+            return registrations.map(reg => reg.userId);
+        }
+
+        // Для остальных пользователей проверяем права доступа через владение графом
+        const event = await this.EventModel
+            .findById(eventId)
+            .populate({
+                path: 'graphId',
+                select: 'ownerUserId'
+            })
+            .lean();
+
+        if (!event) {
+            throw new Error('Мероприятие не найдено');
+        }
+
+        // Проверяем права доступа - пользователь должен быть владельцем графа
+        if (event.graphId && typeof event.graphId === 'object' && 'ownerUserId' in event.graphId) {
+            if (event.graphId.ownerUserId.toString() !== requestingUserId.toString()) {
+                throw new Error('Недостаточно прав для просмотра списка участников');
+            }
+        } else {
+            throw new Error('Информация о графе недоступна');
+        }
+
+        // Если проверка прошла успешно, получаем список пользователей
+        const registrations = await this.EventRegsModel
+            .find({ eventId })
+            .sort({ _id: -1 })
+            .populate({
+                path: 'userId',
+                select: 'firstName lastName username avaPath telegramId'
+            })
+            .lean();
+
+        return registrations.map(reg => reg.userId);
     }
 }

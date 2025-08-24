@@ -29,6 +29,8 @@ async function bootstrap() {
     // по этому адресу - клиент
     origin: [
       process.env.CLIENT_URL,
+      'http://localhost:3000',
+      'https://localhost:3000',
     ],
     credentials: true,
     exposedHeaders: 'set-cookie',

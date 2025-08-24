@@ -38,20 +38,20 @@ export class GraphModel extends TimeStamps {
     @prop({ ref: () => GraphModel, index: true })
     parentGraphId?: Ref<GraphModel>; 
 
-    @prop({ default: 0, index: true })
+    @prop({ default: 0, index: false })
     childGraphNum: number;
 
     @prop()
     imgPath?: string
 
-    @prop()
+    @prop({ index: false })
     directorName?: string
 
-    @prop()
+    @prop({ index: false })
     directorVkLink?: string
     
     // Ссылка на страницу в VK
-    @prop()
+    @prop({ index: false })
     vkLink?: string
 
     // Ссылка на страницу в VK

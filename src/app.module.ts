@@ -19,11 +19,14 @@ import { AdminModule } from './admin/admin.module';
 import { AuthWithRolesGuard } from './decorators/AuthWithRoles.decorator';
 import { EventRegsModule } from './eventRegs/eventRegs.module';
 import { JwtGlobalModule } from './jwt/jwt.module';
+import redisConfig from './config/redis.config';
 
 @Module({
   imports: [
     // Доступ к ENV файлу
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      load: [redisConfig],
+    }),
 
     // Для работы с MongoDB
     TypegooseModule.forRootAsync({

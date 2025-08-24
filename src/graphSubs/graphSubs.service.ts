@@ -9,6 +9,7 @@ import { GraphModel } from 'src/graph/graph.model';
 import { EventService } from 'src/event/event.service';
 import { EventRegsService } from 'src/eventRegs/eventRegs.service';
 import { UserModel } from 'src/user/user.model';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class GraphSubsService {
@@ -27,8 +28,29 @@ export class GraphSubsService {
 
     private readonly scheduleService: ScheduleService,
     private readonly eventService: EventService,
-    private readonly eventRegsService: EventRegsService
+    private readonly eventRegsService: EventRegsService,
+    private readonly redisService: RedisService
   ) {}
+
+  // --- Инвалидация кэша подписок пользователя ---
+  private async invalidateUserSubscriptionsCache(userId: string | Types.ObjectId): Promise<void> {
+    const cacheKey = `userSubs:${userId.toString()}`;
+    await this.redisService.del(cacheKey);
+    console.log(`🗑️ Redis CACHE INVALIDATED: ${cacheKey}`);
+  }
+
+  // --- Инвалидация кэша графа ---
+  private async invalidateGraphCache(graphId: string | Types.ObjectId): Promise<void> {
+    // Инвалидируем кэш конкретного графа
+    const graphCacheKey = `graph:getGraphById:{"id":"${graphId.toString()}"}`;
+    await this.redisService.del(graphCacheKey);
+    console.log(`🗑️ Redis GRAPH CACHE INVALIDATED: ${graphCacheKey}`);
+    
+    // Инвалидируем все кэши списков графов, которые могут содержать обновленную информацию
+    await this.redisService.delPattern('graph:getParentGraphs:*');
+    await this.redisService.delPattern('graph:getGlobalGraphs:*');
+    console.log(`🗑️ Redis GRAPH LISTS CACHE INVALIDATED: All graph lists`);
+  }
 
   // --- Переключение подписки на граф ---
   async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
@@ -58,6 +80,12 @@ export class GraphSubsService {
             ).exec()
           ]);
           
+          // Инвалидируем кэш подписок пользователя и графа
+          await Promise.all([
+            this.invalidateUserSubscriptionsCache(user),
+            this.invalidateGraphCache(graph)
+          ]);
+          
           return { subscribed: false };
         } else {
           // Подписки не было - создаем и увеличиваем счетчики
@@ -73,6 +101,12 @@ export class GraphSubsService {
               { $inc: { graphSubsNum: 1 } },
               { session, lean: true }
             ).exec()
+          ]);
+          
+          // Инвалидируем кэш подписок пользователя и графа
+          await Promise.all([
+            this.invalidateUserSubscriptionsCache(user),
+            this.invalidateGraphCache(graph)
           ]);
           
           return { subscribed: true };
@@ -232,6 +266,12 @@ export class GraphSubsService {
             this.UserModel.bulkWrite(userBulkOps, { session })
           ]);
 
+          // Инвалидируем кэш подписок пользователя и графа
+          await Promise.all([
+            this.invalidateUserSubscriptionsCache(user),
+            this.invalidateGraphCache(graph)
+          ]);
+
           return { subscribed: false };
         } else {
           // Подписки не было - создаем новую и обновляем счетчики
@@ -257,6 +297,12 @@ export class GraphSubsService {
             this.graphSubsModel.create([{ user, graph }], { session }),
             this.GraphModel.bulkWrite(bulkOps, { session }),
             this.UserModel.bulkWrite(userBulkOps, { session })
+          ]);
+
+          // Инвалидируем кэш подписок пользователя и графа
+          await Promise.all([
+            this.invalidateUserSubscriptionsCache(user),
+            this.invalidateGraphCache(graph)
           ]);
 
           return { subscribed: true };

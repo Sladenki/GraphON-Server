@@ -32,7 +32,7 @@ export class UserModel extends TimeStamps {
   avaPath: string
 
   @prop()
-  telegramId: any
+  telegramId: string
 
   @prop({ default: 0 })
   // subsNum: number  // подписки на граф
@@ -44,5 +44,11 @@ export class UserModel extends TimeStamps {
   @prop({ default: 0 })
   attentedEventsNum: number
 
+  // Поля для соглашения об авторских правах
+  @prop({ default: false })
+  copyrightAgreementAccepted: boolean
+
+  @prop()
+  copyrightAgreementAcceptedAt: Date
 
 }

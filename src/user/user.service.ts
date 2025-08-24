@@ -52,31 +52,41 @@ export class UserService {
     const user = await this.UserModel.findById(_id)
       .lean()
       // Убираем поля
-      .select({ _id: 0, email: 0, __v: 0, createdAt: 0, updatedAt: 0 });
+      .select({ email: 0, __v: 0, createdAt: 0, updatedAt: 0 })
+      .populate('selectedGraphId', 'name');
 
     return user;
   }
 
   // --- Получение всех пользователей ---
-  async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
-    const query: any = {};
-    
-    if (lastId) {
-      query._id = { $gt: new Types.ObjectId(lastId) };
-    }
-
+  async getAllUsers() {
     const users = await this.UserModel
-      .find(query)
-      .sort({ _id: 1 })
-      .limit(limit)
+      .find()
+      .sort({ _id: -1 })
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
 
-    return {
-      users,
-      hasMore: users.length === limit
-    };
+    return users;
   }
+  // async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
+  //   const query: any = {};
+    
+  //   if (lastId) {
+  //     query._id = { $gt: new Types.ObjectId(lastId) };
+  //   }
+
+  //   const users = await this.UserModel
+  //     .find(query)
+  //     .sort({ _id: 1 })
+  //     .limit(limit)
+  //     .lean()
+  //     .select({ createdAt: 0, updatedAt: 0 });
+
+  //   return {
+  //     users,
+  //     hasMore: users.length === limit
+  //   };
+  // }
 
   async generateToken(userId: string, role: string): Promise<string> {
     return this.jwtAuthService.generateToken(new Types.ObjectId(userId), role);
@@ -100,6 +110,116 @@ export class UserService {
         throw error;
       }
       throw new InternalServerErrorException('Ошибка при обновлении выбранного графа');
+    }
+  }
+
+  // --- Поиск пользователя по Telegram ID ---
+  async findByTelegramId(telegramId: number) {
+    try {
+      // Ищем пользователя как по числу, так и по строке
+      const user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      })
+        .lean()
+        .exec();
+      
+      return user;
+    } catch (error) {
+      console.error('Error finding user by Telegram ID:', error);
+      return null;
+    }
+  }
+
+  // --- Принятие соглашения об авторских правах ---
+  async acceptCopyrightAgreement(telegramId: number) {
+    try {
+      const now = new Date();
+      
+      // Ищем пользователя как по числу, так и по строке
+      let user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      }).lean();
+      
+      if (user) {
+        // Пользователь найден - обновляем его
+        user = await this.UserModel.findByIdAndUpdate(
+          user._id,
+          {
+            $set: {
+              copyrightAgreementAccepted: true,
+              copyrightAgreementAcceptedAt: now
+            }
+          },
+          { new: true }
+        ).lean();
+        
+        console.log(`Existing user ${user._id} (telegramId: ${telegramId}) accepted copyright agreement at ${now}`);
+      } else {
+        // Пользователь не найден - создаем минимальную запись только для соглашения
+        user = await this.UserModel.create({
+          telegramId: telegramId.toString(), // Сохраняем как строку для консистентности
+          copyrightAgreementAccepted: true,
+          copyrightAgreementAcceptedAt: now,
+          role: 'user'
+        });
+        
+        console.log(`New user created for telegramId ${telegramId} with copyright agreement accepted at ${now}`);
+      }
+      
+      return user;
+    } catch (error) {
+      console.error('Error accepting copyright agreement:', error);
+      throw new InternalServerErrorException('Ошибка при сохранении принятия соглашения');
+    }
+  }
+
+  // --- Проверка принятия соглашения об авторских правах ---
+  async hasAcceptedCopyrightAgreement(telegramId: number): Promise<boolean> {
+    try {
+      const user = await this.UserModel.findOne({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: telegramId.toString() }
+        ]
+      })
+        .select('copyrightAgreementAccepted')
+        .lean()
+        .exec();
+      
+      return user?.copyrightAgreementAccepted || false;
+    } catch (error) {
+      console.error('Error checking copyright agreement:', error);
+      return false;
+    }
+  }
+
+  // --- Миграция telegramId к строковому типу ---
+  async migrateTelegramIdsToString() {
+    try {
+      // Находим всех пользователей с числовым telegramId
+      const usersWithNumericTelegramId = await this.UserModel.find({
+        telegramId: { $type: 'number' }
+      }).lean();
+
+      console.log(`Found ${usersWithNumericTelegramId.length} users with numeric telegramId`);
+
+      for (const user of usersWithNumericTelegramId) {
+        await this.UserModel.findByIdAndUpdate(
+          user._id,
+          { telegramId: user.telegramId.toString() }
+        );
+        console.log(`Migrated user ${user._id}: telegramId ${user.telegramId} -> "${user.telegramId}"`);
+      }
+
+      console.log('TelegramId migration completed');
+    } catch (error) {
+      console.error('Error during telegramId migration:', error);
     }
   }
 
