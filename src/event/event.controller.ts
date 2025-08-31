@@ -80,6 +80,58 @@ export class EventController {
         return eventsWithAttendance;
     }
 
+    // --- Получение мероприятий на неделю по вузу ---
+    @Get("weekly/:globalGraphId")
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
+    async getWeeklyEvents(
+        @GetOptionalAuthContext() authContext: OptionalAuthContext,
+        @Param("globalGraphId") globalGraphId: string
+    ) {
+        if (!authContext.isAuthenticated) {
+            const events = await this.eventService.getWeeklyEvents(globalGraphId);
+            return this.groupEventsByGraph(events);
+        }
+
+        const [events, userEventRegs] = await Promise.all([
+            this.eventService.getWeeklyEvents(globalGraphId),
+            this.eventRegsModel
+                .find({ userId: authContext.userId })
+                .select('eventId')
+                .lean()
+                .exec()
+        ]);
+
+        const attendedEventIds = new Set(
+            userEventRegs.map(reg => reg.eventId.toString())
+        );
+
+        const eventsWithAttendance = events.map(event => ({
+            ...event,
+            isAttended: attendedEventIds.has(event._id.toString())
+        }));
+
+        return this.groupEventsByGraph(eventsWithAttendance);
+    }
+
+    private groupEventsByGraph(events: any[]) {
+        const groups = new Map<string, { graph: any, events: any[] }>();
+
+        for (const event of events) {
+            const graph: any = event.graphId;
+            const graphKey = graph && typeof graph === 'object' ? (graph._id?.toString?.() ?? String(graph)) : String(graph);
+
+            if (!groups.has(graphKey)) {
+                const graphInfo = graph && typeof graph === 'object' ? graph : { _id: graphKey };
+                groups.set(graphKey, { graph: graphInfo, events: [] });
+            }
+
+            groups.get(graphKey)!.events.push(event);
+        }
+
+        return Array.from(groups.values());
+    }
+
     // --- Удаление мероприятия ---
     @UseGuards(JwtAuthGuard)
     @Delete(":eventId")

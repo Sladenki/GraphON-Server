@@ -117,6 +117,24 @@ export class EventService {
             .lean();
     }
 
+    // --- Получение мероприятий на неделю по вузу ---
+    async getWeeklyEvents(globalGraphId: string) {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+
+        return this.EventModel
+            .find({
+                globalGraphId: new Types.ObjectId(globalGraphId),
+                eventDate: { $gte: start, $lt: end }
+            })
+            .sort({ eventDate: 1 })
+            .populate("graphId", "name imgPath ownerUserId")
+            .lean();
+    }
+
     // --- Удаление мероприятия ---
     async deleteEvent(eventId: string | Types.ObjectId) {
         return this.EventModel.findByIdAndDelete(eventId).lean();
