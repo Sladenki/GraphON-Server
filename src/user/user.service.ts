@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { UserModel } from './user.model';
@@ -6,6 +6,7 @@ import { JwtAuthService } from '../jwt/jwt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { Types } from 'mongoose';
 import { USER_CONSTANTS } from '../constants/user.constants';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -110,6 +111,40 @@ export class UserService {
         throw error;
       }
       throw new InternalServerErrorException('Ошибка при обновлении выбранного графа');
+    }
+  }
+
+  // --- Обновление профиля пользователя ---
+  async updateProfile(userId: Types.ObjectId, dto: UpdateUserDto) {
+    try {
+      const updatePayload: Record<string, any> = {};
+
+      if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName;
+      if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName;
+      if (dto.username !== undefined) updatePayload.username = dto.username;
+
+      if (Object.keys(updatePayload).length === 0) {
+        throw new BadRequestException('Нет данных для обновления');
+      }
+
+      const updatedUser = await this.UserModel.findByIdAndUpdate(
+        userId,
+        { $set: updatePayload },
+        { new: true }
+      )
+        .lean()
+        .select({ email: 0, __v: 0, createdAt: 0 });
+
+      if (!updatedUser) {
+        throw new NotFoundException('Пользователь не найден');
+      }
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Ошибка при обновлении профиля пользователя');
     }
   }
 

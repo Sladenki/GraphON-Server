@@ -25,6 +25,7 @@ import { ModelType } from '@typegoose/typegoose/lib/types';
 import { USER_CONSTANTS } from '../constants/user.constants';
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from 'src/decorators/currentUser.decorator';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -82,5 +83,16 @@ export class UserController {
       userId,
       selectedGraphId
     );
+  }
+
+  // Обновление данных профиля
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @Auth()
+  async updateProfile(
+    @CurrentUser('_id') userId: Types.ObjectId,
+    @Body() dto: UpdateUserDto
+  ) {
+    return this.userService.updateProfile(userId, dto);
   }
 }
