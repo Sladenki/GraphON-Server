@@ -79,6 +79,23 @@ export class EventService {
             .lean();
     }
 
+    // --- Получение прошедших мероприятий для определённого графа ---
+    async getPastEventsByGraphId(graphId: string) {
+        // Начало текущего дня (00:00:00)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return this.EventModel
+            .find({ 
+                graphId,
+                eventDate: { $lt: today },
+                isDateTbd: { $ne: true }
+            })
+            .sort({ eventDate: -1 })
+            .populate("graphId", "name imgPath")
+            .lean();
+    }
+
     // Получение мероприятий массива графов
     async getEventsByGraphsIds(graphIds: string[]) {
         // Получаем начало текущего дня (00:00:00)

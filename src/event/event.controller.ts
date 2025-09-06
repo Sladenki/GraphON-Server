@@ -40,6 +40,14 @@ export class EventController {
         return this.eventService.getEventsByGraphId(graphId);
     }
 
+    // --- Получение прошедших мероприятий для определённого графа ---
+    @Get("past/by-graph/:graphId")
+    async getPastEventsByGraphId(
+        @Param("graphId") graphId: string
+    ) {
+        return this.eventService.getPastEventsByGraphId(graphId);
+    }
+
     // --- Получение мероприятий на ближайшее время ---
     @Get("upcoming/:selectedGraphId")
     @UseGuards(JwtAuthGuard, OptionalAuthGuard)
