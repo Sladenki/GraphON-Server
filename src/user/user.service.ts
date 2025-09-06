@@ -5,6 +5,7 @@ import { UserModel } from './user.model';
 import { JwtAuthService } from '../jwt/jwt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { Types } from 'mongoose';
+import { GraphModel } from 'src/graph/graph.model';
 import { USER_CONSTANTS } from '../constants/user.constants';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -13,6 +14,7 @@ export class UserService {
   constructor(
     // Обращаемся к БД модели user
     @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(GraphModel) private readonly GraphModel: ModelType<GraphModel>,
 
     // Для JWT токена
     private jwtAuthService: JwtAuthService,
@@ -255,6 +257,41 @@ export class UserService {
       console.log('TelegramId migration completed');
     } catch (error) {
       console.error('Error during telegramId migration:', error);
+    }
+  }
+
+  // --- Бэкофил managedGraphIds на основе Graph.ownerUserId ---
+  async backfillManagedGraphs() {
+    try {
+      // Находим все графы с ownerUserId
+      const graphs = await this.GraphModel.find({ ownerUserId: { $exists: true, $ne: null } })
+        .select({ _id: 1, ownerUserId: 1 })
+        .lean();
+
+      // Собираем соответствие userId -> массив graphIds
+      const userIdToGraphIds = new Map<string, string[]>();
+      for (const graph of graphs) {
+        const ownerId = (graph as any).ownerUserId?.toString();
+        if (!ownerId) continue;
+        const arr = userIdToGraphIds.get(ownerId) || [];
+        arr.push((graph as any)._id.toString());
+        userIdToGraphIds.set(ownerId, arr);
+      }
+
+      let updatedUsers = 0;
+      for (const [userId, graphIds] of userIdToGraphIds.entries()) {
+        await this.UserModel.findByIdAndUpdate(
+          userId,
+          { $set: { managedGraphIds: graphIds } },
+          { new: false }
+        );
+        updatedUsers += 1;
+      }
+
+      return { updatedUsers, totalGraphs: graphs.length };
+    } catch (error) {
+      console.error('Error during backfillManagedGraphs:', error);
+      throw new InternalServerErrorException('Ошибка при бэкофиле managedGraphIds');
     }
   }
 

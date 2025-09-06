@@ -19,6 +19,10 @@ export class UserModel extends TimeStamps {
   @prop ({ ref: () => GraphModel, index: true, default: null })
   selectedGraphId: Ref<GraphModel>; 
 
+  // Список графов, которыми управляет пользователь (по сути, где он владелец)
+  @prop({ ref: () => GraphModel, type: () => [GraphModel], default: [] })
+  managedGraphIds?: Ref<GraphModel>[];
+
   @prop()
   firstName: string
 

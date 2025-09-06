@@ -1,6 +1,7 @@
 import { TypegooseModule } from '@m8a/nestjs-typegoose';
 import { UserController } from './user.controller';
 import { UserModel } from './user.model';
+import { GraphModel } from 'src/graph/graph.model';
 import { UserService } from './user.service';
 import { Module } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
@@ -23,6 +24,11 @@ import { PassportModule } from '@nestjs/passport';
         typegooseClass: UserModel,
         // Название коллекции в БД
         schemaOptions: { collection: 'User' },
+      },
+      {
+        // Ссылка на модель графа (для популяции и бэкофила)
+        typegooseClass: GraphModel,
+        schemaOptions: { collection: 'Graph' },
       },
     ]),
     JwtModule.registerAsync({

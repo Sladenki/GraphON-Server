@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { getJwtConfig } from "src/config/jwt.config";
 import { GraphModule } from "src/graph/graph.module";
+import { UserModule } from "src/user/user.module";
 import { GraphModel } from "src/graph/graph.model";
 
 @Module({
@@ -35,7 +36,8 @@ import { GraphModel } from "src/graph/graph.model";
         schemaOptions: { collection: 'Graph' },
       },
     ]),
-    GraphModule
+    GraphModule,
+    UserModule
   ],
   exports: [AdminService]
 })

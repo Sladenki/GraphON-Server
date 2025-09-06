@@ -10,12 +10,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { CreateGlobalGraphDto } from 'src/graph/dto/create-global-graph.dto';
 import { CreateTopicGraphDto } from 'src/graph/dto/create-topic-graph.dto';
+import { UserService } from 'src/user/user.service';
 
 @Controller('admin')
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
-    private readonly graphService: GraphService
+    private readonly graphService: GraphService,
+    private readonly userService: UserService
 ) {}
 
     // --- Передача роли --- 
@@ -92,6 +94,13 @@ export class AdminController {
     @Get('server-stats')
     getServerResourceStats() {
         return this.adminService.getServerResourceStats();
+    }
+
+    // --- Триггер бэкофила managedGraphIds у пользователей ---
+    @AuthRoles(UserRole.Create)
+    @Post('backfill-managed-graphs')
+    backfillManagedGraphs() {
+        return this.userService.backfillManagedGraphs();
     }
 
 
