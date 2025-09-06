@@ -12,6 +12,7 @@ import { S3Service } from 'src/s3/s3.service';
 import { RedisService } from 'src/redis/redis.service';
 import type { Express } from 'express';
 import { PipelineStage } from 'mongoose';
+import { UserModel } from 'src/user/user.model';
 
 @Injectable()
 export class GraphService {
@@ -29,6 +30,8 @@ export class GraphService {
     private readonly graphSubsService: GraphSubsService,
     private readonly s3Service: S3Service,
     private readonly redisService: RedisService,
+    @InjectModel(UserModel)
+    private readonly UserModel: ModelType<UserModel>,
   ) {}
 
   // --- Вспомогательные методы для кэша ---
@@ -110,6 +113,13 @@ export class GraphService {
       graphType: "default",
       globalGraphId: dto.globalGraphId
     });
+
+    // Добавляем граф в managedGraphIds пользователя
+    await this.UserModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { managedGraphIds: graph._id } },
+      { new: false }
+    ).exec();
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
     if (dto.parentGraphId) {
@@ -280,6 +290,13 @@ export class GraphService {
       graphType: "global"
     });
 
+    // Добавляем граф в managedGraphIds пользователя
+    await this.UserModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { managedGraphIds: graph._id } },
+      { new: false }
+    ).exec();
+
     // Инвалидируем кэш после создания нового глобального графа
     await this.invalidateGraphCache();
 
@@ -311,6 +328,13 @@ export class GraphService {
       globalGraphId: dto.parentGraphId,
       graphType: "topic"
     });
+
+    // Добавляем граф в managedGraphIds пользователя
+    await this.UserModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { managedGraphIds: graph._id } },
+      { new: false }
+    ).exec();
 
     // Обновляем счетчик родительского графа
     await this.GraphModel.findByIdAndUpdate(dto.parentGraphId, {

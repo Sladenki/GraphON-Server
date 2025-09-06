@@ -32,8 +32,27 @@ export class AdminService {
     const newOwner = await this.UserModel.findById(newOwnerId);
     if (!newOwner) throw new NotFoundException('New owner not found');
 
+    const prevOwnerId = graph.ownerUserId?.toString();
     graph.ownerUserId = newOwner._id;
-    return graph.save();
+    await graph.save();
+
+    // Удаляем граф у предыдущего владельца
+    if (prevOwnerId) {
+      await this.UserModel.findByIdAndUpdate(
+        prevOwnerId,
+        { $pull: { managedGraphIds: graph._id } },
+        { new: false }
+      );
+    }
+
+    // Добавляем граф новому владельцу
+    await this.UserModel.findByIdAndUpdate(
+      newOwner._id,
+      { $addToSet: { managedGraphIds: graph._id } },
+      { new: false }
+    );
+
+    return graph;
   }
 
   // --- Получение статистики приложения ---
