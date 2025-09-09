@@ -20,7 +20,7 @@ export class UserModel extends TimeStamps {
   selectedGraphId: Ref<GraphModel>; 
 
   // Список графов, которыми управляет пользователь (по сути, где он владелец)
-  @prop({ ref: () => GraphModel, type: () => [GraphModel], default: [] })
+  @prop({ ref: () => GraphModel, type: () => [GraphModel], default: undefined })
   managedGraphIds?: Ref<GraphModel>[];
 
   @prop()
