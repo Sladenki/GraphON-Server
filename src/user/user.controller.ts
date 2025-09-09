@@ -62,12 +62,21 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
+  // Получение пользователей по выбранному графу
+  @Get('allUsersByGraph/:graphId')
+  async getUsersBySelectedGraph(
+    @Param('graphId') graphId: string
+  ) {
+    return this.userService.getUsersBySelectedGraph(graphId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@Req() req) {
     return req.user;
   }
 
+  // Выбор графа пользователя
   @UseGuards(JwtAuthGuard)
   @Patch('selected-graph')
   @Auth()

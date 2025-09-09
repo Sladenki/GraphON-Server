@@ -71,6 +71,16 @@ export class UserService {
 
     return users;
   }
+
+  // --- Получение пользователей по выбранному графу ---
+  async getUsersBySelectedGraph(graphId: string) {
+    const users = await this.UserModel
+      .find({ selectedGraphId: new Types.ObjectId(graphId) })
+      .lean()
+      .select({ createdAt: 0, updatedAt: 0 });
+
+    return users;
+  }
   // async getAllUsers(lastId?: string, limit: number = USER_CONSTANTS.DEFAULT_USERS_LIMIT) {
   //   const query: any = {};
     
