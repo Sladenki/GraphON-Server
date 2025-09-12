@@ -21,7 +21,7 @@ export class AdminController {
 ) {}
 
     // --- Передача роли --- 
-    @AuthRoles(UserRole.Create)
+    @AuthRoles(UserRole.Admin)
     @Patch('assignRole/:id')
     assignRole(
         @Param('id') userId: string, 
