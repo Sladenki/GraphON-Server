@@ -25,7 +25,7 @@ export class GraphModel extends TimeStamps {
     @prop()
     city?: string
 
-    @prop ({ index: true, maxlength: 200 })
+    @prop ({ index: false, maxlength: 200 })
     about?: string
 
     @prop({ ref: () => UserModel, index: true })
