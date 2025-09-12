@@ -76,6 +76,7 @@ export class UserService {
   async getUsersBySelectedGraph(graphId: string) {
     const users = await this.UserModel
       .find({ selectedGraphId: new Types.ObjectId(graphId) })
+      .populate('managedGraphIds', 'name')
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
 

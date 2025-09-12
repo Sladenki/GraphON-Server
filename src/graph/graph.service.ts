@@ -204,6 +204,7 @@ export class GraphService {
           globalGraphId: parentGraphId,
           graphType: 'default'
         })
+        .populate('ownerUserId', 'firstName lastName username avaPath')
         .skip(Number(skip) || 0)
         .lean()
         .exec();
