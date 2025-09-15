@@ -6,7 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: false });
 
   // Автоматические добавление api к каждому запросу
   app.setGlobalPrefix('api');
@@ -25,18 +25,7 @@ async function bootstrap() {
 
   // // -----
 
-  app.enableCors({
-    // по этому адресу - клиент
-    origin: [
-      process.env.CLIENT_URL,
-      'http://localhost:3000',
-      'https://localhost:3000',
-    ],
-    credentials: true,
-    exposedHeaders: 'set-cookie',
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  })
+  
 
   await app.listen(process.env.SERVER_PORT);
 }
