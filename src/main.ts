@@ -6,7 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 
-  const app = await NestFactory.create(AppModule, { cors: false });
+  const app = await NestFactory.create(AppModule);
 
   // Автоматические добавление api к каждому запросу
   app.setGlobalPrefix('api');
@@ -25,7 +25,13 @@ async function bootstrap() {
 
   // // -----
 
-  
+  app.enableCors({
+    origin: ['https://graphon.kozow.com'],
+    credentials: true,
+    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['set-cookie'],
+  })
 
   await app.listen(process.env.SERVER_PORT);
 }
