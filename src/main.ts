@@ -26,7 +26,7 @@ async function bootstrap() {
   // // -----
 
   app.enableCors({
-    origin: ['https://graphon.kozow.com'],
+    origin: ['https://graphon.kozow.com', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
