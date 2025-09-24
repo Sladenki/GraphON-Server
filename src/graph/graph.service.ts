@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { InjectModel } from '@m8a/nestjs-typegoose';
 import { GraphModel } from './graph.model';
@@ -405,6 +405,103 @@ export class GraphService {
     await this.redisService.set(cacheKey, result, 86400);
     
     return result;
+  }
+
+  // --- Удаление графа с каскадным удалением подписок и обновлением счетчиков пользователей ---
+  async deleteGraph(graphId: Types.ObjectId, requesterId: Types.ObjectId): Promise<{ deleted: boolean }>{
+    const session = await this.GraphModel.db.startSession();
+
+    // Пользователи, кэш которых нужно инвалидировать после транзакции
+    let affectedUserIds: string[] = [];
+
+    try {
+      await session.withTransaction(async () => {
+        // Проверяем существование графа и право на удаление
+        const graph = await this.GraphModel.findById(graphId)
+          .session(session)
+          .lean()
+          .exec();
+
+        if (!graph) {
+          throw new NotFoundException('Граф не найден');
+        }
+
+        // Проверяем роль пользователя: если role === 'create', разрешаем удаление независимо от владения
+        const requester = await this.UserModel.findById(requesterId)
+          .select('role')
+          .session(session)
+          .lean()
+          .exec();
+        const isCreateRole = requester?.role === 'create';
+
+        if (!isCreateRole && graph.ownerUserId?.toString() !== requesterId.toString()) {
+          throw new ForbiddenException('Нет прав на удаление графа');
+        }
+
+        // Находим все подписки на этот граф и готовим декременты по пользователям
+        const subs = await this.graphSubsModel
+          .find({ graph: graphId })
+          .select('user')
+          .session(session)
+          .lean()
+          .exec();
+
+        const userIdToCount = new Map<string, number>();
+        for (const sub of subs) {
+          const userId = (sub.user as any).toString();
+          userIdToCount.set(userId, (userIdToCount.get(userId) || 0) + 1);
+        }
+
+        // Удаляем подписки на граф
+        await this.graphSubsModel
+          .deleteMany({ graph: graphId })
+          .session(session)
+          .exec();
+
+        // Декрементируем счётчики подписок пользователей, если есть затронутые
+        if (userIdToCount.size > 0) {
+          const userBulk = Array.from(userIdToCount.entries()).map(([userId, dec]) => ({
+            updateOne: {
+              filter: { _id: new Types.ObjectId(userId) },
+              update: { $inc: { graphSubsNum: -dec } }
+            }
+          }));
+          await this.UserModel.bulkWrite(userBulk, { session });
+          affectedUserIds = Array.from(userIdToCount.keys());
+        }
+
+        // Если был родительский граф, уменьшаем его childGraphNum
+        if (graph.parentGraphId) {
+          await this.GraphModel.updateOne(
+            { _id: graph.parentGraphId },
+            { $inc: { childGraphNum: -1 } }
+          ).session(session).exec();
+        }
+
+        // Удаляем граф из managedGraphIds владельца
+        if (graph.ownerUserId) {
+          await this.UserModel.updateOne(
+            { _id: graph.ownerUserId },
+            { $pull: { managedGraphIds: graphId } }
+          ).session(session).exec();
+        }
+
+        // Удаляем сам граф
+        await this.GraphModel.deleteOne({ _id: graphId })
+          .session(session)
+          .exec();
+      });
+
+      // Инвалидация кэшей вне транзакции
+      await Promise.all([
+        this.invalidateGraphCache(),
+        ...affectedUserIds.map(userId => this.redisService.del(`userSubs:${userId}`))
+      ]);
+
+      return { deleted: true };
+    } finally {
+      await session.endSession();
+    }
   }
 
 }

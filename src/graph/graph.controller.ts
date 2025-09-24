@@ -1,8 +1,6 @@
-import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query, UseGuards, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { Controller, UsePipes, ValidationPipe, HttpCode, Post, Body, Get, Param, Query, UseGuards, UseInterceptors, UploadedFile, Delete } from "@nestjs/common";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from "mongoose";
-import { Auth } from "src/decorators/auth.decorator";
-import { CurrentUser } from "src/decorators/currentUser.decorator";
 import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
 import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
 import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
@@ -11,6 +9,8 @@ import { CreateGraphDto } from "./dto/create-graph.dto";
 import { GraphService } from "./graph.service";
 import { OptionalAuthContext } from "../interfaces/optional-auth.interface";
 import { Express } from 'express';
+import { Auth } from "src/decorators/auth.decorator";
+import { CurrentUser } from "src/decorators/currentUser.decorator";
 
 @Controller('graph')
 export class GraphController {
@@ -83,6 +83,16 @@ export class GraphController {
   @Get('getGlobalGraphs')
   async getGlobalGraphs() {
     return this.graphService.getGlobalGraphs();
+  }
+
+  // --- Удаление графа с каскадным удалением подписок ---
+  @Delete(':id')
+  @Auth()
+  async deleteGraph(
+    @Param('id') id: string,
+    @CurrentUser('_id') requesterId: Types.ObjectId,
+  ) {
+    return this.graphService.deleteGraph(new Types.ObjectId(id), requesterId);
   }
 
 
