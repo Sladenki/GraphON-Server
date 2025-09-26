@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 import { MongoExplorerService } from './mongo-explorer.service';
 
 @Controller('mongo')
@@ -33,6 +33,25 @@ export class MongoExplorerController {
     @Param('id') id: string,
   ) {
     return this.explorer.getDocumentById(db, collection, id);
+  }
+
+  @Patch('doc/:db/:collection/:id')
+  async updateById(
+    @Param('db') db: string,
+    @Param('collection') collection: string,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.explorer.updateDocumentById(db, collection, id, body);
+  }
+
+  @Delete('doc/:db/:collection/:id')
+  async deleteById(
+    @Param('db') db: string,
+    @Param('collection') collection: string,
+    @Param('id') id: string,
+  ) {
+    return this.explorer.deleteDocumentById(db, collection, id);
   }
 }
 

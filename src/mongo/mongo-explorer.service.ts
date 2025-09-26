@@ -78,6 +78,26 @@ export class MongoExplorerService {
     return this.stringifyObjectIds(doc);
   }
 
+  async updateDocumentById(dbName: string, collectionName: string, id: string, update: any) {
+    const client = await this.getClient();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+    const normalized = this.normalizeQuery(update || {});
+    // If update contains top-level operators ($set, $unset, etc.), pass through; otherwise wrap into $set
+    const hasOperator = normalized && typeof normalized === 'object' && Object.keys(normalized).some(k => k.startsWith('$'));
+    const finalUpdate = hasOperator ? normalized : { $set: normalized };
+    const res = await collection.updateOne({ _id: new ObjectId(id) }, finalUpdate);
+    return { matchedCount: res.matchedCount, modifiedCount: res.modifiedCount, upsertedId: res.upsertedId };
+  }
+
+  async deleteDocumentById(dbName: string, collectionName: string, id: string) {
+    const client = await this.getClient();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+    const res = await collection.deleteOne({ _id: new ObjectId(id) });
+    return { deletedCount: res.deletedCount };
+  }
+
   private normalizeQuery(query: any): any {
     if (query == null || typeof query !== 'object') return {};
 
