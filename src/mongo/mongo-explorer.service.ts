@@ -59,6 +59,33 @@ export class MongoExplorerService {
 
     const query = this.normalizeQuery(queryRaw || {});
 
+    // Special populate for User.selectedGraphId → Graph document
+    if (collectionName === 'User') {
+      const pipeline: any[] = [
+        { $match: query },
+        {
+          $lookup: {
+            from: 'Graph',
+            localField: 'selectedGraphId',
+            foreignField: '_id',
+            as: 'selectedGraphId',
+          },
+        },
+        { $unwind: { path: '$selectedGraphId', preserveNullAndEmptyArrays: true } },
+      ];
+
+      const hasProjection = options?.projection && Object.keys(options.projection).length > 0;
+      if (hasProjection) pipeline.push({ $project: options!.projection! });
+
+      const hasSort = options?.sort && Object.keys(options.sort).length > 0;
+      if (hasSort) pipeline.push({ $sort: options!.sort! });
+      if (typeof options?.skip === 'number') pipeline.push({ $skip: options.skip });
+      pipeline.push({ $limit: options?.limit ?? 50 });
+
+      const docs = await collection.aggregate(pipeline).toArray();
+      return docs.map(this.stringifyObjectIds);
+    }
+
     const cursor = collection.find(query, {
       projection: options?.projection,
       sort: options?.sort,
