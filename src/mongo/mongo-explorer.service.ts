@@ -49,7 +49,25 @@ export class MongoExplorerService {
     const client = await this.getClient();
     const db = client.db(dbName);
     const collections = await db.listCollections(undefined, { nameOnly: true }).toArray();
-    return collections.map((c) => ({ name: c.name, type: (c as any).type ?? 'collection' }));
+    const withStats = await Promise.all(
+      collections.map(async (c) => {
+        const base: any = { name: c.name, type: (c as any).type ?? 'collection' };
+        try {
+          const stats = await db.command({ collStats: c.name, scale: 1 });
+          return {
+            ...base,
+            count: stats?.count ?? null,
+            sizeBytes: stats?.size ?? null,
+            storageBytes: stats?.storageSize ?? null,
+            totalIndexBytes: stats?.totalIndexSize ?? null,
+          };
+        } catch {
+          // If collStats is not available (e.g., for views or permissions), return base info
+          return base;
+        }
+      }),
+    );
+    return withStats;
   }
 
   async findDocuments(dbName: string, collectionName: string, queryRaw?: any, options?: FindOptions) {
