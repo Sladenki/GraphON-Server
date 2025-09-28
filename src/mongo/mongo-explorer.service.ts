@@ -84,8 +84,11 @@ export class MongoExplorerService {
         {
           $lookup: {
             from: 'Graph',
-            localField: 'selectedGraphId',
-            foreignField: '_id',
+            let: { selectedId: '$selectedGraphId' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$_id', '$$selectedId'] } } },
+              { $project: { _id: 0, name: 1 } },
+            ],
             as: 'selectedGraphId',
           },
         },
