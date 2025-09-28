@@ -143,6 +143,28 @@ export class MongoExplorerService {
     return { deletedCount: res.deletedCount };
   }
 
+  async *exportCollectionIterator(
+    dbName: string,
+    collectionName: string,
+    queryRaw?: any,
+    options?: { limit?: number; sort?: Record<string, 1 | -1>; projection?: Record<string, 0 | 1> },
+  ): AsyncGenerator<any> {
+    const client = await this.getClient();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    const query = this.normalizeQuery(queryRaw || {});
+    const cursor = collection.find(query, {
+      projection: options?.projection,
+      sort: options?.sort,
+      limit: options?.limit,
+    });
+
+    for await (const doc of cursor) {
+      yield this.stringifyObjectIds(doc);
+    }
+  }
+
   private normalizeQuery(query: any): any {
     if (query == null || typeof query !== 'object') return {};
 

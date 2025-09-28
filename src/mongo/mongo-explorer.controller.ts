@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { MongoExplorerService } from './mongo-explorer.service';
 
 @Controller('mongo')
@@ -52,6 +53,56 @@ export class MongoExplorerController {
     @Param('id') id: string,
   ) {
     return this.explorer.deleteDocumentById(db, collection, id);
+  }
+
+  @Get('export/:db/:collection')
+  async exportCollection(
+    @Param('db') db: string,
+    @Param('collection') collection: string,
+    @Res() res: Response,
+    @Query('format') format: 'ndjson' | 'json' = 'ndjson',
+    @Query('limit') limit?: string,
+    @Query('sort') sort?: string,
+    @Query('projection') projection?: string,
+    @Query('query') query?: string,
+  ) {
+    const fileBase = `${collection}-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+    const filename = `${fileBase}.${format === 'json' ? 'json' : 'ndjson'}`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', format === 'json' ? 'application/json; charset=utf-8' : 'application/x-ndjson; charset=utf-8');
+
+    const parsedQuery = query ? JSON.parse(query) : undefined;
+    const parsedSort = sort ? JSON.parse(sort) : undefined;
+    const parsedProjection = projection ? JSON.parse(projection) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+
+    if (format === 'json') {
+      res.write('[');
+      let first = true;
+      for await (const doc of this.explorer.exportCollectionIterator(db, collection, parsedQuery, {
+        limit: parsedLimit,
+        sort: parsedSort,
+        projection: parsedProjection,
+      })) {
+        const json = JSON.stringify(doc);
+        if (!first) res.write(',');
+        res.write(json);
+        first = false;
+      }
+      res.write(']');
+      res.end();
+      return;
+    }
+
+    for await (const doc of this.explorer.exportCollectionIterator(db, collection, parsedQuery, {
+      limit: parsedLimit,
+      sort: parsedSort,
+      projection: parsedProjection,
+    })) {
+      const line = JSON.stringify(doc) + '\n';
+      res.write(line);
+    }
+    res.end();
   }
 }
 
