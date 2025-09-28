@@ -87,7 +87,7 @@ export class MongoExplorerService {
             let: { selectedId: '$selectedGraphId' },
             pipeline: [
               { $match: { $expr: { $eq: ['$_id', '$$selectedId'] } } },
-              { $project: { _id: 0, name: 1 } },
+              { $project: { _id: 1, name: 1 } },
             ],
             as: 'selectedGraphId',
           },
@@ -101,6 +101,8 @@ export class MongoExplorerService {
       const hasSort = options?.sort && Object.keys(options.sort).length > 0;
       if (hasSort) pipeline.push({ $sort: options!.sort! });
       if (typeof options?.skip === 'number') pipeline.push({ $skip: options.skip });
+      // Always hide sensitive/system fields from User output
+      pipeline.push({ $project: { createdAt: 0, copyrightAgreementAcceptedAt: 0 } });
       pipeline.push({ $limit: options?.limit ?? 50 });
 
       const docs = await collection.aggregate(pipeline).toArray();
