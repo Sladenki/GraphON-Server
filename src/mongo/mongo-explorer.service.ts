@@ -48,7 +48,9 @@ export class MongoExplorerService {
   async listCollections(dbName: string) {
     const client = await this.getClient();
     const db = client.db(dbName);
-    const collections = await db.listCollections(undefined, { nameOnly: true }).toArray();
+    const collections = await db
+      .listCollections(undefined, { nameOnly: true, authorizedCollections: true })
+      .toArray();
     const withStats = await Promise.all(
       collections.map(async (c) => {
         const base: any = { name: c.name, type: (c as any).type ?? 'collection' };
