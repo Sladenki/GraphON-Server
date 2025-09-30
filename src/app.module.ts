@@ -20,6 +20,7 @@ import { AuthWithRolesGuard } from './decorators/AuthWithRoles.decorator';
 import { EventRegsModule } from './eventRegs/eventRegs.module';
 import { JwtGlobalModule } from './jwt/jwt.module';
 import redisConfig from './config/redis.config';
+import { MongoModule } from './mongo/mongo.module';
 
 @Module({
   imports: [
@@ -49,7 +50,8 @@ import redisConfig from './config/redis.config';
     TelegramBotModule,
     EventRegsModule,
     AdminModule,
-    JwtGlobalModule
+    JwtGlobalModule,
+    MongoModule
   ],
   controllers: [AppController],
   providers: [
