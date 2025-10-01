@@ -23,6 +23,14 @@ export class EventController {
         private readonly eventRegsModel: ModelType<EventRegsModel>
     ) {}
 
+    // --- Получение мероприятия по id ---
+    @Get(":eventId")
+    async getEventById(
+        @Param("eventId") eventId: string
+    ) {
+        return this.eventService.getEventById(eventId);
+    }
+
      // --- Создание мероприятия ---
     @UseGuards(JwtAuthGuard)
     @Post("create")

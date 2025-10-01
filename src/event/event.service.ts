@@ -13,6 +13,23 @@ export class EventService {
         private readonly EventModel: ModelType<EventModel>
     ) {}
 
+    // --- Получение мероприятия по id ---
+    async getEventById(eventId: string | Types.ObjectId) {
+        const event = await this.EventModel
+            .findById(eventId)
+            .populate("graphId", "name imgPath ownerUserId")
+            .lean();
+
+        if (!event) {
+            throw new HttpException(
+                'Мероприятие не найдено',
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        return event;
+    }
+
     // --- Создание мероприятия ---
     async createEvent(dto: CreateEventDto) {
         try {
