@@ -147,7 +147,14 @@ export class EventService {
                 ]
             })
             .sort({ isDateTbd: 1, eventDate: 1 })
-            .populate("graphId", "name imgPath ownerUserId")
+            .populate({
+                path: "graphId",
+                select: "name imgPath ownerUserId parentGraphId",
+                populate: {
+                    path: "parentGraphId",
+                    select: "name imgPath ownerUserId"
+                }
+            })
             .lean();
     }
 
