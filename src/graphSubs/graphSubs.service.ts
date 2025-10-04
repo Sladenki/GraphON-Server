@@ -205,6 +205,28 @@ export class GraphSubsService {
   }
 
 
+  // --- Получение всех групп, на которые подписан пользователь ---
+  async getUserSubscribedGraphs(userId: Types.ObjectId) {
+    try {
+      const subscribedGraphs = await this.graphSubsModel
+        .find({ user: userId })
+        .populate({
+          path: 'graph',
+          select: 'name description imgPath subsNum postsNum ownerUserId createdAt'
+        })
+        .lean()
+        .exec();
+
+      return subscribedGraphs.map(sub => ({
+        ...sub.graph,
+        subscribedAt: sub.createdAt
+      }));
+    } catch (error) {
+      console.error('Error in getUserSubscribedGraphs:', error);
+      throw new InternalServerErrorException('Ошибка при получении подписанных групп');
+    }
+  }
+
   // --- Проверка подписки на граф ---
   // --- Нужна для гланой страницы для отображения подписок пользователя ---
   async isUserSubsExists(graph: string, userId: string): Promise<boolean> {

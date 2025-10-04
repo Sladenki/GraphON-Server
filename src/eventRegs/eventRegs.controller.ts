@@ -21,13 +21,22 @@ export class EventRegsController {
         return this.eventRegsService.toggleEvent(currentUserId, eventId)
     }
 
-    // Получаем мероприятия, на которые подписан пользователь
+    // Получаем мероприятия, на которые подписан пользователь (только предстоящие)
     @Get('getEventsByUserId')
     @Auth()
     async getEventsByUserId(
         @CurrentUser('_id') userId: Types.ObjectId,
     ) {
         return this.eventRegsService.getEventsByUserId(userId)
+    }
+
+    // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)
+    @Get('getAllUserEvents')
+    @Auth()
+    async getAllUserEvents(
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.eventRegsService.getAllUserEvents(userId)
     }
 
     // Получаем всех пользователей, записанных на мероприятие 

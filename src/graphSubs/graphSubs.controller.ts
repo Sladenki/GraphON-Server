@@ -46,4 +46,13 @@ export class GraphSubsController {
         return this.graphSubsService.getSubsEvents(userId)
     }
 
+    // --- Получение всех групп, на которые подписан пользователь ---
+    @Get('getUserSubscribedGraphs')
+    @Auth()
+    async getUserSubscribedGraphs(
+        @CurrentUser('_id') userId: Types.ObjectId,
+    ) {
+        return this.graphSubsService.getUserSubscribedGraphs(userId)
+    }
+
 }

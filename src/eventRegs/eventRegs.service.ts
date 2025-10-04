@@ -79,6 +79,32 @@ export class EventRegsService {
         return upcomingEvents;
     }
 
+    // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)
+    async getAllUserEvents(userId: string | Types.ObjectId) {
+        const regs = await this.EventRegsModel
+            .find({ userId })
+            .populate({
+                path: 'eventId',
+                model: 'EventModel',
+                populate: {
+                    path: 'graphId',
+                    select: 'name imgPath'
+                }
+            })
+            .sort({ createdAt: -1 }) // Сортируем по дате записи (новые сначала)
+            .lean<{ eventId: EventModel }[]>(); 
+
+        // Возвращаем все мероприятия с информацией о том, что пользователь был записан
+        const allEvents = regs
+            .filter(reg => reg.eventId) // Фильтруем только валидные события
+            .map(reg => ({
+                ...reg.eventId,
+                isAttended: true
+            }));
+
+        return allEvents;
+    }
+
     // Получаем всех пользователей, записанных на мероприятие
     async getUsersByEventId(eventId: string | Types.ObjectId, requestingUserId: string | Types.ObjectId) {
         // Получаем информацию о запрашивающем пользователе
