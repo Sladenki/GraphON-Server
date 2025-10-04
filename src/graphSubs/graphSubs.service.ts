@@ -212,14 +212,14 @@ export class GraphSubsService {
         .find({ user: userId })
         .populate({
           path: 'graph',
-          select: 'name description imgPath subsNum postsNum ownerUserId createdAt'
+          select: 'name about imgPath ownerUserId'
         })
         .lean()
         .exec();
 
       return subscribedGraphs.map(sub => ({
         ...sub.graph,
-        subscribedAt: sub.createdAt
+        isSubscribed: true
       }));
     } catch (error) {
       console.error('Error in getUserSubscribedGraphs:', error);
