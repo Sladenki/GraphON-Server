@@ -89,8 +89,6 @@ export class AdminService {
     const memoryUsagePercentage = (usedMemory / totalMemory) * 100;
     const heapUsagePercentage = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
 
-    const systemLoad = this.assessSystemLoad(avgCpuUsage, memoryUsagePercentage, heapUsagePercentage);
-
     return {
       cpu: {
         model: cpus[0].model,
@@ -119,8 +117,7 @@ export class AdminService {
         type: os.type(),
         release: os.release(),
         hostname: os.hostname()
-      },
-      systemLoad
+      }
     };
   }
 
@@ -169,58 +166,5 @@ export class AdminService {
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
     return `${days}д ${hours}ч ${minutes}м ${secs}с`;
-  }
-
-  private assessSystemLoad(cpuUsage: number, memoryUsage: number, heapUsage: number) {
-    const thresholds = {
-      critical: { cpu: 80, mem: 85, heap: 90 },
-      high:     { cpu: 60, mem: 70, heap: 80 },
-      medium:   { cpu: 40, mem: 50, heap: 60 }
-    };
-
-    if (cpuUsage > thresholds.critical.cpu || memoryUsage > thresholds.critical.mem || heapUsage > thresholds.critical.heap) {
-      return {
-        level: 'critical',
-        description: 'Критическая нагрузка',
-        recommendations: [
-          'Необходимо немедленное вмешательство',
-          'Рассмотрите возможность масштабирования',
-          'Проверьте наличие утечек памяти',
-          'Оптимизируйте запросы к базе данных'
-        ]
-      };
-    }
-
-    if (cpuUsage > thresholds.high.cpu || memoryUsage > thresholds.high.mem || heapUsage > thresholds.high.heap) {
-      return {
-        level: 'high',
-        description: 'Высокая нагрузка',
-        recommendations: [
-          'Рекомендуется мониторинг',
-          'Подготовьте план масштабирования',
-          'Проверьте оптимизацию кода'
-        ]
-      };
-    }
-
-    if (cpuUsage > thresholds.medium.cpu || memoryUsage > thresholds.medium.mem || heapUsage > thresholds.medium.heap) {
-      return {
-        level: 'medium',
-        description: 'Средняя нагрузка',
-        recommendations: [
-          'Система работает в нормальном режиме',
-          'Продолжайте мониторинг'
-        ]
-      };
-    }
-
-    return {
-      level: 'low',
-      description: 'Низкая нагрузка',
-      recommendations: [
-        'Система работает оптимально',
-        'Ресурсы используются эффективно'
-      ]
-    };
   }
 }
