@@ -227,6 +227,29 @@ export class GraphSubsService {
     }
   }
 
+  // --- Получение всех подписчиков графа по его ID ---
+  async getGraphSubscribers(graphId: Types.ObjectId) {
+    try {
+      const subscribers = await this.graphSubsModel
+        .find({ graph: graphId })
+        .populate({
+          path: 'user',
+          select: 'firstName lastName username avaPath telegramId'
+        })
+        .sort({ createdAt: -1 }) // Новые подписчики сначала
+        .lean()
+        .exec();
+
+      return subscribers.map(sub => ({
+        ...sub.user,
+        subscribedAt: sub.createdAt
+      }));
+    } catch (error) {
+      console.error('Error in getGraphSubscribers:', error);
+      throw new InternalServerErrorException('Ошибка при получении подписчиков графа');
+    }
+  }
+
   // --- Проверка подписки на граф ---
   // --- Нужна для гланой страницы для отображения подписок пользователя ---
   async isUserSubsExists(graph: string, userId: string): Promise<boolean> {

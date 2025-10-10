@@ -55,4 +55,13 @@ export class GraphSubsController {
         return this.graphSubsService.getUserSubscribedGraphs(userId)
     }
 
+    // --- Получение всех подписчиков графа по его ID ---
+    @Get('getGraphSubscribers/:graphId')
+    @Auth()
+    async getGraphSubscribers(
+        @Param('graphId') graphId: string,
+    ) {
+        return this.graphSubsService.getGraphSubscribers(new Types.ObjectId(graphId))
+    }
+
 }
