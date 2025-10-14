@@ -18,10 +18,13 @@ export class GraphController {
 
   // --- Получение графа по id ---
   @Get('getById/:id')
+  @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+  @OptionalAuth()
   async getGraphById(
-      @Param('id') id:string
+      @Param('id') id: string,
+      @GetOptionalAuthContext() authContext: OptionalAuthContext,
   ) {
-    return this.graphService.getGraphById(new Types.ObjectId(id))
+    return this.graphService.getGraphById(new Types.ObjectId(id), authContext.userId)
   }
 
   // --- Получение главных родительских графов --- 

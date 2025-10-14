@@ -135,21 +135,33 @@ export class GraphService {
   }  
 
   // --- Получение графа по id ---
-  async getGraphById(id: Types.ObjectId) {
+  async getGraphById(id: Types.ObjectId, userId?: Types.ObjectId) {
     const cacheKey = this.generateCacheKey('getGraphById', { id: id.toString() });
     
     // Пытаемся получить из кэша
-    const cachedGraph = await this.redisService.get(cacheKey);
-    if (cachedGraph) {
-      return cachedGraph;
+    let graph = await this.redisService.get(cacheKey);
+    
+    if (!graph) {
+      // Если нет в кэше, получаем из БД
+      graph = await this.GraphModel.findById(id).populate('parentGraphId', 'name').lean();
+      
+      // Сохраняем в кэш на 1 неделю
+      if (graph) {
+        await this.redisService.set(cacheKey, graph, this.GRAPH_CACHE_TTL);
+      }
     }
 
-    // Если нет в кэше, получаем из БД
-    const graph = await this.GraphModel.findById(id).populate('parentGraphId', 'name');
-    
-    // Сохраняем в кэш на 1 неделю
-    if (graph) {
-      await this.redisService.set(cacheKey, graph, this.GRAPH_CACHE_TTL);
+    if (!graph) {
+      return null;
+    }
+
+    // Если пользователь авторизован, проверяем подписку
+    if (userId) {
+      const subscribedGraphIds = await this.getUserSubscriptions(userId);
+      return {
+        ...(graph as any),
+        isSubscribed: subscribedGraphIds.has((graph as any)._id.toString())
+      };
     }
     
     return graph;
