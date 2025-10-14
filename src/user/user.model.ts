@@ -38,6 +38,12 @@ export class UserModel extends TimeStamps {
   @prop()
   telegramId: string
 
+  @prop({ enum: ['male', 'female'], required: false })
+  gender?: 'male' | 'female'
+
+  @prop({ required: false })
+  birthDate?: Date
+
   @prop({ default: 0 })
   // subsNum: number  // подписки на граф
   graphSubsNum: number
