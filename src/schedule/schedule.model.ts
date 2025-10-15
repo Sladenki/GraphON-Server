@@ -27,14 +27,14 @@ export class ScheduleModel extends TimeStamps {
     type: string;
 
     @prop({ required: true })
-    roomNumber: number;
+    roomNumber: string;
 
     @prop({ required: true, min: 0, max: 6 }) // 0 - Понедельник, 6 - Воскресенье
     dayOfWeek: number;
 
-    @prop({ required: true }) // Время проведения (например, '14:00')
+    @prop({ required: true }) // Время проведения С
     timeFrom: string;
 
-    @prop({ required: false }) // Время проведения (до, '15:40')
+    @prop({ required: false }) // Время проведения ДО
     timeTo: string;
 }
