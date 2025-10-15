@@ -1,5 +1,5 @@
 import { ScheduleType } from "../schedule.model";
-import { IsString, IsNumber, IsEnum, IsNotEmpty } from 'class-validator';
+import { IsString, IsEnum, IsNotEmpty, IsOptional, IsArray, ArrayNotEmpty, ArrayUnique, IsInt, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateScheduleDto {
@@ -19,8 +19,21 @@ export class CreateScheduleDto {
     @IsNotEmpty()
     roomNumber: string;
 
-    @IsNumber()
-    dayOfWeek: number;
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    @Max(6)
+    dayOfWeek?: number;
+
+    @IsOptional()
+    @Transform(({ value }) => Array.isArray(value) ? value.map((v: any) => Number(v)) : value)
+    @IsArray()
+    @ArrayNotEmpty()
+    @ArrayUnique()
+    @IsInt({ each: true })
+    @Min(0, { each: true })
+    @Max(6, { each: true })
+    daysOfWeek?: number[];
 
     @IsString()
     @IsNotEmpty()

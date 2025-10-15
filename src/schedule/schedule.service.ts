@@ -14,6 +14,13 @@ export class ScheduleService {
 
   // --- Создание расписания --- 
   async createSchedule(scheduleDto: CreateScheduleDto) {
+    // Если передан массив дней, создаём сразу несколько расписаний
+    if (Array.isArray((scheduleDto as any).daysOfWeek) && (scheduleDto as any).daysOfWeek.length > 0) {
+      const { daysOfWeek, dayOfWeek, ...rest } = scheduleDto as any;
+      const docs = daysOfWeek.map((day: number) => ({ ...rest, dayOfWeek: day }));
+      return this.ScheduleModel.insertMany(docs);
+    }
+
     const newSchedule = new this.ScheduleModel(scheduleDto);
     return newSchedule.save();
   }
