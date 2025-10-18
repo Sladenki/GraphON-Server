@@ -42,18 +42,82 @@ export class EventController {
 
     // --- Получение мероприятий для определённого графа ---
     @Get("by-graph/:graphId")
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
     async getEventsByGraphId(
+        @GetOptionalAuthContext() authContext: OptionalAuthContext,
         @Param("graphId") graphId: string
     ) {
-        return this.eventService.getEventsByGraphId(graphId);
+        // Если пользователь не авторизован, возвращаем события без проверки посещаемости
+        if (!authContext.isAuthenticated) {
+            return this.eventService.getEventsByGraphId(graphId);
+        }
+
+        // Оптимизированный подход для авторизованных пользователей
+        const [events, userEventRegs] = await Promise.all([
+            // Получаем все события
+            this.eventService.getEventsByGraphId(graphId),
+            
+            // Получаем все записи пользователя на события одним запросом
+            this.eventRegsModel
+                .find({ userId: authContext.userId })
+                .select('eventId')
+                .lean()
+                .exec()
+        ]);
+
+        // Создаем Set для быстрого поиска записей на события
+        const attendedEventIds = new Set(
+            userEventRegs.map(reg => reg.eventId.toString())
+        );
+
+        // Добавляем поле isAttended к каждому событию
+        const eventsWithAttendance = events.map(event => ({
+            ...event,
+            isAttended: attendedEventIds.has(event._id.toString())
+        }));
+
+        return eventsWithAttendance;
     }
 
     // --- Получение прошедших мероприятий для определённого графа ---
     @Get("past/by-graph/:graphId")
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
     async getPastEventsByGraphId(
+        @GetOptionalAuthContext() authContext: OptionalAuthContext,
         @Param("graphId") graphId: string
     ) {
-        return this.eventService.getPastEventsByGraphId(graphId);
+        // Если пользователь не авторизован, возвращаем события без проверки посещаемости
+        if (!authContext.isAuthenticated) {
+            return this.eventService.getPastEventsByGraphId(graphId);
+        }
+
+        // Оптимизированный подход для авторизованных пользователей
+        const [events, userEventRegs] = await Promise.all([
+            // Получаем все прошедшие события
+            this.eventService.getPastEventsByGraphId(graphId),
+            
+            // Получаем все записи пользователя на события одним запросом
+            this.eventRegsModel
+                .find({ userId: authContext.userId })
+                .select('eventId')
+                .lean()
+                .exec()
+        ]);
+
+        // Создаем Set для быстрого поиска записей на события
+        const attendedEventIds = new Set(
+            userEventRegs.map(reg => reg.eventId.toString())
+        );
+
+        // Добавляем поле isAttended к каждому событию
+        const eventsWithAttendance = events.map(event => ({
+            ...event,
+            isAttended: attendedEventIds.has(event._id.toString())
+        }));
+
+        return eventsWithAttendance;
     }
 
     // --- Получение мероприятий на ближайшее время ---
