@@ -14,7 +14,7 @@ export class UpdateEventDto {
     @Transform(({ value }) => value === '' ? undefined : value)
     @IsString()
     @IsOptional()
-    @MaxLength(150, { message: 'Описание не может быть длиннее 150 символов' })
+    @MaxLength(300, { message: 'Описание не может быть длиннее 300 символов' })
     description?: string;
 
     @Transform(({ value }) => value === '' ? undefined : value)
