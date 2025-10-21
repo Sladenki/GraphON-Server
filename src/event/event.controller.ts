@@ -25,10 +25,29 @@ export class EventController {
 
     // --- Получение мероприятия по id ---
     @Get(":eventId")
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
     async getEventById(
+        @GetOptionalAuthContext() authContext: OptionalAuthContext,
         @Param("eventId") eventId: string
     ) {
-        return this.eventService.getEventById(eventId);
+        const event = await this.eventService.getEventById(eventId);
+
+        // Если пользователь не авторизован, возвращаем событие без проверки посещаемости
+        if (!authContext.isAuthenticated) {
+            return event;
+        }
+
+        // Проверяем, записан ли пользователь на это событие
+        const isAttended = await this.eventRegsService.isUserAttendingEvent(
+            authContext.userId,
+            eventId
+        );
+
+        return {
+            ...event,
+            isAttended
+        };
     }
 
      // --- Создание мероприятия ---
