@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Param, Patch, UseGuards, UsePipes, ValidationPipe, HttpException } from "@nestjs/common";
+import { Controller, Get, HttpCode, Param, Patch, Query, UseGuards, UsePipes, ValidationPipe, HttpException } from "@nestjs/common";
 import { Types } from "mongoose";
 import { Auth } from "src/decorators/auth.decorator";
 import { CurrentUser } from "src/decorators/currentUser.decorator";
@@ -22,12 +22,15 @@ export class EventRegsController {
     }
 
     // Получаем мероприятия, на которые подписан пользователь (только предстоящие)
+    // Можно указать период в днях через query параметр daysAhead (по умолчанию 30 дней)
     @Get('getEventsByUserId')
     @Auth()
     async getEventsByUserId(
         @CurrentUser('_id') userId: Types.ObjectId,
+        @Query('daysAhead') daysAhead?: string,
     ) {
-        return this.eventRegsService.getEventsByUserId(userId)
+        const days = daysAhead ? parseInt(daysAhead, 10) : 30;
+        return this.eventRegsService.getEventsByUserId(userId, days)
     }
 
     // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)

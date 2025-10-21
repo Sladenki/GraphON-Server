@@ -29,12 +29,15 @@ export class GraphSubsController {
 
     // --- Получение расписания из подписанных графов ---
     // Для страницы расписания
+    // Можно указать период в днях через query параметр daysAhead (по умолчанию 30 дней)
     @Get('getSubsSchedule')
     @Auth()
     async getSubsSchedule(
         @CurrentUser('_id') userId: Types.ObjectId,
+        @Query('daysAhead') daysAhead?: string,
     ) {
-        return this.graphSubsService.getSubsSchedule(userId)
+        const days = daysAhead ? parseInt(daysAhead, 10) : 30;
+        return this.graphSubsService.getSubsSchedule(userId, days)
     }
 
     // --- Получение событий из подписок ---

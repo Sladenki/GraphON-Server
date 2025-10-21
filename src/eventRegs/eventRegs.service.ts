@@ -50,11 +50,15 @@ export class EventRegsService {
         return !!eventReg;
     }
 
-    // Получаем мероприятия, на которые подписан пользователь (для профиля)
-    async getEventsByUserId(userId: string | Types.ObjectId) {
+    // Получаем мероприятия, на которые подписан пользователь (за месяц)
+    async getEventsByUserId(userId: string | Types.ObjectId, daysAhead: number = 30) {
         // Получаем начало текущего дня (00:00:00)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+
+        // Получаем конец периода (по умолчанию 30 дней)
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + daysAhead);
 
         const regs = await this.EventRegsModel
             .find({ userId })
@@ -68,9 +72,13 @@ export class EventRegsService {
             })
             .lean<{ eventId: EventModel }[]>(); 
 
-        // Фильтруем по дате события
+        // Фильтруем по дате события (от сегодня до endDate)
         const upcomingEvents = regs
-            .filter(reg => reg.eventId && new Date(reg.eventId.eventDate) >= today)
+            .filter(reg => {
+                if (!reg.eventId) return false;
+                const eventDate = new Date(reg.eventId.eventDate);
+                return eventDate >= today && eventDate < endDate;
+            })
             .map(reg => ({
                 ...reg,
                 isAttended: true

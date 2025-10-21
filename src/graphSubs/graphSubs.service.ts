@@ -122,7 +122,7 @@ export class GraphSubsService {
 
   // --- Получение расписания из подписанных графов ---
   // --- Для страницы расписания - стабильное расписание и записанные мероприяти ---
-  async getSubsSchedule(userId: Types.ObjectId) {
+  async getSubsSchedule(userId: Types.ObjectId, daysAhead: number = 30) {
     try {
       // Быстро получаем ID подписанных графов (упрощенный aggregate)
       const subscribedGraphs = await this.graphSubsModel
@@ -140,7 +140,7 @@ export class GraphSubsService {
               subscribedGraphIds.map(id => id.toString())
             )
           : Promise.resolve([]),
-        this.eventRegsService.getEventsByUserId(userId)
+        this.eventRegsService.getEventsByUserId(userId, daysAhead)
       ]);
 
       // Упрощенная обработка событий

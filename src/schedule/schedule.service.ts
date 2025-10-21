@@ -35,12 +35,12 @@ export class ScheduleService {
       .exec();
   }
 
-  // --- Получает расписания для нескольких графов с понедельника по пятницу ---    
+  // --- Получает расписания для нескольких графов (все дни недели) ---    
   async getWeekdaySchedulesByGraphs(graphIds: string[]) {
     return this.ScheduleModel
     .find({
       graphId: { $in: graphIds },
-      dayOfWeek: { $gte: 0, $lte: 4 }, // Понедельник - Пятница
+      // Убрали фильтр по дням - теперь возвращает все дни недели (0-6)
     })
     .populate('graphId', 'name')
     .exec();
