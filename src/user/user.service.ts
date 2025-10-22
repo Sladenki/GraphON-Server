@@ -135,6 +135,8 @@ export class UserService {
       if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName;
       if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName;
       if (dto.username !== undefined) updatePayload.username = dto.username;
+      if (dto.gender !== undefined) updatePayload.gender = dto.gender;
+      if (dto.birthDate !== undefined) updatePayload.birthDate = new Date(dto.birthDate);
 
       if (Object.keys(updatePayload).length === 0) {
         throw new BadRequestException('Нет данных для обновления');
