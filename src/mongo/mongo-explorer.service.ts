@@ -79,10 +79,11 @@ export class MongoExplorerService {
 
     const query = this.normalizeQuery(queryRaw || {});
 
-    // Special populate for User.selectedGraphId → Graph document
+    // Special populate for User.selectedGraphId and managedGraphIds → Graph documents
     if (collectionName === 'User') {
       const pipeline: any[] = [
         { $match: query },
+        // Populate selectedGraphId
         {
           $lookup: {
             from: 'Graph',
@@ -95,6 +96,18 @@ export class MongoExplorerService {
           },
         },
         { $unwind: { path: '$selectedGraphId', preserveNullAndEmptyArrays: true } },
+        // Populate managedGraphIds
+        {
+          $lookup: {
+            from: 'Graph',
+            let: { managedIds: '$managedGraphIds' },
+            pipeline: [
+              { $match: { $expr: { $in: ['$_id', '$$managedIds'] } } },
+              { $project: { _id: 1, name: 1 } },
+            ],
+            as: 'managedGraphIds',
+          },
+        },
       ];
 
       const hasProjection = options?.projection && Object.keys(options.projection).length > 0;
