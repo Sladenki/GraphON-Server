@@ -79,15 +79,14 @@ export class EventService {
 
     // --- Получение мероприятий для определённого графа ---
     async getEventsByGraphId(graphId: string) {
-        // Получаем начало текущего дня (00:00:00)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Получаем текущее время (включая часы и минуты)
+        const now = new Date();
         
         return this.EventModel
             .find({ 
                 graphId,
                 $or: [
-                    { eventDate: { $gte: today } },
+                    { eventDate: { $gt: now } }, // Больше текущего времени
                     { isDateTbd: true }
                 ]
             })
@@ -115,15 +114,14 @@ export class EventService {
 
     // Получение мероприятий массива графов
     async getEventsByGraphsIds(graphIds: string[]) {
-        // Получаем начало текущего дня (00:00:00)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Получаем текущее время (включая часы и минуты)
+        const now = new Date();
         
         return this.EventModel
             .find({
                 graphId: { $in: graphIds },
                 $or: [
-                    { eventDate: { $gte: today } },
+                    { eventDate: { $gt: now } }, // Больше текущего времени
                     { isDateTbd: true }
                 ]
             })
@@ -134,15 +132,14 @@ export class EventService {
 
     // --- Получение мероприятий на ближайшее время ---
     async getUpcomingEvents(globalGraphId: string) {
-        // Получаем начало текущего дня (00:00:00)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Получаем текущее время (включая часы и минуты)
+        const now = new Date();
         
         return this.EventModel
             .find({ 
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 $or: [
-                    { eventDate: { $gte: today } },
+                    { eventDate: { $gt: now } }, // Больше текущего времени
                     { isDateTbd: true }
                 ]
             })
@@ -160,16 +157,14 @@ export class EventService {
 
     // --- Получение мероприятий на неделю по вузу ---
     async getWeeklyEvents(globalGraphId: string) {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date(start);
+        const now = new Date(); // Текущее время
+        const end = new Date(now);
         end.setDate(end.getDate() + 7);
 
         return this.EventModel
             .find({
                 globalGraphId: new Types.ObjectId(globalGraphId),
-                eventDate: { $gte: start, $lt: end }
+                eventDate: { $gt: now, $lt: end } // Больше текущего времени, меньше чем через неделю
             })
             .sort({ eventDate: 1 })
             .populate("graphId", "name imgPath ownerUserId")
