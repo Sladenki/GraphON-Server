@@ -93,7 +93,7 @@ export class TelegramBotService implements OnModuleInit {
 
       // Обычное приветствие без параметров
       this.bot.sendMessage(chatId, 
-        '🌟 *Добро пожаловать в GraphON!* 🌟\n\n' +
+        '👋 *Добро пожаловать в GraphON!*\n\n' +
         'Ваш личный гид по менеджменту внеучебных мероприятий.\n\n', 
         {
         parse_mode: "Markdown",
@@ -110,7 +110,7 @@ export class TelegramBotService implements OnModuleInit {
             ],        
             [
               {
-                text: '📢 Telegram канал',
+                text: '📢 Telegram-канал',
                 url: 'https://t.me/graph_ON', 
               },
             ],
