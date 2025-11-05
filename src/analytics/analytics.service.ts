@@ -24,23 +24,19 @@ export class AnalyticsService {
    * Вызывается автоматически middleware при каждом запросе
    */
   async trackUserActivity(userId: Types.ObjectId): Promise<void> {
-    console.log('📊 trackUserActivity called for userId:', userId);
     const now = new Date();
     const today = this.getStartOfDay(now);
 
     try {
       // Обновляем lastActivityDate в UserModel
-      console.log('📝 Updating UserModel for userId:', userId);
-      const userResult = await this.UserModel.findByIdAndUpdate(
+      await this.UserModel.findByIdAndUpdate(
         userId,
         { lastActivityDate: now },
         { new: false }
       ).exec();
-      console.log('📝 UserModel updated:', userResult ? 'SUCCESS' : 'USER NOT FOUND');
 
       // Обновляем или создаем запись активности за сегодня
-      console.log('📝 Upserting UserActivityModel for userId:', userId, 'date:', today);
-      const activityResult = await this.UserActivityModel.findOneAndUpdate(
+      await this.UserActivityModel.findOneAndUpdate(
         {
           userId: userId,
           date: today,
@@ -63,14 +59,12 @@ export class AnalyticsService {
           new: false,
         }
       ).exec();
-      console.log('📝 UserActivityModel upserted:', activityResult ? 'UPDATED' : 'CREATED');
 
       // Инвалидируем кэш для сегодняшней даты
       const cacheKey = `analytics:dau:${this.formatDate(today)}`;
       await this.redisService.del(cacheKey);
-      console.log('✅ Activity tracking completed successfully');
     } catch (error) {
-      console.error('❌ Error tracking user activity:', error);
+      console.error('Error tracking user activity:', error);
       // Не бросаем ошибку, чтобы не ломать основной запрос пользователя
     }
   }
