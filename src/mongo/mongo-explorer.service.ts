@@ -100,7 +100,7 @@ export class MongoExplorerService {
         {
           $lookup: {
             from: 'Graph',
-            let: { managedIds: '$managedGraphIds' },
+            let: { managedIds: { $ifNull: ['$managedGraphIds', []] } },
             pipeline: [
               { $match: { $expr: { $in: ['$_id', '$$managedIds'] } } },
               { $project: { _id: 1, name: 1 } },
