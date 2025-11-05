@@ -21,6 +21,7 @@ import { EventRegsModule } from './eventRegs/eventRegs.module';
 import { JwtGlobalModule } from './jwt/jwt.module';
 import redisConfig from './config/redis.config';
 import { MongoModule } from './mongo/mongo.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import { MongoModule } from './mongo/mongo.module';
     EventRegsModule,
     AdminModule,
     JwtGlobalModule,
-    MongoModule
+    MongoModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -66,6 +68,11 @@ import { MongoModule } from './mongo/mongo.module';
 
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LogginMiddleware).forRoutes('*');
+    // Импортируем ActivityTrackingMiddleware внутри функции для избежания circular dependency
+    const { ActivityTrackingMiddleware } = require('./analytics/activity-tracking.middleware');
+    
+    consumer
+      .apply(LogginMiddleware, ActivityTrackingMiddleware)
+      .forRoutes('*');
   }
 }

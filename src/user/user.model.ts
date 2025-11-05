@@ -61,4 +61,8 @@ export class UserModel extends TimeStamps {
   @prop()
   copyrightAgreementAcceptedAt: Date
 
+  // Поле для отслеживания активности пользователя
+  @prop()
+  lastActivityDate?: Date
+
 }
