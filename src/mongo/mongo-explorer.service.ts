@@ -300,6 +300,7 @@ export class MongoExplorerService {
     if (!doc) return doc;
     const replacer = (val: any): any => {
       if (val instanceof ObjectId) return { $oid: val.toHexString() } as any;
+      if (val instanceof Date) return { $date: val.toISOString() } as any;
       if (Array.isArray(val)) return val.map(replacer);
       if (val && typeof val === 'object') {
         const out: Record<string, any> = {};
