@@ -1,6 +1,8 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { MongoExplorerService } from './mongo-explorer.service';
+import { Multer } from 'multer';
 
 @Controller('mongo')
 export class MongoExplorerController {
@@ -103,6 +105,44 @@ export class MongoExplorerController {
       res.write(line);
     }
     res.end();
+  }
+
+  @Post('import/:db/:collection')
+  @UseInterceptors(FileInterceptor('file'))
+  async importCollection(
+    @Param('db') db: string,
+    @Param('collection') collection: string,
+    @UploadedFile() file: Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Файл не загружен');
+    }
+
+    try {
+      // Парсим JSON из буфера файла
+      const jsonContent = file.buffer.toString('utf-8');
+      const documents = JSON.parse(jsonContent);
+
+      // Проверяем, что это массив
+      if (!Array.isArray(documents)) {
+        throw new BadRequestException('JSON файл должен содержать массив объектов');
+      }
+
+      // Импортируем документы
+      const result = await this.explorer.importDocuments(db, collection, documents);
+
+      return {
+        success: true,
+        insertedCount: result.insertedCount,
+        totalDocuments: documents.length,
+        errors: result.errors.length > 0 ? result.errors : undefined,
+      };
+    } catch (error: any) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Ошибка при импорте: ${error.message}`);
+    }
   }
 }
 

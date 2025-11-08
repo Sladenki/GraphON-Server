@@ -273,6 +273,75 @@ export class MongoExplorerService {
     }
   }
 
+  async importDocuments(dbName: string, collectionName: string, documents: any[]): Promise<{ insertedCount: number; errors: any[] }> {
+    const client = await this.getClient();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    const errors: any[] = [];
+    let insertedCount = 0;
+
+    // Процесс каждого документа
+    const processedDocs = documents.map((doc, index) => {
+      try {
+        return this.parseExtendedJson(doc);
+      } catch (error) {
+        errors.push({ index, error: error.message, document: doc });
+        return null;
+      }
+    }).filter(doc => doc !== null);
+
+    if (processedDocs.length === 0) {
+      return { insertedCount: 0, errors };
+    }
+
+    try {
+      const result = await collection.insertMany(processedDocs, { ordered: false });
+      insertedCount = result.insertedCount;
+    } catch (error: any) {
+      // Обработка частичной вставки (когда некоторые документы вставились, а некоторые нет)
+      if (error.writeErrors) {
+        insertedCount = processedDocs.length - error.writeErrors.length;
+        error.writeErrors.forEach((writeError: any) => {
+          errors.push({
+            index: writeError.index,
+            error: writeError.errmsg,
+            document: processedDocs[writeError.index],
+          });
+        });
+      } else {
+        throw error;
+      }
+    }
+
+    return { insertedCount, errors };
+  }
+
+  private parseExtendedJson(obj: any): any {
+    if (!obj || typeof obj !== 'object') return obj;
+
+    // Обработка MongoDB Extended JSON формата
+    if (obj.$oid && typeof obj.$oid === 'string') {
+      return new ObjectId(obj.$oid);
+    }
+
+    if (obj.$date && typeof obj.$date === 'string') {
+      return new Date(obj.$date);
+    }
+
+    // Рекурсивная обработка массивов
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.parseExtendedJson(item));
+    }
+
+    // Рекурсивная обработка объектов
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = this.parseExtendedJson(value);
+    }
+    return result;
+  }
+
   private normalizeQuery(query: any): any {
     if (query == null || typeof query !== 'object') return {};
 
