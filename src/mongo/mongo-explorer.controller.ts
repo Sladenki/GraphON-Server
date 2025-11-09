@@ -2,7 +2,15 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { MongoExplorerService } from './mongo-explorer.service';
-import { Multer } from 'multer';
+
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 
 @Controller('mongo')
 export class MongoExplorerController {
@@ -112,7 +120,7 @@ export class MongoExplorerController {
   async importCollection(
     @Param('db') db: string,
     @Param('collection') collection: string,
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: MulterFile,
   ) {
     if (!file) {
       throw new BadRequestException('Файл не загружен');
