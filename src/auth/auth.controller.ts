@@ -81,11 +81,12 @@ export class AuthController {
   private async findOrCreateUser(user: any): Promise<any> {
     return this.UserModel.findOneAndUpdate(
       { telegramId: user.telegramId },
-      user,
+      { $set: user },  // Обязательно нужен $set для работы timestamps
       { 
         upsert: true,
         new: true,
-        lean: true
+        lean: true,
+        setDefaultsOnInsert: true  // Устанавливает createdAt и defaults при создании
       }
     );
   }
