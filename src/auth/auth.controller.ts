@@ -81,7 +81,17 @@ export class AuthController {
   private async findOrCreateUser(user: any): Promise<any> {
     return this.UserModel.findOneAndUpdate(
       { telegramId: user.telegramId },
-      { $set: user },  // Обязательно нужен $set для работы timestamps
+      {
+        $set: {
+          avaPath: user.avaPath,      // Всегда обновляем аватар (может измениться в TG)
+        },
+        $setOnInsert: {
+          telegramId: user.telegramId,
+          firstName: user.firstName,  // Устанавливаем только при создании
+          lastName: user.lastName,    // Пользователь может изменить в приложении
+          username: user.username,    // Не перезаписываем при повторном входе
+        }
+      },
       { 
         upsert: true,
         new: true,
