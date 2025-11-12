@@ -67,7 +67,7 @@ export class UserService {
       .find()
       .sort({ _id: -1 })
       .lean()
-      .select({ createdAt: 0, updatedAt: 0 });
+      .select({ createdAt: 1, updatedAt: 0 });
 
     return users;
   }
