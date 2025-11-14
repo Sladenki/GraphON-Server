@@ -12,17 +12,29 @@ export interface EventModel extends Base {}
     }
 })
 export class EventModel extends TimeStamps {
-    @prop({ ref: () => GraphModel, required: true, index: true })
-    graphId: Ref<GraphModel>;
-
+    // КГТУ / КБК / Калининград
     @prop({ ref: () => GraphModel, required: true, index: true })
     globalGraphId: Ref<GraphModel>;
+    
+    // Граф тематики (Юмор) - нужно, если нет graphId
+    @prop({ ref: () => GraphModel, required: false, index: true })
+    parentGraphId?: Ref<GraphModel>;
+
+    // Граф, на котором проводится мероприятие (группа)
+    @prop({ ref: () => GraphModel, required: true, index: true })
+    graphId: Ref<GraphModel>;
 
     @prop({ required: true })
     name: string;
 
     @prop({ maxlength: 150 })
     place: string;
+
+    @prop()
+    price?: number;
+
+    @prop()
+    imgPath?: string;
 
     @prop({ maxlength: 300 })
     description: string;
@@ -41,4 +53,7 @@ export class EventModel extends TimeStamps {
 
     @prop({ default: 0 })
     regedUsers: number
+
+    @prop({ enum: ["city", "university"], required: false, index: true })
+    type?: "city" | "university";
 }

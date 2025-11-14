@@ -4,11 +4,31 @@ import { Transform } from 'class-transformer';
 export class CreateEventDto {
     @IsString()
     @IsNotEmpty()
+    globalGraphId: string;
+
+    @IsString()
+    @IsNotEmpty()
     graphId: string;
+
+    @IsString()
+    @IsOptional()
+    parentGraphId?: string;
 
     @IsString()
     @IsNotEmpty()
     name: string;
+
+    @IsString()
+    @IsOptional()
+    price?: number;
+
+    @IsString()
+    @IsOptional()
+    imgPath?: string;
+
+    @IsString()
+    @IsOptional()
+    type?: "city" | "university";
 
     @Transform(({ value }) => value === '' ? undefined : value)
     @IsString()
@@ -41,8 +61,4 @@ export class CreateEventDto {
     @IsString()
     @IsOptional()
     timeTo?: string;
-
-    @IsString()
-    @IsNotEmpty()
-    globalGraphId: string;
 }
