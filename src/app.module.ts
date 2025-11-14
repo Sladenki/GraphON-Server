@@ -22,6 +22,7 @@ import { JwtGlobalModule } from './jwt/jwt.module';
 import redisConfig from './config/redis.config';
 import { MongoModule } from './mongo/mongo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { DownloadsModule } from './downloads/downloads.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     JwtGlobalModule,
     MongoModule,
     AnalyticsModule,
+    DownloadsModule,
   ],
   controllers: [AppController],
   providers: [
