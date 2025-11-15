@@ -212,6 +212,36 @@ export class MongoExplorerService {
       return docs.map(this.stringifyObjectIds);
     }
 
+    // Special populate for app_downloads.userId
+    if (collectionName === 'app_downloads') {
+      const pipeline: any[] = [
+        { $match: query },
+        {
+          $lookup: {
+            from: 'User',
+            let: { userId: '$userId' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
+              { $project: { _id: 1, firstName: 1, lastName: 1, username: 1, avaPath: 1 } },
+            ],
+            as: 'userId',
+          },
+        },
+        { $unwind: { path: '$userId', preserveNullAndEmptyArrays: true } },
+      ];
+
+      const hasProjection = options?.projection && Object.keys(options.projection).length > 0;
+      if (hasProjection) pipeline.push({ $project: options!.projection! });
+
+      const hasSort = options?.sort && Object.keys(options.sort).length > 0;
+      if (hasSort) pipeline.push({ $sort: options!.sort! });
+      if (typeof options?.skip === 'number') pipeline.push({ $skip: options.skip });
+      pipeline.push({ $limit: options?.limit ?? 50 });
+
+      const docs = await collection.aggregate(pipeline).toArray();
+      return docs.map(this.stringifyObjectIds);
+    }
+
     const cursor = collection.find(query, {
       projection: options?.projection,
       sort: options?.sort,
