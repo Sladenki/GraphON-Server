@@ -10,30 +10,20 @@ export class DownloadsService {
     private readonly appDownloadModel: ModelType<AppDownloadModel>,
   ) {}
 
-  async incrementCount() {
-    const now = new Date();
+  async incrementCount(userId?: string) {
+    const payload: Partial<AppDownloadModel> = {};
 
-    return this.appDownloadModel
-      .findOneAndUpdate(
-        {},
-        {
-          $inc: { count: 1 },
-          $set: { lastIncrementedAt: now },
-        },
-        { upsert: true, new: true },
-      )
-      .lean()
-      .exec();
+    if (userId) {
+      payload.user_id = userId;
+    }
+
+    const created = await this.appDownloadModel.create(payload);
+    return created.toObject();
   }
 
   async getTotalCount() {
-    const doc = await this.appDownloadModel.findOne().lean().exec();
-    if (doc) {
-      return doc;
-    }
-
-    const created = await this.appDownloadModel.create({});
-    return created.toObject();
+    const total = await this.appDownloadModel.countDocuments().exec();
+    return { count: total };
   }
 }
 

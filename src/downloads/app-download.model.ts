@@ -11,10 +11,7 @@ export interface AppDownloadModel extends Base {}
   },
 })
 export class AppDownloadModel extends TimeStamps {
-  @prop({ required: true, default: 0 })
-  count!: number;
-
-  @prop({ default: () => new Date() })
-  lastIncrementedAt?: Date;
+  @prop()
+  user_id?: string;
 }
 
