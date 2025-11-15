@@ -1,5 +1,6 @@
-import { modelOptions, prop } from "@typegoose/typegoose";
+import { modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
+import { UserModel } from "src/user/user.model";
 
 export interface AppDownloadModel extends Base {}
 
@@ -11,7 +12,7 @@ export interface AppDownloadModel extends Base {}
   },
 })
 export class AppDownloadModel extends TimeStamps {
-  @prop()
-  user_id?: string;
+  @prop({ ref: () => UserModel})
+  userId?: Ref<UserModel>;
 }
 

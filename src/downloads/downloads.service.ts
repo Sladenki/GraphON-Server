@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@m8a/nestjs-typegoose";
 import { ModelType } from "@typegoose/typegoose/lib/types";
 import { AppDownloadModel } from "./app-download.model";
+import { Types } from "mongoose";
 
 @Injectable()
 export class DownloadsService {
@@ -14,7 +15,7 @@ export class DownloadsService {
     const payload: Partial<AppDownloadModel> = {};
 
     if (userId) {
-      payload.user_id = userId;
+      payload.userId = new Types.ObjectId(userId);
     }
 
     const created = await this.appDownloadModel.create(payload);
