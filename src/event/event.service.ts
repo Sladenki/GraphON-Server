@@ -176,6 +176,15 @@ export class EventService {
         return this.EventModel.findByIdAndDelete(eventId).lean();
     }
 
+    // --- Удаление всех мероприятий с типом "city" ---
+    async deleteAllCityEvents() {
+        const result = await this.EventModel.deleteMany({ type: "city" });
+        return {
+            deletedCount: result.deletedCount,
+            message: `Удалено мероприятий: ${result.deletedCount}`
+        };
+    }
+
     // --- Редактирование мероприятия ---
     async updateEvent(eventId: string | Types.ObjectId, dto: UpdateEventDto) {
         try {
