@@ -82,17 +82,34 @@ export class EventService {
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        return this.EventModel
-            .find({ 
-                graphId,
-                $or: [
-                    { eventDate: { $gt: now } }, // Больше текущего времени
-                    { isDateTbd: true }
-                ]
-            })
-            .sort({ isDateTbd: 1, eventDate: 1 })
+        const events = await this.EventModel
+            .find({ graphId })
             .populate("graphId", "name imgPath")
             .lean();
+        
+        // Сортируем: сначала будущие мероприятия и с isDateTbd, потом прошедшие
+        return events.sort((a, b) => {
+            // Сначала мероприятия с isDateTbd
+            if (a.isDateTbd && !b.isDateTbd) return -1;
+            if (!a.isDateTbd && b.isDateTbd) return 1;
+            
+            // Если оба с isDateTbd или оба без, сортируем по дате
+            if (!a.eventDate && !b.eventDate) return 0;
+            if (!a.eventDate) return 1;
+            if (!b.eventDate) return -1;
+            
+            const dateA = new Date(a.eventDate);
+            const dateB = new Date(b.eventDate);
+            const isAPast = dateA < now;
+            const isBPast = dateB < now;
+            
+            // Будущие мероприятия идут перед прошедшими
+            if (!isAPast && isBPast) return -1;
+            if (isAPast && !isBPast) return 1;
+            
+            // Если оба будущие или оба прошедшие, сортируем по дате
+            return dateA.getTime() - dateB.getTime();
+        });
     }
 
     // --- Получение прошедших мероприятий для определённого графа ---
