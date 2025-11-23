@@ -149,14 +149,21 @@ export class EventService {
 
     // --- Получение мероприятий на ближайшее время ---
     async getUpcomingEvents(globalGraphId: string) {
-        // Получаем текущее время (включая часы и минуты)
-        const now = new Date();
+        // Получаем начало текущего дня для корректного сравнения
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
         return this.EventModel
             .find({ 
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 $or: [
-                    { eventDate: { $gt: now } }, // Больше текущего времени
+                    { 
+                        eventDate: { 
+                            $exists: true,
+                            $ne: null,
+                            $gte: today 
+                        } 
+                    }, // Больше или равно началу текущего дня
                     { isDateTbd: true }
                 ]
             })
