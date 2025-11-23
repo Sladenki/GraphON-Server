@@ -242,9 +242,7 @@ export class EventController {
     }
 
     // --- Удаление всех мероприятий с типом "city" ---
-    @UseGuards(JwtAuthGuard)
     @Delete("delete-all/city")
-    @Auth()
     async deleteAllCityEvents() {
         return this.eventService.deleteAllCityEvents();
     }
