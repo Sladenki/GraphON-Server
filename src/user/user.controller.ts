@@ -104,4 +104,10 @@ export class UserController {
   ) {
     return this.userService.updateProfile(userId, dto);
   }
+
+  // Получение всех пользователей с null telegramId
+  @Get('without-telegram-id')
+  async getUsersWithoutTelegramId() {
+    return this.userService.findUsersWithNullTelegramId();
+  }
 }

@@ -273,6 +273,26 @@ export class UserService {
     }
   }
 
+  // --- Поиск всех пользователей с null telegramId ---
+  async findUsersWithNullTelegramId() {
+    try {
+      const users = await this.UserModel
+        .find({
+          $or: [
+            { telegramId: null },
+            { telegramId: { $exists: false } }
+          ]
+        })
+        .lean()
+        .select({ createdAt: 0, updatedAt: 0 });
+      
+      return users;
+    } catch (error) {
+      console.error('Error finding users with null telegramId:', error);
+      throw new InternalServerErrorException('Ошибка при поиске пользователей с null telegramId');
+    }
+  }
+
   // --- Бэкофил managedGraphIds на основе Graph.ownerUserId ---
   async backfillManagedGraphs() {
     try {
