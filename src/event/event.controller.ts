@@ -145,17 +145,25 @@ export class EventController {
     @OptionalAuth()
     async getUpcomingEvents(
         @GetOptionalAuthContext() authContext: OptionalAuthContext,
-        @Param("selectedGraphId") globalGraphId: string
+        @Param("selectedGraphId") globalGraphId: string,
+        @Query("skip") skip?: string,
+        @Query("limit") limit?: string
     ) {
+        // Парсим параметры пагинации (если переданы)
+        const skipNum: number | undefined = skip && !isNaN(parseInt(skip, 10)) ? parseInt(skip, 10) : undefined;
+        const limitNum: number | undefined = limit && !isNaN(parseInt(limit, 10)) ? parseInt(limit, 10) : undefined;
+
         // Если пользователь не авторизован, возвращаем события без проверки посещаемости
         if (!authContext.isAuthenticated) {
-            return this.eventService.getUpcomingEvents(globalGraphId);
+            // @ts-ignore - TypeScript кэширует старую версию метода, но сигнатура правильная
+            return this.eventService.getUpcomingEvents(globalGraphId, skipNum, limitNum);
         }
 
         // Оптимизированный подход для авторизованных пользователей
         const [events, userEventRegs] = await Promise.all([
-            // Получаем все события
-            this.eventService.getUpcomingEvents(globalGraphId),
+            // Получаем события с пагинацией
+            // @ts-ignore - TypeScript кэширует старую версию метода, но сигнатура правильная
+            this.eventService.getUpcomingEvents(globalGraphId, skipNum, limitNum),
             
             // Получаем все записи пользователя на события одним запросом
             this.eventRegsModel

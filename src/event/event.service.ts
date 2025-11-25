@@ -148,12 +148,12 @@ export class EventService {
     }
 
     // --- Получение мероприятий на ближайшее время ---
-    async getUpcomingEvents(globalGraphId: string) {
+    async getUpcomingEvents(globalGraphId: string, skip?: number, limit?: number) {
         // Получаем начало текущего дня для корректного сравнения
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        return this.EventModel
+        const query = this.EventModel
             .find({ 
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 $or: [
@@ -175,8 +175,17 @@ export class EventService {
                     path: "parentGraphId",
                     select: "name imgPath ownerUserId"
                 }
-            })
-            .lean();
+            });
+        
+        // Применяем пагинацию только если параметры переданы
+        if (skip !== undefined && skip !== null) {
+            query.skip(skip);
+        }
+        if (limit !== undefined && limit !== null) {
+            query.limit(limit);
+        }
+        
+        return query.lean();
     }
 
     // --- Получение мероприятий на неделю по вузу ---
