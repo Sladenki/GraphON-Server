@@ -293,6 +293,26 @@ export class UserService {
     }
   }
 
+  // --- Удаление всех пользователей с null telegramId ---
+  async deleteUsersWithNullTelegramId() {
+    try {
+      const result = await this.UserModel.deleteMany({
+        $or: [
+          { telegramId: null },
+          { telegramId: { $exists: false } }
+        ]
+      });
+      
+      return {
+        deletedCount: result.deletedCount,
+        message: `Удалено пользователей: ${result.deletedCount}`
+      };
+    } catch (error) {
+      console.error('Error deleting users with null telegramId:', error);
+      throw new InternalServerErrorException('Ошибка при удалении пользователей с null telegramId');
+    }
+  }
+
   // --- Бэкофил managedGraphIds на основе Graph.ownerUserId ---
   async backfillManagedGraphs() {
     try {

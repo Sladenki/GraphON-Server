@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   InternalServerErrorException,
   NotFoundException,
@@ -109,5 +110,11 @@ export class UserController {
   @Get('without-telegram-id')
   async getUsersWithoutTelegramId() {
     return this.userService.findUsersWithNullTelegramId();
+  }
+
+  // Удаление всех пользователей с null telegramId
+  @Delete('without-telegram-id')
+  async deleteUsersWithoutTelegramId() {
+    return this.userService.deleteUsersWithNullTelegramId();
   }
 }
