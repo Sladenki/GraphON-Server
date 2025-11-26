@@ -65,4 +65,7 @@ export class UserModel extends TimeStamps {
   @prop()
   lastActivityDate?: Date
 
+  @prop()
+  isStudent?: boolean
+
 }
