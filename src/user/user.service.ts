@@ -313,6 +313,25 @@ export class UserService {
     }
   }
 
+  // --- Установка isStudent: true для всех пользователей ---
+  async setAllUsersAsStudents() {
+    try {
+      const result = await this.UserModel.updateMany(
+        {}, // Пустой фильтр - обновляем все документы
+        { $set: { isStudent: true } }
+      );
+      
+      return {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        message: `Обновлено пользователей: ${result.modifiedCount} из ${result.matchedCount}`
+      };
+    } catch (error) {
+      console.error('Error setting all users as students:', error);
+      throw new InternalServerErrorException('Ошибка при установке isStudent для всех пользователей');
+    }
+  }
+
   // --- Бэкофил managedGraphIds на основе Graph.ownerUserId ---
   async backfillManagedGraphs() {
     try {

@@ -117,4 +117,10 @@ export class UserController {
   async deleteUsersWithoutTelegramId() {
     return this.userService.deleteUsersWithNullTelegramId();
   }
+
+  // Установка isStudent: true для всех пользователей
+  @Patch('set-all-as-students')
+  async setAllUsersAsStudents() {
+    return this.userService.setAllUsersAsStudents();
+  }
 }
