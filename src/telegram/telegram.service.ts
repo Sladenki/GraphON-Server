@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as TelegramBot from 'node-telegram-bot-api';
+import * as fs from 'fs';
+import * as path from 'path';
 import { UserService } from 'src/user/user.service';
 import { getCopyrightConfig } from 'src/config/copyright.config';
 
@@ -40,6 +42,9 @@ export class TelegramBotService implements OnModuleInit {
     const copyrightConfig = getCopyrightConfig(this.configService);
     this.COPYRIGHT_PDF_PATH = copyrightConfig.pdfPath; // Для обратной совместимости
     this.COPYRIGHT_PDF_PATHS = copyrightConfig.pdfPaths; // Массив файлов
+    
+    // Логируем загруженные пути для отладки
+    console.log('Copyright PDF paths loaded:', this.COPYRIGHT_PDF_PATHS);
   }
 
   onModuleInit() {
@@ -227,8 +232,39 @@ export class TelegramBotService implements OnModuleInit {
     try {
       // Если есть несколько файлов, отправляем их как медиагруппу
       if (this.COPYRIGHT_PDF_PATHS && this.COPYRIGHT_PDF_PATHS.length > 1) {
-        // Создаем массив медиа для отправки
-        const media = this.COPYRIGHT_PDF_PATHS.map((filePath, index) => {
+        // Проверяем существование файлов перед отправкой
+        const existingFiles: string[] = [];
+        const missingFiles: string[] = [];
+
+        for (const filePath of this.COPYRIGHT_PDF_PATHS) {
+          try {
+            // Преобразуем относительный путь в абсолютный
+            const absolutePath = path.isAbsolute(filePath) 
+              ? filePath 
+              : path.resolve(process.cwd(), filePath);
+            
+            if (fs.existsSync(absolutePath)) {
+              existingFiles.push(filePath);
+            } else {
+              missingFiles.push(filePath);
+              console.error(`File not found: ${filePath} (absolute: ${absolutePath})`);
+            }
+          } catch (err) {
+            console.error(`Error checking file ${filePath}:`, err);
+            missingFiles.push(filePath);
+          }
+        }
+
+        if (existingFiles.length === 0) {
+          throw new Error(`Все файлы не найдены. Отсутствующие файлы: ${missingFiles.join(', ')}`);
+        }
+
+        if (missingFiles.length > 0) {
+          console.warn(`Некоторые файлы не найдены: ${missingFiles.join(', ')}. Отправляем только существующие.`);
+        }
+
+        // Создаем массив медиа для отправки только из существующих файлов
+        const media = existingFiles.map((filePath, index) => {
           const mediaItem: any = {
             type: 'document',
             media: filePath,
@@ -264,7 +300,16 @@ export class TelegramBotService implements OnModuleInit {
         });
       } else {
         // Для одного файла используем старый метод
-        await this.bot.sendDocument(chatId, this.COPYRIGHT_PDF_PATH, {
+        const filePath = this.COPYRIGHT_PDF_PATHS?.[0] || this.COPYRIGHT_PDF_PATH;
+        const absolutePath = path.isAbsolute(filePath) 
+          ? filePath 
+          : path.resolve(process.cwd(), filePath);
+        
+        if (!fs.existsSync(absolutePath)) {
+          throw new Error(`Файл не найден: ${filePath} (absolute: ${absolutePath})`);
+        }
+
+        await this.bot.sendDocument(chatId, filePath, {
           caption: '📋 *Соглашение об авторских правах*\n\n' +
                   'Даю свое согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с Политикой конфиденциальности, Положением об обработке данных, Политикой использования файлов cookies.\n\n',
           parse_mode: "Markdown",
@@ -280,12 +325,20 @@ export class TelegramBotService implements OnModuleInit {
           },
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending copyright agreement:', error);
-      // Если не удалось отправить файл, отправляем текстовое сообщение
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        pdfPaths: this.COPYRIGHT_PDF_PATHS,
+      });
+      
+      // Если не удалось отправить файл, отправляем текстовое сообщение с подробностями ошибки
+      const errorMessage = error.message || 'Неизвестная ошибка';
       this.bot.sendMessage(chatId, 
         '📋 *Соглашение об авторских правах*\n\n' +
         'К сожалению, не удалось загрузить документ.\n\n' +
+        `Ошибка: ${errorMessage}\n\n` +
         'Пожалуйста, свяжитесь с поддержкой для получения соглашения.', 
         {
         parse_mode: "Markdown",
