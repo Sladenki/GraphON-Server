@@ -11,6 +11,7 @@ export class TelegramBotService implements OnModuleInit {
   private SERVER_URL: string;
   private SUPPORT_URL: string;
   private COPYRIGHT_PDF_PATH: string;
+  private COPYRIGHT_PDF_PATHS: string[];
 
   constructor(
     private readonly configService: ConfigService,
@@ -35,9 +36,10 @@ export class TelegramBotService implements OnModuleInit {
     const supportUrlString = this.configService.get<string>('SUPPORT_URL');
     this.SUPPORT_URL = supportUrlString
 
-    // Путь к PDF файлу соглашения
+    // Пути к PDF файлам соглашения
     const copyrightConfig = getCopyrightConfig(this.configService);
-    this.COPYRIGHT_PDF_PATH = copyrightConfig.pdfPath;
+    this.COPYRIGHT_PDF_PATH = copyrightConfig.pdfPath; // Для обратной совместимости
+    this.COPYRIGHT_PDF_PATHS = copyrightConfig.pdfPaths; // Массив файлов
   }
 
   onModuleInit() {
@@ -223,22 +225,61 @@ export class TelegramBotService implements OnModuleInit {
   // Отправка соглашения об авторских правах
   async sendCopyrightAgreement(chatId: number) {
     try {
-      // Отправляем PDF файл
-      await this.bot.sendDocument(chatId, this.COPYRIGHT_PDF_PATH, {
-        caption: '📋 *Соглашение об авторских правах*\n\n' +
-                'Даю свое согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с Политикой конфиденциальности, Положением об обработке данных, Политикой использования файлов cookies.\n\n',
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '✅ Принять соглашение',
-                callback_data: 'accept_copyright_agreement'
-              },
+      // Если есть несколько файлов, отправляем их как медиагруппу
+      if (this.COPYRIGHT_PDF_PATHS && this.COPYRIGHT_PDF_PATHS.length > 1) {
+        // Создаем массив медиа для отправки
+        const media = this.COPYRIGHT_PDF_PATHS.map((filePath, index) => {
+          const mediaItem: any = {
+            type: 'document',
+            media: filePath,
+          };
+          // Добавляем caption только к первому файлу (Telegram позволяет caption только первому элементу медиагруппы)
+          if (index === 0) {
+            mediaItem.caption = '📋 *Соглашение об авторских правах*\n\n' +
+              'Даю свое согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с Политикой конфиденциальности, Положением об обработке данных, Политикой использования файлов cookies.\n\n';
+            mediaItem.parse_mode = 'Markdown';
+          }
+          return mediaItem;
+        });
+
+        // Отправляем медиагруппу (первые 10 файлов, так как Telegram ограничивает медиагруппы 10 файлами)
+        await this.bot.sendMediaGroup(chatId, media.slice(0, 10));
+
+        // Отправляем сообщение с кнопкой "Принять соглашение" после медиагруппы
+        await this.bot.sendMessage(chatId, 
+          '📋 *Соглашение об авторских правах*\n\n' +
+          'Пожалуйста, ознакомьтесь с прикрепленными документами.',
+          {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '✅ Принять соглашение',
+                  callback_data: 'accept_copyright_agreement'
+                },
+              ],
             ],
-          ],
-        },
-      });
+          },
+        });
+      } else {
+        // Для одного файла используем старый метод
+        await this.bot.sendDocument(chatId, this.COPYRIGHT_PDF_PATH, {
+          caption: '📋 *Соглашение об авторских правах*\n\n' +
+                  'Даю свое согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с Политикой конфиденциальности, Положением об обработке данных, Политикой использования файлов cookies.\n\n',
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '✅ Принять соглашение',
+                  callback_data: 'accept_copyright_agreement'
+                },
+              ],
+            ],
+          },
+        });
+      }
     } catch (error) {
       console.error('Error sending copyright agreement:', error);
       // Если не удалось отправить файл, отправляем текстовое сообщение
