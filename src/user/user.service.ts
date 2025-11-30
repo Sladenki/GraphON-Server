@@ -127,6 +127,28 @@ export class UserService {
     }
   }
 
+  // --- Обновление статуса студента пользователя ---
+  async updateIsStudent(userId: Types.ObjectId, isStudent: boolean) {
+    try {
+      const updatedUser = await this.UserModel.findByIdAndUpdate(
+        userId,
+        { isStudent },
+        { new: true }
+      ).lean();
+
+      if (!updatedUser) {
+        throw new NotFoundException('Пользователь не найден');
+      }
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Ошибка при обновлении статуса студента');
+    }
+  }
+
   // --- Обновление профиля пользователя ---
   async updateProfile(userId: Types.ObjectId, dto: UpdateUserDto) {
     try {

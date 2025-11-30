@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -93,6 +94,21 @@ export class UserController {
       userId,
       selectedGraphId
     );
+  }
+
+  // Обновление статуса студента пользователя
+  @UseGuards(JwtAuthGuard)
+  @Patch('is-student')
+  @Auth()
+  async updateIsStudent(
+    @CurrentUser('_id') userId: Types.ObjectId,
+    @Body('isStudent') isStudent: boolean
+  ) {
+    if (typeof isStudent !== 'boolean') {
+      throw new BadRequestException('Поле isStudent должно быть boolean (true или false)');
+    }
+    
+    return this.userService.updateIsStudent(userId, isStudent);
   }
 
   // Обновление данных профиля
