@@ -16,8 +16,13 @@ export class UserModel extends TimeStamps {
   @prop({ enum: ['create', 'admin', 'editor', 'sysadmin', 'user'], default: 'user' })
   role: 'create' | 'admin' | 'editor' | 'sysadmin' | 'user';
 
+  // Калининград (больше для локалки)
   @prop ({ ref: () => GraphModel, index: true, default: null })
   selectedGraphId: Ref<GraphModel>; 
+
+  // КГТУ \ КБК
+  @prop ({ ref: () => GraphModel, index: true, default: null })
+  universityGraphId: Ref<GraphModel>; 
 
   // Список графов, которыми управляет пользователь (по сути, где он владелец)
   @prop({ ref: () => GraphModel, type: () => [GraphModel], default: undefined })
