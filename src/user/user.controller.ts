@@ -96,6 +96,24 @@ export class UserController {
     );
   }
 
+  // Выбор университетского графа пользователя
+  @UseGuards(JwtAuthGuard)
+  @Patch('university-graph')
+  @Auth()
+  async updateUniversityGraph(
+    @CurrentUser('_id') userId: Types.ObjectId,
+    @Body('universityGraphId') universityGraphId: string
+  ) {
+    if (!universityGraphId) {
+      throw new UnauthorizedException('ID университетского графа не указан');
+    }
+    
+    return this.userService.updateUniversityGraph(
+      userId,
+      universityGraphId
+    );
+  }
+
   // Обновление статуса студента пользователя
   @UseGuards(JwtAuthGuard)
   @Patch('is-student')

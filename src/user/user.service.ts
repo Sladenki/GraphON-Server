@@ -127,6 +127,28 @@ export class UserService {
     }
   }
 
+  // --- Обновление университетского графа пользователя ---
+  async updateUniversityGraph(userId: Types.ObjectId, universityGraphId: string) {
+    try {
+      const updatedUser = await this.UserModel.findByIdAndUpdate(
+        userId,
+        { universityGraphId },
+        { new: true }
+      ).lean();
+
+      if (!updatedUser) {
+        throw new NotFoundException('Пользователь не найден');
+      }
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Ошибка при обновлении университетского графа');
+    }
+  }
+
   // --- Обновление статуса студента пользователя ---
   async updateIsStudent(userId: Types.ObjectId, isStudent: boolean) {
     try {
