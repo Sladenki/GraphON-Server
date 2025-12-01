@@ -12,9 +12,9 @@ export interface RequestsConnectedGraphModel extends Base {}
     }
 })
 export class RequestsConnectedGraphModel extends TimeStamps {
-    // Пользователь, который сделал запрос
-    @prop({ ref: () => UserModel, required: true, index: true })
-    userId: Ref<UserModel>;
+    // Пользователь, который сделал запрос (опционально, если пользователь не авторизован)
+    @prop({ ref: () => UserModel, required: false, index: true })
+    userId?: Ref<UserModel>;
 
     // Название вуза
     @prop({ required: true })

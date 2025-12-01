@@ -15,7 +15,7 @@ export class RequestsConnectedGraphService {
     ) {}
 
     // --- Создание запроса на подключение вуза ---
-    async createRequest(userId: Types.ObjectId, university: string) {
+    async createRequest(university: string, userId?: Types.ObjectId) {
         try {
             if (!university || university.trim().length === 0) {
                 throw new HttpException(
@@ -24,18 +24,20 @@ export class RequestsConnectedGraphService {
                 );
             }
 
-            // Проверяем, существует ли пользователь
-            const user = await this.UserModel.findById(userId).lean();
-            if (!user) {
-                throw new HttpException(
-                    'Пользователь не найден',
-                    HttpStatus.NOT_FOUND
-                );
+            // Если userId передан, проверяем существование пользователя
+            if (userId) {
+                const user = await this.UserModel.findById(userId).lean();
+                if (!user) {
+                    throw new HttpException(
+                        'Пользователь не найден',
+                        HttpStatus.NOT_FOUND
+                    );
+                }
             }
 
-            // Создаем запрос
+            // Создаем запрос (userId может быть undefined, если пользователь не авторизован)
             const request = await this.RequestsConnectedGraphModel.create({
-                userId,
+                userId: userId || undefined,
                 university: university.trim(),
             });
 
