@@ -139,4 +139,10 @@ export class UserController {
   async setAllUsersAsStudents() {
     return this.userService.setAllUsersAsStudents();
   }
+
+  // Миграция selectedGraphId в universityGraphId
+  @Post('migrate-selected-to-university-graph')
+  async migrateSelectedGraphToUniversityGraph() {
+    return this.userService.migrateSelectedGraphToUniversityGraph();
+  }
 }

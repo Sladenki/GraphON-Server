@@ -354,6 +354,45 @@ export class UserService {
     }
   }
 
+  // --- Миграция selectedGraphId в universityGraphId ---
+  async migrateSelectedGraphToUniversityGraph() {
+    try {
+      // Находим всех пользователей с selectedGraphId
+      const usersWithSelectedGraph = await this.UserModel.find({
+        selectedGraphId: { $exists: true, $ne: null }
+      }).select({ _id: 1, selectedGraphId: 1, universityGraphId: 1 }).lean();
+
+      let migratedCount = 0;
+      let skippedCount = 0;
+
+      for (const user of usersWithSelectedGraph) {
+        // Пропускаем, если universityGraphId уже заполнен
+        if (user.universityGraphId) {
+          skippedCount++;
+          continue;
+        }
+
+        // Переносим selectedGraphId в universityGraphId
+        await this.UserModel.findByIdAndUpdate(
+          user._id,
+          { $set: { universityGraphId: user.selectedGraphId } },
+          { new: false }
+        );
+        migratedCount++;
+      }
+
+      return {
+        totalUsers: usersWithSelectedGraph.length,
+        migratedCount,
+        skippedCount,
+        message: `Миграция завершена. Перенесено: ${migratedCount}, пропущено (уже заполнено): ${skippedCount}`
+      };
+    } catch (error) {
+      console.error('Error migrating selectedGraphId to universityGraphId:', error);
+      throw new InternalServerErrorException('Ошибка при миграции selectedGraphId в universityGraphId');
+    }
+  }
+
   // --- Бэкофил managedGraphIds на основе Graph.ownerUserId ---
   async backfillManagedGraphs() {
     try {
