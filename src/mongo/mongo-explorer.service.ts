@@ -79,7 +79,7 @@ export class MongoExplorerService {
 
     const query = this.normalizeQuery(queryRaw || {});
 
-    // Special populate for User.selectedGraphId and managedGraphIds → Graph documents
+    // Special populate for User.selectedGraphId, universityGraphId and managedGraphIds → Graph documents
     if (collectionName === 'User') {
       const pipeline: any[] = [
         { $match: query },
@@ -96,6 +96,19 @@ export class MongoExplorerService {
           },
         },
         { $unwind: { path: '$selectedGraphId', preserveNullAndEmptyArrays: true } },
+        // Populate universityGraphId
+        {
+          $lookup: {
+            from: 'Graph',
+            let: { universityId: '$universityGraphId' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$_id', '$$universityId'] } } },
+              { $project: { _id: 1, name: 1 } },
+            ],
+            as: 'universityGraphId',
+          },
+        },
+        { $unwind: { path: '$universityGraphId', preserveNullAndEmptyArrays: true } },
         // Populate managedGraphIds
         {
           $lookup: {
