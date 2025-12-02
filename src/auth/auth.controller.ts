@@ -79,26 +79,49 @@ export class AuthController {
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<any> {
-    return this.UserModel.findOneAndUpdate(
-      { telegramId: user.telegramId },
-      {
-        $set: {
-          avaPath: user.avaPath,      // Всегда обновляем аватар (может измениться в TG)
-        },
-        $setOnInsert: {
-          telegramId: user.telegramId,
-          firstName: user.firstName,  // Устанавливаем только при создании
-          lastName: user.lastName,    // Пользователь может изменить в приложении
-          username: user.username,    // Не перезаписываем при повторном входе
-        }
-      },
-      { 
-        upsert: true,
-        new: true,
-        lean: true,
-        setDefaultsOnInsert: true  // Устанавливает createdAt и defaults при создании
+    console.log('findOrCreateUser called with:', user);
+    
+    // Сначала ищем пользователя
+    const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
+    
+    if (existingUser) {
+      // Пользователь существует - обновляем данные
+      const updateFields: any = {
+        avaPath: user.avaPath, // Всегда обновляем аватар
+      };
+      
+      // Обновляем firstName, lastName, username только если они пустые
+      if (!existingUser.firstName && user.firstName) {
+        updateFields.firstName = user.firstName;
       }
-    );
+      if (!existingUser.lastName && user.lastName) {
+        updateFields.lastName = user.lastName;
+      }
+      if (!existingUser.username && user.username) {
+        updateFields.username = user.username;
+      }
+      
+      const result = await this.UserModel.findByIdAndUpdate(
+        existingUser._id,
+        { $set: updateFields },
+        { new: true, lean: true }
+      );
+      
+      console.log('Updated existing user:', result);
+      return result;
+    } else {
+      // Создаем нового пользователя
+      const result = await this.UserModel.create({
+        telegramId: user.telegramId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        avaPath: user.avaPath,
+      });
+      
+      console.log('Created new user:', result);
+      return result;
+    }
   }
 
   // Серверный метод для выхода
