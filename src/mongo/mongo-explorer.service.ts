@@ -294,6 +294,34 @@ export class MongoExplorerService {
     return { deletedCount: res.deletedCount };
   }
 
+  // Вставка одного документа
+  async insertOneDocument(dbName: string, collectionName: string, document: any) {
+    const client = await this.getClient();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    try {
+      // Обрабатываем Extended JSON (если есть _id с $oid, например)
+      const processedDoc = this.parseExtendedJson(document);
+      
+      const result = await collection.insertOne(processedDoc);
+      
+      return {
+        insertedId: result.insertedId.toString(),
+        message: 'Документ успешно добавлен'
+      };
+    } catch (error: any) {
+      console.error('Error inserting document:', error);
+      
+      // Обработка дублирования _id
+      if (error.code === 11000) {
+        throw new Error(`Документ с таким _id уже существует: ${error.message}`);
+      }
+      
+      throw new Error(`Ошибка при вставке документа: ${error.message}`);
+    }
+  }
+
   async *exportCollectionIterator(
     dbName: string,
     collectionName: string,
@@ -375,6 +403,22 @@ export class MongoExplorerService {
     // Рекурсивная обработка массивов
     if (Array.isArray(obj)) {
       return obj.map(item => this.parseExtendedJson(item));
+    }
+
+    // Обработка populated полей (объектов с _id и name, без других значимых полей)
+    // Это характерно для populated Graph документов
+    const keys = Object.keys(obj);
+    const hasOnlyIdAndName = keys.length <= 3 && obj._id && (obj.name !== undefined || obj.imgPath !== undefined);
+    
+    if (hasOnlyIdAndName && !obj.$oid && !obj.$date) {
+      // Если _id - это объект с $oid
+      if (typeof obj._id === 'object' && obj._id.$oid) {
+        return new ObjectId(obj._id.$oid);
+      }
+      // Если _id - это строка
+      if (typeof obj._id === 'string' && /^[a-f\d]{24}$/i.test(obj._id)) {
+        return new ObjectId(obj._id);
+      }
     }
 
     // Рекурсивная обработка объектов

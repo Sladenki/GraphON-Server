@@ -65,6 +65,20 @@ export class MongoExplorerController {
     return this.explorer.deleteDocumentById(db, collection, id);
   }
 
+  @Post('insertOne/:db/:collection')
+  @HttpCode(200)
+  async insertOne(
+    @Param('db') db: string,
+    @Param('collection') collection: string,
+    @Body() document: any,
+  ) {
+    try {
+      return await this.explorer.insertOneDocument(db, collection, document);
+    } catch (error: any) {
+      throw new BadRequestException(error.message || 'Ошибка при вставке документа');
+    }
+  }
+
   @Get('export/:db/:collection')
   async exportCollection(
     @Param('db') db: string,
