@@ -301,8 +301,37 @@ export class MongoExplorerService {
     const collection = db.collection(collectionName);
 
     try {
+      console.log('Original document before processing:', JSON.stringify(document, null, 2));
+      
       // Обрабатываем Extended JSON (если есть _id с $oid, например)
-      const processedDoc = this.parseExtendedJson(document);
+      let processedDoc = this.parseExtendedJson(document);
+      
+      // Дополнительная обработка для коллекции User: преобразуем строковые Ref-поля в ObjectId
+      if (collectionName === 'User') {
+        // Преобразуем _id
+        if (typeof processedDoc._id === 'string' && /^[a-f\d]{24}$/i.test(processedDoc._id)) {
+          processedDoc._id = new ObjectId(processedDoc._id);
+        }
+        
+        // Преобразуем selectedGraphId
+        if (typeof processedDoc.selectedGraphId === 'string' && /^[a-f\d]{24}$/i.test(processedDoc.selectedGraphId)) {
+          processedDoc.selectedGraphId = new ObjectId(processedDoc.selectedGraphId);
+        }
+        
+        // Преобразуем universityGraphId
+        if (typeof processedDoc.universityGraphId === 'string' && /^[a-f\d]{24}$/i.test(processedDoc.universityGraphId)) {
+          processedDoc.universityGraphId = new ObjectId(processedDoc.universityGraphId);
+        }
+      }
+      
+      console.log('Processed document after parseExtendedJson:');
+      console.log('_id type:', typeof processedDoc._id, processedDoc._id);
+      console.log('selectedGraphId type:', typeof processedDoc.selectedGraphId, processedDoc.selectedGraphId);
+      console.log('universityGraphId type:', typeof processedDoc.universityGraphId, processedDoc.universityGraphId);
+      console.log('managedGraphIds length:', processedDoc.managedGraphIds?.length);
+      if (processedDoc.managedGraphIds?.length > 0) {
+        console.log('First managedGraphId type:', typeof processedDoc.managedGraphIds[0], processedDoc.managedGraphIds[0]);
+      }
       
       const result = await collection.insertOne(processedDoc);
       
