@@ -8,7 +8,7 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   // Получить общую статистику (DAU, WAU, MAU, новые пользователи)
-  @AuthRoles(UserRole.Create)
+  // @AuthRoles(UserRole.Create)
   @Get('overall')
   async getOverallStats() {
     return this.analyticsService.getOverallStats();
