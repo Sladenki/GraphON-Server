@@ -83,7 +83,6 @@ export class AdminController {
     }
 
     // --- Получение статистики приложения ---
-    // @AuthRoles(UserRole.Create)
     @Get('user-stats')
     getApplicationStats() {
         return this.adminService.getApplicationStats();
