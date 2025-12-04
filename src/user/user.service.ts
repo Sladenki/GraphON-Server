@@ -108,16 +108,18 @@ export class UserService {
 
   async updateSelectedGraph(userId: Types.ObjectId, selectedGraphId: string) {
     try {
-      // Сначала получаем пользователя, чтобы проверить isStudent
+      // Сначала получаем пользователя, чтобы проверить isStudent и universityGraphId
       const user = await this.UserModel.findById(userId).lean();
       
       if (!user) {
         throw new NotFoundException('Пользователь не найден');
       }
 
-      // Если пользователь студент, обновляем и selectedGraphId, и universityGraphId
+      // Обновляем selectedGraphId
       const updateFields: any = { selectedGraphId };
-      if (user.isStudent === true) {
+      
+      // Если пользователь студент и universityGraphId еще не заполнен - заполняем его (первая регистрация)
+      if (user.isStudent === true && !user.universityGraphId) {
         updateFields.universityGraphId = selectedGraphId;
       }
 
