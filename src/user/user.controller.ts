@@ -163,4 +163,12 @@ export class UserController {
   async migrateSelectedGraphToUniversityGraph() {
     return this.userService.migrateSelectedGraphToUniversityGraph();
   }
+
+  // Удаление пользователя по telegramId
+  @Delete('by-telegram-id/:telegramId')
+  async deleteUserByTelegramId(
+    @Param('telegramId') telegramId: string
+  ) {
+    return this.userService.deleteUserByTelegramId(telegramId);
+  }
 }

@@ -304,6 +304,33 @@ export class UserService {
     }
   }
 
+  // --- Удаление пользователя по telegramId ---
+  async deleteUserByTelegramId(telegramId: string) {
+    try {
+      const deletedUser = await this.UserModel.findOneAndDelete({
+        $or: [
+          { telegramId: telegramId },
+          { telegramId: parseInt(telegramId, 10) }
+        ]
+      }).lean();
+
+      if (!deletedUser) {
+        throw new NotFoundException('Пользователь не найден');
+      }
+
+      return {
+        deletedUser,
+        message: `Пользователь с telegramId ${telegramId} удален`
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error deleting user by telegramId:', error);
+      throw new InternalServerErrorException('Ошибка при удалении пользователя');
+    }
+  }
+
   // --- Миграция telegramId к строковому типу ---
   async migrateTelegramIdsToString() {
     try {
