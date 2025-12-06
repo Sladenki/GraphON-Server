@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as TelegramBot from 'node-telegram-bot-api';
+import TelegramBot from 'node-telegram-bot-api';
 import * as fs from 'fs';
 import * as path from 'path';
 import { UserService } from 'src/user/user.service';
@@ -8,7 +8,7 @@ import { getCopyrightConfig } from 'src/config/copyright.config';
 
 @Injectable()
 export class TelegramBotService implements OnModuleInit {
-  public bot: TelegramBot;
+  public bot: any;
   private WEB_APP_URL: string;
   private SERVER_URL: string;
   private SUPPORT_URL: string;
