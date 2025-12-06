@@ -42,9 +42,6 @@ export class TelegramBotService implements OnModuleInit {
     const copyrightConfig = getCopyrightConfig(this.configService);
     this.COPYRIGHT_PDF_PATH = copyrightConfig.pdfPath; // Для обратной совместимости
     this.COPYRIGHT_PDF_PATHS = copyrightConfig.pdfPaths; // Массив файлов
-    
-    // Логируем загруженные пути для отладки
-    console.log('Copyright PDF paths loaded:', this.COPYRIGHT_PDF_PATHS);
   }
 
   onModuleInit() {
