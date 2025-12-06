@@ -36,7 +36,7 @@ export class AnalyticsService {
       ).exec();
 
       // Обновляем или создаем запись активности за сегодня
-      await this.UserActivityModel.findOneAndUpdate(
+      await (this.UserActivityModel.findOneAndUpdate as any)(
         {
           userId: userId,
           date: today,

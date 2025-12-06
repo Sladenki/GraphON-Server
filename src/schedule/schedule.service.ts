@@ -28,8 +28,7 @@ export class ScheduleService {
 
   // --- Получает расписание для одного графа с понедельника по пятницу ---    
   async getWeekdaySchedulesByGraph(graphId: string) {
-    return this.ScheduleModel
-      .find({ graphId: graphId })
+    return (this.ScheduleModel.find as any)({ graphId: graphId })
       .populate('graphId', 'name')
       .lean()
       .exec();
@@ -37,8 +36,7 @@ export class ScheduleService {
 
   // --- Получает расписания для нескольких графов (все дни недели) ---    
   async getWeekdaySchedulesByGraphs(graphIds: string[]) {
-    return this.ScheduleModel
-    .find({
+    return (this.ScheduleModel.find as any)({
       graphId: { $in: graphIds },
       // Убрали фильтр по дням - теперь возвращает все дни недели (0-6)
     })

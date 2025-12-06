@@ -57,8 +57,7 @@ export class GraphService {
     }
 
     // Если нет в кэше, получаем из БД
-    const userSubscriptions = await this.graphSubsModel
-      .find({ user: userId })
+    const userSubscriptions = await (this.graphSubsModel.find as any)({ user: userId })
       .select('graph')
       .lean()
       .exec();
@@ -211,8 +210,7 @@ export class GraphService {
     
     if (!graphs || !Array.isArray(graphs)) {
       // Если нет в кэше, получаем из БД
-      graphs = await this.GraphModel
-        .find({
+      graphs = await (this.GraphModel.find as any)({
           globalGraphId: parentGraphId,
           graphType: 'default'
         })
@@ -241,7 +239,7 @@ export class GraphService {
   // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 
   async getAllChildrenByTopic(parentGraphId: Types.ObjectId) {
 
-    const childrenGraphs = this.GraphModel.find({
+    const childrenGraphs = (this.GraphModel.find as any)({
       parentGraphId: parentGraphId,
       graphType: 'default'
     }).lean()
@@ -254,13 +252,13 @@ export class GraphService {
 
     const [globalGraph, childrenGraphs] = await Promise.all([
       // Получаем сам глобальный граф
-      this.GraphModel.findOne({
+      (this.GraphModel.findOne as any)({
         _id: globalGraphId,
         graphType: 'global'
       }).lean(),
 
       // Получаем все дочерние графы
-      this.GraphModel.find({
+      (this.GraphModel.find as any)({
         globalGraphId: globalGraphId,
         graphType: 'default'
       }).lean()
@@ -403,7 +401,7 @@ export class GraphService {
       }).lean(),
 
       // Получаем все графы-тематики для этого глобального графа
-      this.GraphModel.find({
+      (this.GraphModel.find as any)({
         parentGraphId: globalGraphId,
         graphType: 'topic'
       }).sort({ name: 1 }).lean()
@@ -452,8 +450,7 @@ export class GraphService {
         }
 
         // Находим все подписки на этот граф и готовим декременты по пользователям
-        const subs = await this.graphSubsModel
-          .find({ graph: graphId })
+        const subs = await (this.graphSubsModel.find as any)({ graph: graphId })
           .select('user')
           .session(session)
           .lean()
@@ -466,8 +463,7 @@ export class GraphService {
         }
 
         // Удаляем подписки на граф
-        await this.graphSubsModel
-          .deleteMany({ graph: graphId })
+        await (this.graphSubsModel.deleteMany as any)({ graph: graphId })
           .session(session)
           .exec();
 
@@ -485,7 +481,7 @@ export class GraphService {
 
         // Если был родительский граф, уменьшаем его childGraphNum
         if (graph.parentGraphId) {
-          await this.GraphModel.updateOne(
+          await (this.GraphModel.updateOne as any)(
             { _id: graph.parentGraphId },
             { $inc: { childGraphNum: -1 } }
           ).session(session).exec();
@@ -493,7 +489,7 @@ export class GraphService {
 
         // Удаляем граф из managedGraphIds владельца
         if (graph.ownerUserId) {
-          await this.UserModel.updateOne(
+          await (this.UserModel.updateOne as any)(
             { _id: graph.ownerUserId },
             { $pull: { managedGraphIds: graphId } }
           ).session(session).exec();

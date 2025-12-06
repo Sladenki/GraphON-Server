@@ -79,7 +79,7 @@ export class EventController {
             
             // Получаем все записи пользователя на события одним запросом
             this.eventRegsModel
-                .find({ userId: authContext.userId })
+                .find({ userId: authContext.userId } as any)
                 .select('eventId')
                 .lean()
                 .exec()
@@ -119,7 +119,7 @@ export class EventController {
             
             // Получаем все записи пользователя на события одним запросом
             this.eventRegsModel
-                .find({ userId: authContext.userId })
+                .find({ userId: authContext.userId } as any)
                 .select('eventId')
                 .lean()
                 .exec()
@@ -167,7 +167,7 @@ export class EventController {
             
             // Получаем все записи пользователя на события одним запросом
             this.eventRegsModel
-                .find({ userId: authContext.userId })
+                .find({ userId: authContext.userId } as any)
                 .select('eventId')
                 .lean()
                 .exec()
@@ -203,7 +203,7 @@ export class EventController {
         const [events, userEventRegs] = await Promise.all([
             this.eventService.getWeeklyEvents(globalGraphId),
             this.eventRegsModel
-                .find({ userId: authContext.userId })
+                .find({ userId: authContext.userId } as any)
                 .select('eventId')
                 .lean()
                 .exec()

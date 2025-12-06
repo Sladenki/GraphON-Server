@@ -63,8 +63,8 @@ export class AdminService {
     const kbkGraphId = new Types.ObjectId('6896447465255a1c4ed48eaf');
 
     const [usersKgtu, usersKbk, usersNoGraph] = await Promise.all([
-      this.UserModel.countDocuments({ selectedGraphId: kgtuGraphId }),
-      this.UserModel.countDocuments({ selectedGraphId: kbkGraphId }),
+      (this.UserModel.countDocuments as any)({ selectedGraphId: kgtuGraphId }),
+      (this.UserModel.countDocuments as any)({ selectedGraphId: kbkGraphId }),
       this.UserModel.countDocuments({ selectedGraphId: null })
     ]);
 

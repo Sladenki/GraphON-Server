@@ -26,7 +26,7 @@ export class EventRegsService {
     // Подписываемся на мероприятие
     async toggleEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) { 
         // Оптимизированный подход: пытаемся удалить запись, если она есть
-        const deletedEvent = await this.EventRegsModel.findOneAndDelete({ userId, eventId }).lean();
+        const deletedEvent = await (this.EventRegsModel.findOneAndDelete as any)({ userId, eventId }).lean();
     
         if (deletedEvent) {
             // Если запись была найдена и удалена, уменьшаем счётчики
@@ -46,7 +46,7 @@ export class EventRegsService {
 
     // Проверяем, участвует ли пользователь в мероприятии
     async isUserAttendingEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) {
-        const eventReg = await this.EventRegsModel.findOne({ userId, eventId }).exec();
+        const eventReg = await (this.EventRegsModel.findOne as any)({ userId, eventId }).exec();
         return !!eventReg;
     }
 
@@ -60,8 +60,7 @@ export class EventRegsService {
         const endDate = new Date(today);
         endDate.setDate(endDate.getDate() + daysAhead);
 
-        const regs = await this.EventRegsModel
-            .find({ userId })
+        const regs = await (this.EventRegsModel.find as any)({ userId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
@@ -70,7 +69,7 @@ export class EventRegsService {
                     select: 'name imgPath'
                 }
             })
-            .lean<{ eventId: EventModel }[]>(); 
+            .lean(); 
 
         // Фильтруем по дате события (от сегодня до endDate)
         const upcomingEvents = regs
@@ -89,8 +88,7 @@ export class EventRegsService {
 
     // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)
     async getAllUserEvents(userId: string | Types.ObjectId) {
-        const regs = await this.EventRegsModel
-            .find({ userId })
+        const regs = await (this.EventRegsModel.find as any)({ userId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
@@ -100,7 +98,7 @@ export class EventRegsService {
                 }
             })
             .sort({ createdAt: -1 }) // Сортируем по дате записи (новые сначала)
-            .lean<{ eventId: EventModel }[]>(); 
+            .lean(); 
 
         // Возвращаем все мероприятия с информацией о том, что пользователь был записан
         const allEvents = regs
@@ -127,8 +125,7 @@ export class EventRegsService {
 
         // Если у пользователя роль 'create', разрешаем доступ без дополнительных проверок
         if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
-            const registrations = await this.EventRegsModel
-                .find({ eventId })
+            const registrations = await (this.EventRegsModel.find as any)({ eventId })
                 .sort({ _id: -1 })
                 .populate({
                     path: 'userId',
@@ -162,8 +159,7 @@ export class EventRegsService {
         }
 
         // Если проверка прошла успешно, получаем список пользователей
-        const registrations = await this.EventRegsModel
-            .find({ eventId })
+        const registrations = await (this.EventRegsModel.find as any)({ eventId })
             .sort({ _id: -1 })
             .populate({
                 path: 'userId',

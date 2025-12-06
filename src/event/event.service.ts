@@ -82,8 +82,7 @@ export class EventService {
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        const events = await this.EventModel
-            .find({ graphId })
+        const events = await (this.EventModel.find as any)({ graphId })
             .populate("graphId", "name imgPath")
             .lean();
         
@@ -118,8 +117,7 @@ export class EventService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        return this.EventModel
-            .find({ 
+        return (this.EventModel.find as any)({ 
                 graphId,
                 eventDate: { $lt: today },
                 isDateTbd: { $ne: true }
@@ -134,8 +132,7 @@ export class EventService {
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        return this.EventModel
-            .find({
+        return (this.EventModel.find as any)({
                 graphId: { $in: graphIds },
                 $or: [
                     { eventDate: { $gt: now } }, // Больше текущего времени
@@ -153,8 +150,7 @@ export class EventService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const query = this.EventModel
-            .find({ 
+        const query = (this.EventModel.find as any)({ 
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 $or: [
                     { 
@@ -194,8 +190,7 @@ export class EventService {
         const end = new Date(now);
         end.setDate(end.getDate() + 7);
 
-        return this.EventModel
-            .find({
+        return (this.EventModel.find as any)({
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 eventDate: { $gt: now, $lt: end } // Больше текущего времени, меньше чем через неделю
             })

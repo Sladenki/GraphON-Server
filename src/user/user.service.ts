@@ -74,8 +74,7 @@ export class UserService {
 
   // --- Получение пользователей по выбранному графу ---
   async getUsersBySelectedGraph(graphId: string) {
-    const users = await this.UserModel
-      .find({ selectedGraphId: new Types.ObjectId(graphId) })
+    const users = await (this.UserModel.find as any)({ selectedGraphId: new Types.ObjectId(graphId) })
       .populate('managedGraphIds', 'name')
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
@@ -222,7 +221,7 @@ export class UserService {
   async findByTelegramId(telegramId: number) {
     try {
       // Ищем пользователя как по числу, так и по строке
-      const user = await this.UserModel.findOne({
+      const user = await (this.UserModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -244,7 +243,7 @@ export class UserService {
       const now = new Date();
       
       // Ищем пользователя как по числу, так и по строке
-      let user = await this.UserModel.findOne({
+      let user = await (this.UserModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -287,7 +286,7 @@ export class UserService {
   // --- Проверка принятия соглашения об авторских правах ---
   async hasAcceptedCopyrightAgreement(telegramId: number): Promise<boolean> {
     try {
-      const user = await this.UserModel.findOne({
+      const user = await (this.UserModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -307,7 +306,7 @@ export class UserService {
   // --- Удаление пользователя по telegramId ---
   async deleteUserByTelegramId(telegramId: string) {
     try {
-      const deletedUser = await this.UserModel.findOneAndDelete({
+      const deletedUser = await (this.UserModel.findOneAndDelete as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: parseInt(telegramId, 10) }
@@ -335,7 +334,7 @@ export class UserService {
   async migrateTelegramIdsToString() {
     try {
       // Находим всех пользователей с числовым telegramId
-      const usersWithNumericTelegramId = await this.UserModel.find({
+      const usersWithNumericTelegramId = await (this.UserModel.find as any)({
         telegramId: { $type: 'number' }
       }).lean();
 

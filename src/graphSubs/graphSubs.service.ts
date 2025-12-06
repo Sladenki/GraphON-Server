@@ -59,8 +59,7 @@ export class GraphSubsService {
     try {
       return await session.withTransaction(async () => {
         // Используем findOneAndDelete для атомарной операции
-        const deletedSub = await this.graphSubsModel
-          .findOneAndDelete({ user, graph })
+        const deletedSub = await (this.graphSubsModel.findOneAndDelete as any)({ user, graph })
           .session(session)
           .lean()
           .exec();
@@ -125,8 +124,7 @@ export class GraphSubsService {
   async getSubsSchedule(userId: Types.ObjectId, daysAhead: number = 30) {
     try {
       // Быстро получаем ID подписанных графов (упрощенный aggregate)
-      const subscribedGraphs = await this.graphSubsModel
-        .find({ user: userId })
+      const subscribedGraphs = await (this.graphSubsModel.find as any)({ user: userId })
         .select('graph')
         .lean()
         .exec();
@@ -172,8 +170,7 @@ export class GraphSubsService {
       ]).exec(),
       
       // Получаем все записи пользователя на события одним запросом
-      this.eventRegsModel
-        .find({ userId })
+      (this.eventRegsModel.find as any)({ userId })
         .select('eventId')
         .lean()
         .exec()
@@ -208,8 +205,7 @@ export class GraphSubsService {
   // --- Получение всех групп, на которые подписан пользователь ---
   async getUserSubscribedGraphs(userId: Types.ObjectId) {
     try {
-      const subscribedGraphs = await this.graphSubsModel
-        .find({ user: userId })
+      const subscribedGraphs = await (this.graphSubsModel.find as any)({ user: userId })
         .populate({
           path: 'graph',
           select: 'name about imgPath ownerUserId'
@@ -230,8 +226,7 @@ export class GraphSubsService {
   // --- Получение всех подписчиков графа по его ID ---
   async getGraphSubscribers(graphId: Types.ObjectId) {
     try {
-      const subscribers = await this.graphSubsModel
-        .find({ graph: graphId })
+      const subscribers = await (this.graphSubsModel.find as any)({ graph: graphId })
         .populate({
           path: 'user',
           select: 'firstName lastName username avaPath telegramId'
@@ -260,7 +255,7 @@ export class GraphSubsService {
           {
             graph: new Types.ObjectId(graph),
             user: new Types.ObjectId(userId),
-          },
+          } as any,
           { _id: 1 } // Выбираем только ID для оптимизации
         )
         .lean() // Возвращаем простой объект вместо документа Mongoose
@@ -281,8 +276,7 @@ export class GraphSubsService {
     try {
       return await session.withTransaction(async () => {
         // Пытаемся удалить подписку
-        const deleteResult = await this.graphSubsModel
-          .deleteOne({ user, graph })
+        const deleteResult = await (this.graphSubsModel.deleteOne as any)({ user, graph })
           .session(session)
           .exec();
 
@@ -307,8 +301,8 @@ export class GraphSubsService {
           ];
 
           await Promise.all([
-            this.GraphModel.bulkWrite(bulkOps, { session }),
-            this.UserModel.bulkWrite(userBulkOps, { session })
+            (this.GraphModel.bulkWrite as any)(bulkOps, { session }),
+            (this.UserModel.bulkWrite as any)(userBulkOps, { session })
           ]);
 
           // Инвалидируем кэш подписок пользователя и графа
@@ -340,8 +334,8 @@ export class GraphSubsService {
 
           await Promise.all([
             this.graphSubsModel.create([{ user, graph }], { session }),
-            this.GraphModel.bulkWrite(bulkOps, { session }),
-            this.UserModel.bulkWrite(userBulkOps, { session })
+            (this.GraphModel.bulkWrite as any)(bulkOps, { session }),
+            (this.UserModel.bulkWrite as any)(userBulkOps, { session })
           ]);
 
           // Инвалидируем кэш подписок пользователя и графа
