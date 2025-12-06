@@ -3,18 +3,32 @@ import { RedisClientType } from '@redis/client';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  constructor(@Inject('REDIS_CLIENT') private redisClient: RedisClientType) {
-    console.log('✅ Redis service initialized successfully');
+  private isRedisAvailable: boolean;
+  private redisClient: RedisClientType | null;
+
+  constructor(@Inject('REDIS_CLIENT') redisClient: RedisClientType | null) {
+    this.redisClient = redisClient;
+    this.isRedisAvailable = redisClient !== null;
+    if (this.isRedisAvailable) {
+      console.log('✅ Redis service initialized successfully');
+    } else {
+      console.warn('⚠️  Redis service initialized without Redis connection (cache disabled)');
+    }
   }
 
   async onModuleDestroy() {
-    await this.redisClient.quit();
+    if (this.isRedisAvailable && this.redisClient) {
+      await this.redisClient.quit();
+    }
   }
 
   /**
    * Получить значение из кэша
    */
   async get<T>(key: string): Promise<T | null> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return null;
+    }
     try {
       const result = await this.redisClient.get(key);
       if (result) {
@@ -34,6 +48,9 @@ export class RedisService implements OnModuleDestroy {
    * Установить значение в кэш
    */
   async set(key: string, value: any, ttl?: number): Promise<void> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return;
+    }
     try {
       const serializedValue = JSON.stringify(value);
       if (ttl) {
@@ -51,6 +68,9 @@ export class RedisService implements OnModuleDestroy {
    * Удалить значение из кэша
    */
   async del(key: string): Promise<void> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return;
+    }
     try {
       await this.redisClient.del(key);
       console.log(`🗑️ Redis CACHE DEL: ${key}`);
@@ -63,6 +83,9 @@ export class RedisService implements OnModuleDestroy {
    * Очистить весь кэш
    */
   async reset(): Promise<void> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return;
+    }
     try {
       await this.redisClient.flushDb();
       console.log('🧹 Redis CACHE RESET: All data cleared');
@@ -75,6 +98,9 @@ export class RedisService implements OnModuleDestroy {
    * Получить ключи по паттерну
    */
   async getKeys(pattern: string): Promise<string[]> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return [];
+    }
     try {
       const keys = await this.redisClient.keys(pattern);
       console.log(`🔍 Redis KEYS: Found ${keys.length} keys for pattern "${pattern}"`);
@@ -104,6 +130,9 @@ export class RedisService implements OnModuleDestroy {
    * Проверить подключение к Redis
    */
   async ping(): Promise<boolean> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return false;
+    }
     try {
       const result = await this.redisClient.ping();
       return result === 'PONG';
