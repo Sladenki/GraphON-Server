@@ -1,17 +1,17 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { RequestsConnectedGraphModel } from './requests-connected-graph.model';
-import { ModelType } from '@typegoose/typegoose/lib/types';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { RequestsConnectedGraphModel, RequestsConnectedGraphDocument } from './requests-connected-graph.model';
 import { Types } from 'mongoose';
-import { UserModel } from 'src/user/user.model';
+import { UserModel, UserDocument } from 'src/user/user.model';
 
 @Injectable()
 export class RequestsConnectedGraphService {
     constructor(
-        @InjectModel(RequestsConnectedGraphModel)
-        private readonly RequestsConnectedGraphModel: ModelType<RequestsConnectedGraphModel>,
-        @InjectModel(UserModel)
-        private readonly UserModel: ModelType<UserModel>,
+        @InjectModel(RequestsConnectedGraphModel.name)
+        private readonly requestsConnectedGraphModel: Model<RequestsConnectedGraphDocument>,
+        @InjectModel(UserModel.name)
+        private readonly userModel: Model<UserDocument>,
     ) {}
 
     // --- Создание запроса на подключение вуза ---
@@ -26,7 +26,7 @@ export class RequestsConnectedGraphService {
 
             // Если userId передан, проверяем существование пользователя
             if (userId) {
-                const user = await this.UserModel.findById(userId).lean();
+                const user = await this.userModel.findById(userId).lean();
                 if (!user) {
                     throw new HttpException(
                         'Пользователь не найден',
@@ -36,7 +36,7 @@ export class RequestsConnectedGraphService {
             }
 
             // Создаем запрос (userId может быть undefined, если пользователь не авторизован)
-            const request = await this.RequestsConnectedGraphModel.create({
+            const request = await this.requestsConnectedGraphModel.create({
                 userId: userId || undefined,
                 university: university.trim(),
             });
@@ -56,7 +56,7 @@ export class RequestsConnectedGraphService {
     // --- Получение всех запросов ---
     async getAllRequests() {
         try {
-            return await this.RequestsConnectedGraphModel
+            return await this.requestsConnectedGraphModel
                 .find()
                 .populate('userId', 'firstName lastName username telegramId')
                 .sort({ createdAt: -1 })

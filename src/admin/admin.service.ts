@@ -1,24 +1,24 @@
-import { InjectModel } from "@m8a/nestjs-typegoose";
+import { InjectModel } from "@nestjs/mongoose";
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { ModelType } from "@typegoose/typegoose/lib/types";
-import { UserModel } from "src/user/user.model";
+import { Model } from "mongoose";
+import { UserModel, UserDocument } from "src/user/user.model";
 import { UserRole } from "./role.enum";
-import { GraphModel } from "src/graph/graph.model";
+import { GraphModel, GraphDocument } from "src/graph/graph.model";
 import * as os from 'os';
 import { Types } from 'mongoose';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectModel(UserModel) 
-    private readonly UserModel: ModelType<UserModel>,
-    @InjectModel(GraphModel)
-    private readonly GraphModel: ModelType<GraphModel>,
+    @InjectModel(UserModel.name) 
+    private readonly userModel: Model<UserDocument>,
+    @InjectModel(GraphModel.name)
+    private readonly graphModel: Model<GraphDocument>,
   ) {}
 
   // --- Передача роли --- 
   async assignRole(userId: string, newRole: UserRole) {
-    const user = await this.UserModel.findById(userId);
+    const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
     user.role = newRole;
     return user.save();
@@ -26,10 +26,10 @@ export class AdminService {
 
   // --- Передача прав администратора графа ---
   async transferGraphOwnership(graphId: string, newOwnerId: string) {
-    const graph = await this.GraphModel.findById(graphId);
+    const graph = await this.graphModel.findById(graphId);
     if (!graph) throw new NotFoundException('Graph not found');
 
-    const newOwner = await this.UserModel.findById(newOwnerId);
+    const newOwner = await this.userModel.findById(newOwnerId);
     if (!newOwner) throw new NotFoundException('New owner not found');
 
     const prevOwnerId = graph.ownerUserId?.toString();
@@ -38,7 +38,7 @@ export class AdminService {
 
     // Удаляем граф у предыдущего владельца
     if (prevOwnerId) {
-      await this.UserModel.findByIdAndUpdate(
+      await this.userModel.findByIdAndUpdate(
         prevOwnerId,
         { $pull: { managedGraphIds: graph._id } },
         { new: false }
@@ -46,7 +46,7 @@ export class AdminService {
     }
 
     // Добавляем граф новому владельцу
-    await this.UserModel.findByIdAndUpdate(
+    await this.userModel.findByIdAndUpdate(
       newOwner._id,
       { $addToSet: { managedGraphIds: graph._id } },
       { new: false }
@@ -57,15 +57,15 @@ export class AdminService {
 
   // --- Получение статистики приложения ---
   async getApplicationStats() {
-    const totalUsers = await this.UserModel.countDocuments();
+    const totalUsers = await this.userModel.countDocuments();
 
     const kgtuGraphId = new Types.ObjectId('67a499dd08ac3c0df94d6ab7');
     const kbkGraphId = new Types.ObjectId('6896447465255a1c4ed48eaf');
 
     const [usersKgtu, usersKbk, usersNoGraph] = await Promise.all([
-      (this.UserModel.countDocuments as any)({ selectedGraphId: kgtuGraphId }),
-      (this.UserModel.countDocuments as any)({ selectedGraphId: kbkGraphId }),
-      this.UserModel.countDocuments({ selectedGraphId: null })
+      (this.userModel.countDocuments as any)({ selectedGraphId: kgtuGraphId }),
+      (this.userModel.countDocuments as any)({ selectedGraphId: kbkGraphId }),
+      this.userModel.countDocuments({ selectedGraphId: null })
     ]);
 
     return {

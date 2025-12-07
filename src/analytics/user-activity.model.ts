@@ -1,37 +1,38 @@
-import { modelOptions, prop, Ref, index } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { UserModel } from "src/user/user.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface UserActivityModel extends Base {}
+export type UserActivityDocument = UserActivityModel & Document;
 
-// Составной индекс для быстрого поиска по пользователю и дате
-@index({ userId: 1, date: 1 }, { unique: true })
-@modelOptions({
-  schemaOptions: {
-    timestamps: false,
-    versionKey: false,
-    collection: 'user_activities' // Название коллекции
-  }
+@Schema({
+  collection: 'user_activities', // Название коллекции
+  timestamps: false,
+  versionKey: false,
 })
-export class UserActivityModel extends TimeStamps {
-  @prop({ ref: () => UserModel, required: true, index: true })
-  userId: Ref<UserModel>;
+export class UserActivityModel {
+  _id: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'UserModel', required: true, index: true })
+  userId: Types.ObjectId;
 
   // Дата активности (только дата, без времени, для группировки)
-  @prop({ required: true, index: true })
+  @Prop({ required: true, index: true })
   date: Date;
 
   // Количество запросов в этот день (опционально, для детальной аналитики)
-  @prop({ default: 1 })
+  @Prop({ default: 1 })
   requestCount: number;
 
   // Первая активность в этот день
-  @prop({ required: true })
+  @Prop({ required: true })
   firstSeenAt: Date;
 
   // Последняя активность в этот день
-  @prop({ required: true })
+  @Prop({ required: true })
   lastSeenAt: Date;
 }
+
+export const UserActivitySchema = SchemaFactory.createForClass(UserActivityModel);
+
+// Составной индекс для быстрого поиска по пользователю и дате
+UserActivitySchema.index({ userId: 1, date: 1 }, { unique: true });
 

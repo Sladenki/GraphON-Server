@@ -1,30 +1,30 @@
 import { forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { ModelType } from '@typegoose/typegoose/lib/types';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { GraphSubsModel } from './graphSubs.model';
-import { EventRegsModel } from 'src/eventRegs/eventRegs.model';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { GraphSubsModel, GraphSubsDocument } from './graphSubs.model';
+import { EventRegsModel, EventRegsDocument } from 'src/eventRegs/eventRegs.model';
 import { Types } from 'mongoose';
 import { ScheduleService } from 'src/schedule/schedule.service';
-import { GraphModel } from 'src/graph/graph.model';
+import { GraphModel, GraphDocument } from 'src/graph/graph.model';
 import { EventService } from 'src/event/event.service';
 import { EventRegsService } from 'src/eventRegs/eventRegs.service';
-import { UserModel } from 'src/user/user.model';
+import { UserModel, UserDocument } from 'src/user/user.model';
 import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class GraphSubsService {
   constructor(
-    @InjectModel(GraphSubsModel)
-    private readonly graphSubsModel: ModelType<GraphSubsModel>,
+    @InjectModel(GraphSubsModel.name)
+    private readonly graphSubsModel: Model<GraphSubsDocument>,
 
-    @InjectModel(GraphModel)
-    private readonly GraphModel: ModelType<GraphModel>,
+    @InjectModel(GraphModel.name)
+    private readonly graphModel: Model<GraphDocument>,
 
-    @InjectModel(UserModel)
-    private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(UserModel.name)
+    private readonly userModel: Model<UserDocument>,
 
-    @InjectModel(EventRegsModel)
-    private readonly eventRegsModel: ModelType<EventRegsModel>,
+    @InjectModel(EventRegsModel.name)
+    private readonly eventRegsModel: Model<EventRegsDocument>,
 
     private readonly scheduleService: ScheduleService,
     private readonly eventService: EventService,
@@ -67,12 +67,12 @@ export class GraphSubsService {
         if (deletedSub) {
           // Подписка была удалена - уменьшаем счетчики
           await Promise.all([
-            this.GraphModel.findByIdAndUpdate(
+            this.graphModel.findByIdAndUpdate(
               graph,
               { $inc: { subsNum: -1 } },
               { session, lean: true }
             ).exec(),
-            this.UserModel.findByIdAndUpdate(
+            this.userModel.findByIdAndUpdate(
               user,
               { $inc: { graphSubsNum: -1 } },
               { session, lean: true }
@@ -89,13 +89,13 @@ export class GraphSubsService {
         } else {
           // Подписки не было - создаем и увеличиваем счетчики
           await Promise.all([
-            this.graphSubsModel.create([{ user, graph }], { session }),
-            this.GraphModel.findByIdAndUpdate(
+            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
+            (this.graphModel.findByIdAndUpdate as any)(
               graph,
               { $inc: { subsNum: 1 } },
               { session, lean: true }
             ).exec(),
-            this.UserModel.findByIdAndUpdate(
+            (this.userModel.findByIdAndUpdate as any)(
               user,
               { $inc: { graphSubsNum: 1 } },
               { session, lean: true }
@@ -301,8 +301,8 @@ export class GraphSubsService {
           ];
 
           await Promise.all([
-            (this.GraphModel.bulkWrite as any)(bulkOps, { session }),
-            (this.UserModel.bulkWrite as any)(userBulkOps, { session })
+            (this.graphModel.bulkWrite as any)(bulkOps, { session }),
+            (this.userModel.bulkWrite as any)(userBulkOps, { session })
           ]);
 
           // Инвалидируем кэш подписок пользователя и графа
@@ -333,9 +333,9 @@ export class GraphSubsService {
           ];
 
           await Promise.all([
-            this.graphSubsModel.create([{ user, graph }], { session }),
-            (this.GraphModel.bulkWrite as any)(bulkOps, { session }),
-            (this.UserModel.bulkWrite as any)(userBulkOps, { session })
+            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
+            (this.graphModel.bulkWrite as any)(bulkOps, { session }),
+            (this.userModel.bulkWrite as any)(userBulkOps, { session })
           ]);
 
           // Инвалидируем кэш подписок пользователя и графа

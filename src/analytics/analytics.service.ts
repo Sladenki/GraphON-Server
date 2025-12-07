@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { ModelType } from '@typegoose/typegoose/lib/types';
-import { UserActivityModel } from './user-activity.model';
-import { UserModel } from 'src/user/user.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { UserActivityModel, UserActivityDocument } from './user-activity.model';
+import { UserModel, UserDocument } from 'src/user/user.model';
 import { RedisService } from 'src/redis/redis.service';
 import { Types } from 'mongoose';
 
@@ -12,10 +12,10 @@ export class AnalyticsService {
   private readonly ANALYTICS_CACHE_TTL = 60 * 60;
 
   constructor(
-    @InjectModel(UserActivityModel)
-    private readonly UserActivityModel: ModelType<UserActivityModel>,
-    @InjectModel(UserModel)
-    private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(UserActivityModel.name)
+    private readonly userActivityModel: Model<UserActivityDocument>,
+    @InjectModel(UserModel.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly redisService: RedisService,
   ) {}
 
@@ -29,14 +29,14 @@ export class AnalyticsService {
 
     try {
       // Обновляем lastActivityDate в UserModel
-      await this.UserModel.findByIdAndUpdate(
+      await this.userModel.findByIdAndUpdate(
         userId,
         { lastActivityDate: now },
         { new: false }
       ).exec();
 
       // Обновляем или создаем запись активности за сегодня
-      await (this.UserActivityModel.findOneAndUpdate as any)(
+      await (this.userActivityModel.findOneAndUpdate as any)(
         {
           userId: userId,
           date: today,
@@ -83,7 +83,7 @@ export class AnalyticsService {
     }
 
     // Считаем из БД
-    const count = await this.UserActivityModel.countDocuments({
+    const count = await this.userActivityModel.countDocuments({
       date: startOfDay,
     }).exec();
 
@@ -110,7 +110,7 @@ export class AnalyticsService {
     }
 
     // Считаем уникальных пользователей за период
-    const uniqueUsers = await this.UserActivityModel.distinct('userId', {
+    const uniqueUsers = await this.userActivityModel.distinct('userId', {
       date: { $gte: start, $lte: end },
     }).exec();
 
@@ -138,7 +138,7 @@ export class AnalyticsService {
     }
 
     // Считаем уникальных пользователей за месяц
-    const uniqueUsers = await this.UserActivityModel.distinct('userId', {
+    const uniqueUsers = await this.userActivityModel.distinct('userId', {
       date: { $gte: start, $lte: end },
     }).exec();
 
@@ -170,7 +170,7 @@ export class AnalyticsService {
     }
 
     // Считаем новых пользователей (у которых createdAt в этот день)
-    const count = await this.UserModel.countDocuments({
+    const count = await this.userModel.countDocuments({
       createdAt: { $gte: startOfDay, $lte: endOfDay },
     }).exec();
 
@@ -188,7 +188,7 @@ export class AnalyticsService {
     const end = this.getStartOfDay(endDate);
 
     // Агрегация по дням
-    const stats = await this.UserActivityModel.aggregate([
+    const stats = await this.userActivityModel.aggregate([
       {
         $match: {
           date: { $gte: start, $lte: end },
@@ -229,7 +229,7 @@ export class AnalyticsService {
       mau,
       newUsersToday,
     ] = await Promise.all([
-      this.UserModel.countDocuments().exec(),
+      this.userModel.countDocuments().exec(),
       this.getDailyActiveUsers(today),
       this.getDailyActiveUsers(yesterday),
       this.getWeeklyActiveUsers(today),
@@ -257,7 +257,7 @@ export class AnalyticsService {
     const start = this.getStartOfDay(startDate);
     const end = this.getStartOfDay(endDate);
 
-    const topUsers = await this.UserActivityModel.aggregate([
+    const topUsers = await this.userActivityModel.aggregate([
       {
         $match: {
           date: { $gte: start, $lte: end },

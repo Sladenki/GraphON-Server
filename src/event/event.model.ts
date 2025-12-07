@@ -1,59 +1,60 @@
-import { modelOptions, prop, Ref } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { GraphModel } from "src/graph/graph.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface EventModel extends Base {}
+export type EventDocument = EventModel & Document;
 
-@modelOptions({
-    schemaOptions: {
-        timestamps: false, // Отключает поля createdAt и updatedAt
-        versionKey: false  // Отключает поле _v
-    }
+@Schema({
+    collection: 'Event',
+    timestamps: false, // Отключает поля createdAt и updatedAt
+    versionKey: false  // Отключает поле _v
 })
-export class EventModel extends TimeStamps {
+export class EventModel {
+    _id: Types.ObjectId;
+
     // КГТУ / КБК / Калининград
-    @prop({ ref: () => GraphModel, required: true, index: true })
-    globalGraphId: Ref<GraphModel>;
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', required: true, index: true })
+    globalGraphId: Types.ObjectId;
     
     // Граф тематики (Юмор) - нужно, если нет graphId
-    @prop({ ref: () => GraphModel, required: false, index: true })
-    parentGraphId?: Ref<GraphModel>;
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', required: false, index: true })
+    parentGraphId?: Types.ObjectId;
 
     // Граф, на котором проводится мероприятие (группа)
-    @prop({ ref: () => GraphModel, required: true, index: true })
-    graphId: Ref<GraphModel>;
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', required: true, index: true })
+    graphId: Types.ObjectId;
 
-    @prop({ required: true })
+    @Prop({ required: true })
     name: string;
 
-    @prop({ maxlength: 150 })
+    @Prop({ maxlength: 150 })
     place: string;
 
-    @prop()
+    @Prop()
     price?: number;
 
-    @prop()
+    @Prop()
     imgPath?: string;
 
-    @prop({ maxlength: 300 })
+    @Prop({ maxlength: 300 })
     description: string;
 
-    @prop()
+    @Prop()
     eventDate?: Date; // Дата мероприятия
 
-    @prop({ default: false })
+    @Prop({ default: false })
     isDateTbd: boolean; // Статус: дата уточняется
 
-    @prop()
+    @Prop()
     timeFrom?: string; // Время начала
 
-    @prop()
+    @Prop()
     timeTo: string; // Время окончания
 
-    @prop({ default: 0 })
+    @Prop({ default: 0 })
     regedUsers: number
 
-    @prop({ enum: ["city", "university"], required: false, index: true })
+    @Prop({ enum: ["city", "university"], required: false, index: true })
     type?: "city" | "university";
 }
+
+export const EventSchema = SchemaFactory.createForClass(EventModel);

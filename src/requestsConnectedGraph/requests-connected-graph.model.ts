@@ -1,23 +1,27 @@
-import { prop, Ref, modelOptions } from '@typegoose/typegoose';
-import { Base, TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
-import { UserModel } from 'src/user/user.model';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface RequestsConnectedGraphModel extends Base {}
+export type RequestsConnectedGraphDocument = RequestsConnectedGraphModel & Document;
 
-@modelOptions({
-    schemaOptions: {
-        timestamps: true, // Включает поля createdAt и updatedAt
-        versionKey: false  // Отключает поле _v
-    }
+@Schema({
+    collection: 'requests_connected_graph',
+    timestamps: true, // Включает поля createdAt и updatedAt
+    versionKey: false  // Отключает поле _v
 })
-export class RequestsConnectedGraphModel extends TimeStamps {
+export class RequestsConnectedGraphModel {
+    _id: Types.ObjectId;
+
     // Пользователь, который сделал запрос (опционально, если пользователь не авторизован)
-    @prop({ ref: () => UserModel, required: false, index: true })
-    userId?: Ref<UserModel>;
+    @Prop({ type: Types.ObjectId, ref: 'UserModel', required: false, index: true })
+    userId?: Types.ObjectId;
 
     // Название вуза
-    @prop({ required: true })
+    @Prop({ required: true })
     university: string;
+
+    createdAt: Date;
+    updatedAt: Date;
 }
+
+export const RequestsConnectedGraphSchema = SchemaFactory.createForClass(RequestsConnectedGraphModel);
 

@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common';
-import { TypegooseModule } from '@m8a/nestjs-typegoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
-import { UserActivityModel } from './user-activity.model';
-import { UserModel } from 'src/user/user.model';
+import { UserActivityModel, UserActivitySchema } from './user-activity.model';
+import { UserModel, UserSchema } from 'src/user/user.model';
 import { RedisModule } from 'src/redis/redis.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypegooseModule.forFeature([UserActivityModel, UserModel]),
+    MongooseModule.forFeature([
+      { name: UserActivityModel.name, schema: UserActivitySchema },
+      { name: UserModel.name, schema: UserSchema },
+    ]),
     RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

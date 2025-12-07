@@ -1,62 +1,62 @@
-import { modelOptions, prop, Ref } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { UserModel } from "src/user/user.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface GraphModel extends Base {}
+export type GraphDocument = GraphModel & Document;
 
-// TimeStamps - даты
-@modelOptions({
-    schemaOptions: {
-        timestamps: false, // Отключает поля createdAt и updatedAt
-        versionKey: false  // Отключает поле _v
-    }
+@Schema({
+    collection: 'Graph',
+    timestamps: false, // Отключает поля createdAt и updatedAt
+    versionKey: false  // Отключает поле _v
 })
-export class GraphModel extends TimeStamps {
-    @prop({ enum: ["global", "topic", "default"], required: true, index: true })
+export class GraphModel {
+    _id: Types.ObjectId;
+
+    @Prop({ enum: ["global", "topic", "default"], required: true, index: true })
     graphType: "global" | "topic" | "default";
 
-    @prop({ ref: () => GraphModel, index: true })
-    globalGraphId?: Ref<GraphModel>;
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', index: true })
+    globalGraphId?: Types.ObjectId;
 
-    @prop()
+    @Prop()
     name: string
 
-    @prop()
+    @Prop()
     city?: string
 
-    @prop ({ index: false, maxlength: 200 })
+    @Prop({ index: false, maxlength: 200 })
     about?: string
 
-    @prop({ ref: () => UserModel, index: true })
-    ownerUserId: Ref<UserModel>; 
+    @Prop({ type: Types.ObjectId, ref: 'UserModel', index: true })
+    ownerUserId: Types.ObjectId; 
 
     // Количество подписчиков на граф
-    @prop({ default: 0 })
+    @Prop({ default: 0 })
     subsNum: number
 
-    @prop({ ref: () => GraphModel, index: true })
-    parentGraphId?: Ref<GraphModel>; 
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', index: true })
+    parentGraphId?: Types.ObjectId; 
 
-    @prop({ default: 0, index: false })
+    @Prop({ default: 0, index: false })
     childGraphNum: number;
 
-    @prop()
+    @Prop()
     imgPath?: string
 
-    @prop({ index: false })
+    @Prop({ index: false })
     directorName?: string
 
-    @prop({ index: false })
+    @Prop({ index: false })
     directorVkLink?: string
     
     // Ссылка на страницу в VK
-    @prop({ index: false })
+    @Prop({ index: false })
     vkLink?: string
 
     // Ссылка на сайт
-    @prop()
+    @Prop()
     websiteLink?: string
 }
+
+export const GraphSchema = SchemaFactory.createForClass(GraphModel);
 
 

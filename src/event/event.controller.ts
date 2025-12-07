@@ -3,15 +3,15 @@ import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
 import { EventRegsService } from "src/eventRegs/eventRegs.service";
-import { EventRegsModel } from "src/eventRegs/eventRegs.model";
+import { EventRegsModel, EventRegsDocument } from "src/eventRegs/eventRegs.model";
 import { JwtAuthGuard } from "src/jwt/jwt-auth.guard";
 import { OptionalAuthGuard } from "src/guards/optionalAuth.guard";
 import { GetOptionalAuthContext } from "src/decorators/optional-auth-context.decorator";
 import { OptionalAuthContext } from "src/interfaces/optional-auth.interface";
 import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
 import { Auth } from "src/decorators/auth.decorator";
-import { InjectModel } from "@m8a/nestjs-typegoose";
-import { ModelType } from "@typegoose/typegoose/lib/types";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
 
 @Controller("event")
 export class EventController {
@@ -19,8 +19,8 @@ export class EventController {
         private readonly eventService: EventService,
         private readonly eventRegsService: EventRegsService,
 
-        @InjectModel(EventRegsModel)
-        private readonly eventRegsModel: ModelType<EventRegsModel>
+        @InjectModel(EventRegsModel.name)
+        private readonly eventRegsModel: Model<EventRegsDocument>
     ) {}
 
     // --- Получение мероприятия по id ---

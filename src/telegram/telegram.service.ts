@@ -1,14 +1,14 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import TelegramBot from 'node-telegram-bot-api';
+import { Telegraf, Context } from 'telegraf';
 import * as fs from 'fs';
 import * as path from 'path';
 import { UserService } from 'src/user/user.service';
 import { getCopyrightConfig } from 'src/config/copyright.config';
 
 @Injectable()
-export class TelegramBotService implements OnModuleInit {
-  public bot: any;
+export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
+  public bot: Telegraf;
   private WEB_APP_URL: string;
   private SERVER_URL: string;
   private SUPPORT_URL: string;
@@ -22,7 +22,7 @@ export class TelegramBotService implements OnModuleInit {
     // Подключаем бота
     const token = this.configService.get<string>('BOT_TOKEN');
     // const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
-    this.bot = new TelegramBot(token, { polling: true });
+    this.bot = new Telegraf(token);
 
     console.log('Bot instance created');
 
@@ -44,27 +44,34 @@ export class TelegramBotService implements OnModuleInit {
     this.COPYRIGHT_PDF_PATHS = copyrightConfig.pdfPaths; // Массив файлов
   }
 
-  onModuleInit() {
+  async onModuleInit() {
     console.log('Bot initialized');
-    // Даем немного времени для инициализации перед началом polling
-    setTimeout(() => {
-      this.setupBotCommands();
-      this.handleStartCommand();
-      this.handleAuthCommand();
-      this.handleSupportCommand();
-      this.handleCallbackQueries();
-    }, 1000); // 1 секунда задержки
+    // Настраиваем команды и обработчики
+    await this.setupBotCommands();
+    this.handleStartCommand();
+    this.handleAuthCommand();
+    this.handleSupportCommand();
+    this.handleCallbackQueries();
+    
+    // Запускаем бота
+    await this.bot.launch();
+    console.log('Bot started');
+  }
+
+  async onModuleDestroy() {
+    await this.bot.stop();
+    console.log('Bot stopped');
   }
 
   // Метод для получения профиля пользователя
   async getUserProfilePhotos(id: number) {
-    return await this.bot.getUserProfilePhotos(id);
+    return await this.bot.telegram.getUserProfilePhotos(id);
   }
 
   // Настройка команд бота (отображаются в меню)
   async setupBotCommands() {
     try {
-      await this.bot.setMyCommands([
+      await this.bot.telegram.setMyCommands([
         {
           command: 'start',
           description: '🌟 Главное меню'
@@ -85,9 +92,9 @@ export class TelegramBotService implements OnModuleInit {
 
   // Метод для обработки команды /start
   handleStartCommand() {
-    this.bot.onText(/\/start(.*)/, async (msg, match) => {
-      const chatId = msg.chat.id;
-      const parameter = match[1]?.trim(); // Получаем параметр после /start
+    this.bot.command('start', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
+      const parameter = (ctx.message as any).text?.split(' ')[1]?.trim(); // Получаем параметр после /start
       
       // Если есть параметр "auth", сразу показываем форму авторизации
       if (parameter === 'auth') {
@@ -96,7 +103,7 @@ export class TelegramBotService implements OnModuleInit {
       }
 
       // Обычное приветствие без параметров
-      this.bot.sendMessage(chatId, 
+      await ctx.reply(
         '👋 *Добро пожаловать в GraphON!*\n\n' +
         'Ваш личный гид по мероприятиям.\n\n', 
         {
@@ -108,7 +115,6 @@ export class TelegramBotService implements OnModuleInit {
                 text: '🌐 Открыть приложение',
                 web_app: {
                   url: this.WEB_APP_URL,
-                  hide_webapp_header: true
                 },
               },
             ],        
@@ -126,36 +132,39 @@ export class TelegramBotService implements OnModuleInit {
 
   // Метод для обработки команды /auth
   handleAuthCommand() {
-    this.bot.onText(/\/auth/, async (msg) => {
-      const chatId = msg.chat.id;
+    this.bot.command('auth', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
       await this.sendAuthMessage(chatId);
     });
   }
 
   // Метод для обработки команды /support
   handleSupportCommand() {
-    this.bot.onText(/\/support/, (msg) => {
-      const chatId = msg.chat.id;
-      this.sendSupportMessage(chatId);
+    this.bot.command('support', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
+      await this.sendSupportMessage(chatId);
     });
   }
 
   // Обработка callback запросов (нажатия на кнопки)
   handleCallbackQueries() {
-    this.bot.on('callback_query', async (callbackQuery) => {
-      const chatId = callbackQuery.message.chat.id;
-      const data = callbackQuery.data;
+    this.bot.action('show_copyright_agreement', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
+      await this.sendCopyrightAgreement(chatId);
+      await ctx.answerCbQuery();
+    });
 
-      if (data === 'show_copyright_agreement') {
-        await this.sendCopyrightAgreement(chatId);
-      } else if (data === 'accept_copyright_agreement') {
-        await this.acceptCopyrightAgreement(chatId, callbackQuery.from.id);
-      } else if (data === 'proceed_to_auth') {
-        await this.sendAuthMessage(chatId);
-      }
+    this.bot.action('accept_copyright_agreement', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
+      const telegramId = ctx.from.id;
+      await this.acceptCopyrightAgreement(chatId, telegramId);
+      await ctx.answerCbQuery();
+    });
 
-      // Отвечаем на callback query
-      await this.bot.answerCallbackQuery(callbackQuery.id);
+    this.bot.action('proceed_to_auth', async (ctx: Context) => {
+      const chatId = ctx.chat.id;
+      await this.sendAuthMessage(chatId);
+      await ctx.answerCbQuery();
     });
   }
 
@@ -167,7 +176,7 @@ export class TelegramBotService implements OnModuleInit {
       
       if (user && user.copyrightAgreementAccepted) {
         // Пользователь уже принял соглашение - показываем форму авторизации
-        this.bot.sendMessage(chatId, 
+        await this.bot.telegram.sendMessage(chatId, 
           '🔐 *Авторизация в GraphON*\n\n' +
           'Для доступа к приложению авторизуйтесь, нажав на кнопку ⬇️\n\n' +
           '---\n\n' +
@@ -195,7 +204,7 @@ export class TelegramBotService implements OnModuleInit {
       } else {
         // Пользователь не принял соглашение - отправляем сообщение и сразу PDF файл
         // Сначала отправляем текстовое сообщение
-        await this.bot.sendMessage(chatId, 
+        await this.bot.telegram.sendMessage(chatId, 
           '📋 *Вопросы обработки персональных данных*\n\n' +
           'Для продолжения необходимо принять соглашение об авторских правах.\n\n' +
           'Пожалуйста, ознакомьтесь с документом и примите условия.', 
@@ -210,7 +219,7 @@ export class TelegramBotService implements OnModuleInit {
       console.error('Error in sendAuthMessage:', error);
       // В случае ошибки отправляем запрос на принятие соглашения
       try {
-        await this.bot.sendMessage(chatId, 
+        await this.bot.telegram.sendMessage(chatId, 
           '📋 *Вопросы обработки персональных данных*\n\n' +
           'Для продолжения необходимо принять соглашение об авторских правах.\n\n' +
           'Пожалуйста, ознакомьтесь с документом и примите условия.', 
@@ -261,16 +270,16 @@ export class TelegramBotService implements OnModuleInit {
         }
 
         // Создаем массив медиа для отправки только из существующих файлов (без caption, так как текст уже отправлен)
-        const media = existingFiles.map((filePath) => ({
-          type: 'document',
-          media: filePath,
+        const media = existingFiles.slice(0, 10).map((filePath) => ({
+          type: 'document' as const,
+          media: { source: filePath },
         }));
 
         // Отправляем медиагруппу (первые 10 файлов, так как Telegram ограничивает медиагруппы 10 файлами)
-        await this.bot.sendMediaGroup(chatId, media.slice(0, 10));
+        await this.bot.telegram.sendMediaGroup(chatId, media);
 
         // Отправляем сообщение с кнопкой "Принять соглашение" после медиагруппы
-        await this.bot.sendMessage(chatId, 
+        await this.bot.telegram.sendMessage(chatId, 
           'Пожалуйста, ознакомьтесь с прикрепленными документами.',
           {
           parse_mode: "Markdown",
@@ -296,7 +305,7 @@ export class TelegramBotService implements OnModuleInit {
           throw new Error(`Файл не найден: ${filePath} (absolute: ${absolutePath})`);
         }
 
-        await this.bot.sendDocument(chatId, filePath, {
+        await this.bot.telegram.sendDocument(chatId, { source: filePath }, {
           caption: '📋 *Вопросы обработки персональных данных*\n\n' +
                   'Даю свое согласие на обработку моих персональных данных и подтверждаю, что ознакомлен(а) с Политикой конфиденциальности, Положением об обработке данных, Политикой использования файлов cookies.\n\n',
           parse_mode: "Markdown",
@@ -322,7 +331,7 @@ export class TelegramBotService implements OnModuleInit {
       
       // Если не удалось отправить файл, отправляем текстовое сообщение с подробностями ошибки
       const errorMessage = error.message || 'Неизвестная ошибка';
-      this.bot.sendMessage(chatId, 
+      await this.bot.telegram.sendMessage(chatId, 
         '📋 *Вопросы обработки персональных данных*\n\n' +
         'К сожалению, не удалось загрузить документ.\n\n' +
         `Ошибка: ${errorMessage}\n\n` +
@@ -349,7 +358,7 @@ export class TelegramBotService implements OnModuleInit {
       // Обновляем или создаем пользователя с принятым соглашением
       await this.userService.acceptCopyrightAgreement(telegramId);
       
-      this.bot.sendMessage(chatId, 
+      await this.bot.telegram.sendMessage(chatId, 
         '✅ *Соглашение принято!*\n\n' +
         'Теперь вы можете продолжить авторизацию.', 
         {
@@ -367,7 +376,7 @@ export class TelegramBotService implements OnModuleInit {
       });
     } catch (error) {
       console.error('Error accepting copyright agreement:', error);
-      this.bot.sendMessage(chatId, 
+      await this.bot.telegram.sendMessage(chatId, 
         '❌ *Ошибка*\n\n' +
         'Не удалось сохранить принятие соглашения.\n\n' +
         'Пожалуйста, попробуйте еще раз или обратитесь в поддержку.', 
@@ -388,8 +397,8 @@ export class TelegramBotService implements OnModuleInit {
   }
 
   // Отдельный метод для отправки сообщения о техподдержке
-  sendSupportMessage(chatId: number) {
-    this.bot.sendMessage(chatId, 
+  async sendSupportMessage(chatId: number) {
+    await this.bot.telegram.sendMessage(chatId, 
       '🛠 *Техподдержка GraphON*\n\n' +
       '📞 *Как получить помощь?*\n\n' +
       '• Опишите проблему в чате поддержки\n\n', 
@@ -409,7 +418,7 @@ export class TelegramBotService implements OnModuleInit {
   }
 
   // Метод для отправки сообщений
-  sendMessage(chatId: number, message: string) {
-    this.bot.sendMessage(chatId, message);
+  async sendMessage(chatId: number, message: string) {
+    await this.bot.telegram.sendMessage(chatId, message);
   }
 }

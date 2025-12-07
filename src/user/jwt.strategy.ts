@@ -1,16 +1,16 @@
 import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { InjectModel } from '@m8a/nestjs-typegoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { ModelType } from '@typegoose/typegoose/lib/types';
-import { UserModel } from './user.model';
+import { UserModel, UserDocument } from './user.model';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(UserModel.name) private readonly userModel: Model<UserDocument>,
   ) {
     super({
       // Указываем откуда будем брать токен
@@ -25,6 +25,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate({ _id }: Pick<UserModel, '_id'>) {
     // Поиск пользователя в базе данных по идентификатору из JWT (по id пользователя)
-    return this.UserModel.findById(_id).exec();
+    return this.userModel.findById(_id).exec();
   }
 }

@@ -20,29 +20,27 @@
 		"test:e2e": "jest --config ./test/jest-e2e.json"
 	},
 	"dependencies": {
-		"@m8a/nestjs-typegoose": "^12.0.1",
 		"@nestjs/axios": "^4.0.1",
 		"@nestjs/cache-manager": "^3.0.1",
 		"@nestjs/common": "^11.1.9",
 		"@nestjs/config": "^4.0.2",
 		"@nestjs/core": "^11.1.9",
 		"@nestjs/jwt": "^11.0.2",
+		"@nestjs/mongoose": "^11.0.3",
 		"@nestjs/passport": "^11.0.5",
 		"@nestjs/platform-express": "^11.1.9",
 		"@redis/client": "^5.10.0",
-		"@typegoose/typegoose": "^12.20.0",
 		"cache-manager": "^7.2.5",
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.3",
 		"cookie-parser": "^1.4.7",
 		"easy-yandex-s3": "^2.0.0",
-		"mongoose": "^9.0.1",
-		"node-telegram-bot-api": "^0.66.0",
+		"mongoose": "~8.19.1",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",
 		"redis": "^5.10.0",
 		"rxjs": "^7.8.2",
-		"tough-cookie": "^6.0.0"
+		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.14",
