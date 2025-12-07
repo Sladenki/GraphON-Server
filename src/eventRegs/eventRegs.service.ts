@@ -39,7 +39,7 @@ export class EventRegsService {
             await Promise.all([
                 (this.userModel.findOneAndUpdate as any)({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
                 (this.eventModel.findOneAndUpdate as any)({ _id: eventId }, { $inc: { regedUsers: 1 } }),
-                this.eventRegsModel.create({ userId, eventId })
+                (this.eventRegsModel.create as any)({ userId, eventId })
             ]);
         }
     }

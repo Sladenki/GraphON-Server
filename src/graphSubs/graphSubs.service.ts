@@ -89,13 +89,13 @@ export class GraphSubsService {
         } else {
           // Подписки не было - создаем и увеличиваем счетчики
           await Promise.all([
-            this.graphSubsModel.create([{ user, graph }], { session }),
-            this.graphModel.findByIdAndUpdate(
+            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
+            (this.graphModel.findByIdAndUpdate as any)(
               graph,
               { $inc: { subsNum: 1 } },
               { session, lean: true }
             ).exec(),
-            this.userModel.findByIdAndUpdate(
+            (this.userModel.findByIdAndUpdate as any)(
               user,
               { $inc: { graphSubsNum: 1 } },
               { session, lean: true }
@@ -333,7 +333,7 @@ export class GraphSubsService {
           ];
 
           await Promise.all([
-            this.graphSubsModel.create([{ user, graph }], { session }),
+            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
             (this.graphModel.bulkWrite as any)(bulkOps, { session }),
             (this.userModel.bulkWrite as any)(userBulkOps, { session })
           ]);
