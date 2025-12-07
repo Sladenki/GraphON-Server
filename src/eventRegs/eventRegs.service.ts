@@ -31,14 +31,14 @@ export class EventRegsService {
         if (deletedEvent) {
             // Если запись была найдена и удалена, уменьшаем счётчики
             await Promise.all([
-                this.userModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
-                this.eventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: -1 } })
+                (this.userModel.findOneAndUpdate as any)({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
+                (this.eventModel.findOneAndUpdate as any)({ _id: eventId }, { $inc: { regedUsers: -1 } })
             ]);
         } else {
             // Если записи не было, создаём её и увеличиваем счётчики
             await Promise.all([
-                this.userModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
-                this.eventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: 1 } }),
+                (this.userModel.findOneAndUpdate as any)({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
+                (this.eventModel.findOneAndUpdate as any)({ _id: eventId }, { $inc: { regedUsers: 1 } }),
                 this.eventRegsModel.create({ userId, eventId })
             ]);
         }
