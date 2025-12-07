@@ -1,52 +1,52 @@
 import { Injectable } from "@nestjs/common";
-import { ModelType } from "@typegoose/typegoose/lib/types";
-import { UserModel } from "src/user/user.model";
+import { Model } from "mongoose";
+import { InjectModel } from "@nestjs/mongoose";
+import { UserModel, UserDocument } from "src/user/user.model";
 import { Types } from "mongoose";
-import { EventModel } from "src/event/event.model";
-import { InjectModel } from "@m8a/nestjs-typegoose";
-import { EventRegsModel } from "./eventRegs.model";
-import { GraphModel } from "src/graph/graph.model";
+import { EventModel, EventDocument } from "src/event/event.model";
+import { EventRegsModel, EventRegsDocument } from "./eventRegs.model";
+import { GraphModel, GraphDocument } from "src/graph/graph.model";
 
 @Injectable()
 export class EventRegsService {
     constructor(
-        @InjectModel(UserModel)
-        private readonly UserModel: ModelType<UserModel>,
+        @InjectModel(UserModel.name)
+        private readonly userModel: Model<UserDocument>,
 
-        @InjectModel(EventModel)
-        private readonly EventModel: ModelType<EventModel>,
+        @InjectModel(EventModel.name)
+        private readonly eventModel: Model<EventDocument>,
 
-        @InjectModel(EventRegsModel)
-        private readonly EventRegsModel: ModelType<EventRegsModel>,
+        @InjectModel(EventRegsModel.name)
+        private readonly eventRegsModel: Model<EventRegsDocument>,
 
-        @InjectModel(GraphModel)
-        private readonly GraphModel: ModelType<GraphModel>,
+        @InjectModel(GraphModel.name)
+        private readonly graphModel: Model<GraphDocument>,
     ) {}
 
     // Подписываемся на мероприятие
     async toggleEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) { 
         // Оптимизированный подход: пытаемся удалить запись, если она есть
-        const deletedEvent = await (this.EventRegsModel.findOneAndDelete as any)({ userId, eventId }).lean();
+        const deletedEvent = await (this.eventRegsModel.findOneAndDelete as any)({ userId, eventId }).lean();
     
         if (deletedEvent) {
             // Если запись была найдена и удалена, уменьшаем счётчики
             await Promise.all([
-                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
-                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: -1 } })
+                this.userModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
+                this.eventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: -1 } })
             ]);
         } else {
             // Если записи не было, создаём её и увеличиваем счётчики
             await Promise.all([
-                this.UserModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
-                this.EventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: 1 } }),
-                this.EventRegsModel.create({ userId, eventId })
+                this.userModel.findOneAndUpdate({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
+                this.eventModel.findOneAndUpdate({ _id: eventId }, { $inc: { regedUsers: 1 } }),
+                this.eventRegsModel.create({ userId, eventId })
             ]);
         }
     }
 
     // Проверяем, участвует ли пользователь в мероприятии
     async isUserAttendingEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) {
-        const eventReg = await (this.EventRegsModel.findOne as any)({ userId, eventId }).exec();
+        const eventReg = await (this.eventRegsModel.findOne as any)({ userId, eventId }).exec();
         return !!eventReg;
     }
 
@@ -60,7 +60,7 @@ export class EventRegsService {
         const endDate = new Date(today);
         endDate.setDate(endDate.getDate() + daysAhead);
 
-        const regs = await (this.EventRegsModel.find as any)({ userId })
+        const regs = await (this.eventRegsModel.find as any)({ userId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
@@ -88,7 +88,7 @@ export class EventRegsService {
 
     // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)
     async getAllUserEvents(userId: string | Types.ObjectId) {
-        const regs = await (this.EventRegsModel.find as any)({ userId })
+        const regs = await (this.eventRegsModel.find as any)({ userId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
@@ -114,7 +114,7 @@ export class EventRegsService {
     // Получаем всех пользователей, записанных на мероприятие
     async getUsersByEventId(eventId: string | Types.ObjectId, requestingUserId: string | Types.ObjectId) {
         // Получаем информацию о запрашивающем пользователе
-        const requestingUser = await this.UserModel
+        const requestingUser = await this.userModel
             .findById(requestingUserId)
             .select('role')
             .lean();
@@ -125,7 +125,7 @@ export class EventRegsService {
 
         // Если у пользователя роль 'create', разрешаем доступ без дополнительных проверок
         if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
-            const registrations = await (this.EventRegsModel.find as any)({ eventId })
+            const registrations = await (this.eventRegsModel.find as any)({ eventId })
                 .sort({ _id: -1 })
                 .populate({
                     path: 'userId',
@@ -137,7 +137,7 @@ export class EventRegsService {
         }
 
         // Для остальных пользователей проверяем права доступа через владение графом
-        const event = await this.EventModel
+        const event = await this.eventModel
             .findById(eventId)
             .populate({
                 path: 'graphId',
@@ -159,7 +159,7 @@ export class EventRegsService {
         }
 
         // Если проверка прошла успешно, получаем список пользователей
-        const registrations = await (this.EventRegsModel.find as any)({ eventId })
+        const registrations = await (this.eventRegsModel.find as any)({ eventId })
             .sort({ _id: -1 })
             .populate({
                 path: 'userId',

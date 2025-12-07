@@ -1,14 +1,14 @@
 import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@m8a/nestjs-typegoose";
-import { ModelType } from "@typegoose/typegoose/lib/types";
-import { AppDownloadModel } from "./app-download.model";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { AppDownloadModel, AppDownloadDocument } from "./app-download.model";
 import { Types } from "mongoose";
 
 @Injectable()
 export class DownloadsService {
   constructor(
-    @InjectModel(AppDownloadModel)
-    private readonly appDownloadModel: ModelType<AppDownloadModel>,
+    @InjectModel(AppDownloadModel.name)
+    private readonly appDownloadModel: Model<AppDownloadDocument>,
   ) {}
 
   async incrementCount(userId?: string) {

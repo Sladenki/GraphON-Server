@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypegooseModule } from '@m8a/nestjs-typegoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { RequestsConnectedGraphController } from './requests-connected-graph.controller';
 import { RequestsConnectedGraphService } from './requests-connected-graph.service';
-import { RequestsConnectedGraphModel } from './requests-connected-graph.model';
-import { UserModel } from 'src/user/user.model';
+import { RequestsConnectedGraphModel, RequestsConnectedGraphSchema } from './requests-connected-graph.model';
+import { UserModel, UserSchema } from 'src/user/user.model';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { getJwtConfig } from 'src/config/jwt.config';
@@ -18,15 +18,9 @@ import { getJwtConfig } from 'src/config/jwt.config';
             inject: [ConfigService],
             useFactory: getJwtConfig,
         }),
-        TypegooseModule.forFeature([
-            {
-                typegooseClass: RequestsConnectedGraphModel,
-                schemaOptions: { collection: 'requests_connected_graph' }
-            },
-            {
-                typegooseClass: UserModel,
-                schemaOptions: { collection: 'User' }
-            },
+        MongooseModule.forFeature([
+            { name: RequestsConnectedGraphModel.name, schema: RequestsConnectedGraphSchema },
+            { name: UserModel.name, schema: UserSchema },
         ]),
     ],
     exports: [RequestsConnectedGraphService]

@@ -1,18 +1,22 @@
-import { modelOptions, prop, Ref } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { UserModel } from "src/user/user.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-export interface AppDownloadModel extends Base {}
+export type AppDownloadDocument = AppDownloadModel & Document;
 
-@modelOptions({
-  schemaOptions: {
-    timestamps: true,
-    versionKey: false,
-    collection: "app_downloads",
-  },
+@Schema({
+  collection: "app_downloads",
+  timestamps: true,
+  versionKey: false,
 })
-export class AppDownloadModel extends TimeStamps {
-  @prop({ ref: () => UserModel})
-  userId?: Ref<UserModel>;
+export class AppDownloadModel {
+  _id: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'UserModel' })
+  userId?: Types.ObjectId;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export const AppDownloadSchema = SchemaFactory.createForClass(AppDownloadModel);
 

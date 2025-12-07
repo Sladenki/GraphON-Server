@@ -1,12 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { TypegooseModule } from '@m8a/nestjs-typegoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { GraphController } from './graph.controller';
-import { GraphModel } from './graph.model';
-import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
+import { GraphModel, GraphSchema } from './graph.model';
+import { GraphSubsModel, GraphSubsSchema } from 'src/graphSubs/graphSubs.model';
 import { GraphService } from './graph.service';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { ConfigModule } from '@nestjs/config';
-import { UserModel } from 'src/user/user.model';
+import { UserModel, UserSchema } from 'src/user/user.model';
 import { GraphSubsModule } from 'src/graphSubs/graphSubs.module';
 import { OptionalAuthGuard } from 'src/guards/optionalAuth.guard';
 import { S3Module } from 'src/s3/s3.module';
@@ -19,21 +19,10 @@ import { RedisModule } from 'src/redis/redis.module';
     ConfigModule,
     S3Module,
     RedisModule,
-    TypegooseModule.forFeature([
-      {
-        typegooseClass: GraphModel,
-        schemaOptions: { collection: 'Graph' },
-      },
-      {
-        typegooseClass: GraphSubsModel,
-        schemaOptions: { collection: 'GraphSubs' },
-      },
-      {
-        // Ссылка на модель пользователя
-        typegooseClass: UserModel,
-        // Название коллекции в БД
-        schemaOptions: { collection: 'User' },
-      },
+    MongooseModule.forFeature([
+      { name: GraphModel.name, schema: GraphSchema },
+      { name: GraphSubsModel.name, schema: GraphSubsSchema },
+      { name: UserModel.name, schema: UserSchema },
     ]),
     forwardRef(() => GraphSubsModule)
   ],

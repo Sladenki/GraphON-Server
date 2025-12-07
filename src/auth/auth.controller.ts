@@ -6,9 +6,9 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { UserModel } from 'src/user/user.model';
-import { ModelType } from '@typegoose/typegoose/lib/types';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { UserModel, UserDocument } from 'src/user/user.model';
 import { Request, Response } from 'express';
 import { JwtAuthService } from '../jwt/jwt.service';
 
@@ -16,7 +16,7 @@ import { JwtAuthService } from '../jwt/jwt.service';
 export class AuthController {
   constructor(
     private jwtAuthService: JwtAuthService,
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,    
+    @InjectModel(UserModel.name) private readonly userModel: Model<UserDocument>,    
   ) { }
 
   // Инициализация при старте модуля
@@ -82,7 +82,7 @@ export class AuthController {
     console.log('findOrCreateUser called with:', user);
     
     // Сначала ищем пользователя
-    const existingUser = await this.UserModel.findOne({ telegramId: user.telegramId }).lean();
+    const existingUser = await this.userModel.findOne({ telegramId: user.telegramId }).lean();
     
     if (existingUser) {
       // Пользователь существует - обновляем данные
@@ -101,7 +101,7 @@ export class AuthController {
         updateFields.username = user.username;
       }
       
-      const result = await this.UserModel.findByIdAndUpdate(
+      const result = await this.userModel.findByIdAndUpdate(
         existingUser._id,
         { $set: updateFields },
         { new: true, lean: true }
@@ -111,7 +111,7 @@ export class AuthController {
       return result;
     } else {
       // Создаем нового пользователя
-      const result = await this.UserModel.create({
+      const result = await this.userModel.create({
         telegramId: user.telegramId,
         firstName: user.firstName,
         lastName: user.lastName,

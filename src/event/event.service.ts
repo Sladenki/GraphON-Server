@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { EventModel } from "./event.model";
-import { ModelType } from "@typegoose/typegoose/lib/types";
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { EventModel, EventDocument } from "./event.model";
 import { CreateEventDto } from "./dto/event.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
 import { Types } from "mongoose";
@@ -9,13 +9,13 @@ import { Types } from "mongoose";
 @Injectable()
 export class EventService {
     constructor(
-        @InjectModel(EventModel) 
-        private readonly EventModel: ModelType<EventModel>
+        @InjectModel(EventModel.name) 
+        private readonly eventModel: Model<EventDocument>
     ) {}
 
     // --- Получение мероприятия по id ---
     async getEventById(eventId: string | Types.ObjectId) {
-        const event = await this.EventModel
+        const event = await this.eventModel
             .findById(eventId)
             .populate("graphId", "name imgPath ownerUserId")
             .lean();
@@ -49,7 +49,7 @@ export class EventService {
                 payload.eventDate = null;
             }
 
-            return await this.EventModel.create(payload);
+            return await this.eventModel.create(payload);
         } catch (error) {
             // Обработка ошибок валидации MongoDB
             if (error.name === 'ValidationError') {
@@ -82,7 +82,7 @@ export class EventService {
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        const events = await (this.EventModel.find as any)({ graphId })
+        const events = await (this.eventModel.find as any)({ graphId })
             .populate("graphId", "name imgPath")
             .lean();
         
@@ -117,7 +117,7 @@ export class EventService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        return (this.EventModel.find as any)({ 
+        return (this.eventModel.find as any)({ 
                 graphId,
                 eventDate: { $lt: today },
                 isDateTbd: { $ne: true }
@@ -132,7 +132,7 @@ export class EventService {
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        return (this.EventModel.find as any)({
+        return (this.eventModel.find as any)({
                 graphId: { $in: graphIds },
                 $or: [
                     { eventDate: { $gt: now } }, // Больше текущего времени
@@ -150,7 +150,7 @@ export class EventService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const query = (this.EventModel.find as any)({ 
+        const query = (this.eventModel.find as any)({ 
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 $or: [
                     { 
@@ -190,7 +190,7 @@ export class EventService {
         const end = new Date(now);
         end.setDate(end.getDate() + 7);
 
-        return (this.EventModel.find as any)({
+        return (this.eventModel.find as any)({
                 globalGraphId: new Types.ObjectId(globalGraphId),
                 eventDate: { $gt: now, $lt: end } // Больше текущего времени, меньше чем через неделю
             })
@@ -201,12 +201,12 @@ export class EventService {
 
     // --- Удаление мероприятия ---
     async deleteEvent(eventId: string | Types.ObjectId) {
-        return this.EventModel.findByIdAndDelete(eventId).lean();
+        return this.eventModel.findByIdAndDelete(eventId).lean();
     }
 
     // --- Удаление всех мероприятий с типом "city" ---
     async deleteAllCityEvents() {
-        const result = await this.EventModel.deleteMany({ type: "city" });
+        const result = await this.eventModel.deleteMany({ type: "city" });
         return {
             deletedCount: result.deletedCount,
             message: `Удалено мероприятий: ${result.deletedCount}`
@@ -225,7 +225,7 @@ export class EventService {
                 update.eventDate = null;
             }
 
-            const updatedEvent = await this.EventModel
+            const updatedEvent = await this.eventModel
                 .findByIdAndUpdate(
                     eventId,
                     update,

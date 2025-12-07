@@ -1,40 +1,41 @@
-import { modelOptions, prop, Ref } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { GraphModel } from "src/graph/graph.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface ScheduleModel extends Base {}
+export type ScheduleDocument = ScheduleModel & Document;
 
 export enum ScheduleType {
     LECTURE = 'lecture',
     PRACTICE = 'practice',
 }
 
-@modelOptions({
-    schemaOptions: {
-        timestamps: false, // Отключает поля createdAt и updatedAt
-        versionKey: false  // Отключает поле _v
-    }
+@Schema({
+    collection: 'Schedule',
+    timestamps: false, // Отключает поля createdAt и updatedAt
+    versionKey: false  // Отключает поле _v
 })
-export class ScheduleModel extends TimeStamps {
-    @prop({ ref: () => GraphModel, index: true })
-    graphId: Ref<GraphModel>
+export class ScheduleModel {
+    _id: Types.ObjectId;
 
-    @prop({ required: true })
+    @Prop({ type: Types.ObjectId, ref: 'GraphModel', index: true })
+    graphId: Types.ObjectId
+
+    @Prop({ required: true })
     name: string
 
-    @prop({ required: true, enum: ScheduleType })
+    @Prop({ required: true, enum: ScheduleType })
     type: string;
 
-    @prop({ required: true })
+    @Prop({ required: true })
     roomNumber: string;
 
-    @prop({ required: true, min: 0, max: 6 }) // 0 - Понедельник, 6 - Воскресенье
+    @Prop({ required: true, min: 0, max: 6 }) // 0 - Понедельник, 6 - Воскресенье
     dayOfWeek: number;
 
-    @prop({ required: true }) // Время проведения С
+    @Prop({ required: true }) // Время проведения С
     timeFrom: string;
 
-    @prop({ required: false }) // Время проведения ДО
+    @Prop({ required: false }) // Время проведения ДО
     timeTo: string;
 }
+
+export const ScheduleSchema = SchemaFactory.createForClass(ScheduleModel);

@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypegooseModule } from '@m8a/nestjs-typegoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { getMongoConfig } from './config/mongo.config';
 import { UserModule } from './user/user.module';
 import { LogginMiddleware } from './logging.middleware';
@@ -33,7 +33,7 @@ import { RequestsConnectedGraphModule } from './requestsConnectedGraph/requests-
     }),
 
     // Для работы с MongoDB
-    TypegooseModule.forRootAsync({
+    MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getMongoConfig,

@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ModelType } from '@typegoose/typegoose/lib/types';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { GraphModel } from './graph.model';
-import { GraphSubsModel } from 'src/graphSubs/graphSubs.model';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { GraphModel, GraphDocument } from './graph.model';
+import { GraphSubsModel, GraphSubsDocument } from 'src/graphSubs/graphSubs.model';
 import { CreateGraphDto } from './dto/create-graph.dto';
 import { CreateGlobalGraphDto } from './dto/create-global-graph.dto';
 import { CreateTopicGraphDto } from './dto/create-topic-graph.dto';
@@ -12,7 +12,7 @@ import { S3Service } from 'src/s3/s3.service';
 import { RedisService } from 'src/redis/redis.service';
 import type { Express } from 'express';
 import { PipelineStage } from 'mongoose';
-import { UserModel } from 'src/user/user.model';
+import { UserModel, UserDocument } from 'src/user/user.model';
 
 @Injectable()
 export class GraphService {
@@ -21,17 +21,17 @@ export class GraphService {
   private readonly USER_SUBS_CACHE_TTL = 5 * 60; // 5 минут в секундах
 
   constructor(
-    @InjectModel(GraphModel)
-    private readonly GraphModel: ModelType<GraphModel>,
+    @InjectModel(GraphModel.name)
+    private readonly graphModel: Model<GraphDocument>,
 
-    @InjectModel(GraphSubsModel)
-    private readonly graphSubsModel: ModelType<GraphSubsModel>,
+    @InjectModel(GraphSubsModel.name)
+    private readonly graphSubsModel: Model<GraphSubsDocument>,
 
     private readonly graphSubsService: GraphSubsService,
     private readonly s3Service: S3Service,
     private readonly redisService: RedisService,
-    @InjectModel(UserModel)
-    private readonly UserModel: ModelType<UserModel>,
+    @InjectModel(UserModel.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   // --- Вспомогательные методы для кэша ---
@@ -91,7 +91,7 @@ export class GraphService {
 
     if (image) {
       // Получаем название глобального графа
-      const globalGraph = await this.GraphModel.findById(dto.globalGraphId).select('name').lean();
+      const globalGraph = await this.graphModel.findById(dto.globalGraphId).select('name').lean();
       const globalGraphName = globalGraph?.name || 'unknown';
       
       // Get file extension from original filename
@@ -105,7 +105,7 @@ export class GraphService {
     }
 
     // Создаем новый граф
-    const graph = await this.GraphModel.create({
+    const graph = await this.graphModel.create({
       ...dto, 
       ownerUserId: userId, 
       imgPath,
@@ -114,7 +114,7 @@ export class GraphService {
     });
 
     // Добавляем граф в managedGraphIds пользователя
-    await this.UserModel.findByIdAndUpdate(
+    await this.userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { managedGraphIds: graph._id } },
       { new: false }
@@ -122,7 +122,7 @@ export class GraphService {
 
     // Если это дочерний граф (есть parentGraphId), обновляем счетчик родительского графа
     if (dto.parentGraphId) {
-      await this.GraphModel.findByIdAndUpdate(dto.parentGraphId, {
+      await this.graphModel.findByIdAndUpdate(dto.parentGraphId, {
         $inc: { childGraphNum: 1 },
       }).exec();
     }
@@ -142,7 +142,7 @@ export class GraphService {
     
     if (!graph) {
       // Если нет в кэше, получаем из БД
-      graph = await this.GraphModel.findById(id).populate('parentGraphId', 'name').lean();
+      graph = await this.graphModel.findById(id).populate('parentGraphId', 'name').lean();
       
       // Сохраняем в кэш на 1 неделю
       if (graph) {
@@ -177,7 +177,7 @@ export class GraphService {
     
     if (!graphs || !Array.isArray(graphs)) {
       // Если нет в кэше, получаем из БД
-      graphs = await this.GraphModel
+      graphs = await this.graphModel
         .find()
         .skip(Number(skip) || 0)
         .lean()
@@ -210,7 +210,7 @@ export class GraphService {
     
     if (!graphs || !Array.isArray(graphs)) {
       // Если нет в кэше, получаем из БД
-      graphs = await (this.GraphModel.find as any)({
+      graphs = await (this.graphModel.find as any)({
           globalGraphId: parentGraphId,
           graphType: 'default'
         })
@@ -239,7 +239,7 @@ export class GraphService {
   // --- Получение всех дочерних графов по Id родительского графа-тематики - Для системы графов --- 
   async getAllChildrenByTopic(parentGraphId: Types.ObjectId) {
 
-    const childrenGraphs = (this.GraphModel.find as any)({
+    const childrenGraphs = (this.graphModel.find as any)({
       parentGraphId: parentGraphId,
       graphType: 'default'
     }).lean()
@@ -252,13 +252,13 @@ export class GraphService {
 
     const [globalGraph, childrenGraphs] = await Promise.all([
       // Получаем сам глобальный граф
-      (this.GraphModel.findOne as any)({
+      (this.graphModel.findOne as any)({
         _id: globalGraphId,
         graphType: 'global'
       }).lean(),
 
       // Получаем все дочерние графы
-      (this.GraphModel.find as any)({
+      (this.graphModel.find as any)({
         globalGraphId: globalGraphId,
         graphType: 'default'
       }).lean()
@@ -279,7 +279,7 @@ export class GraphService {
       },
     ];
 
-    return this.GraphModel.aggregate(pipeline).exec();
+    return this.graphModel.aggregate(pipeline).exec();
   }
 
   // --- Создание глобального графа ---
@@ -295,7 +295,7 @@ export class GraphService {
       imgPath = `images/${s3Path}`;
     }
 
-    const graph = await this.GraphModel.create({
+    const graph = await this.graphModel.create({
       ...dto,
       ownerUserId: userId,
       imgPath,
@@ -303,7 +303,7 @@ export class GraphService {
     });
 
     // Добавляем граф в managedGraphIds пользователя
-    await this.UserModel.findByIdAndUpdate(
+    await this.userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { managedGraphIds: graph._id } },
       { new: false }
@@ -321,7 +321,7 @@ export class GraphService {
 
     if (image) {
       // Получаем название глобального графа (родительского для тематики)
-      const globalGraph = await this.GraphModel.findById(dto.parentGraphId).select('name').lean();
+      const globalGraph = await this.graphModel.findById(dto.parentGraphId).select('name').lean();
       const globalGraphName = globalGraph?.name || 'unknown';
       
       const fileExtension = image.originalname.split('.').pop();
@@ -333,7 +333,7 @@ export class GraphService {
     }
 
     // Создаем новый граф-тематику
-    const graph = await this.GraphModel.create({
+    const graph = await this.graphModel.create({
       ...dto,
       ownerUserId: userId,
       imgPath,
@@ -342,14 +342,14 @@ export class GraphService {
     });
 
     // Добавляем граф в managedGraphIds пользователя
-    await this.UserModel.findByIdAndUpdate(
+    await this.userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { managedGraphIds: graph._id } },
       { new: false }
     ).exec();
 
     // Обновляем счетчик родительского графа
-    await this.GraphModel.findByIdAndUpdate(dto.parentGraphId, {
+    await this.graphModel.findByIdAndUpdate(dto.parentGraphId, {
       $inc: { childGraphNum: 1 },
     }).exec();
 
@@ -370,7 +370,7 @@ export class GraphService {
     }
 
     // Если нет в кэше, получаем из БД
-    const graphs = await this.GraphModel.find({ graphType: 'global' })
+    const graphs = await this.graphModel.find({ graphType: 'global' })
       .sort({ name: 1 })
       .lean()
       .exec();
@@ -395,13 +395,13 @@ export class GraphService {
 
     const [globalGraph, topicGraphs] = await Promise.all([
       // Получаем информацию о глобальном графе
-      this.GraphModel.findOne({
+      this.graphModel.findOne({
         _id: globalGraphId,
         graphType: 'global'
       }).lean(),
 
       // Получаем все графы-тематики для этого глобального графа
-      (this.GraphModel.find as any)({
+      (this.graphModel.find as any)({
         parentGraphId: globalGraphId,
         graphType: 'topic'
       }).sort({ name: 1 }).lean()
@@ -420,7 +420,7 @@ export class GraphService {
 
   // --- Удаление графа с каскадным удалением подписок и обновлением счетчиков пользователей ---
   async deleteGraph(graphId: Types.ObjectId, requesterId: Types.ObjectId): Promise<{ deleted: boolean }>{
-    const session = await this.GraphModel.db.startSession();
+    const session = await this.graphModel.db.startSession();
 
     // Пользователи, кэш которых нужно инвалидировать после транзакции
     let affectedUserIds: string[] = [];
@@ -428,7 +428,7 @@ export class GraphService {
     try {
       await session.withTransaction(async () => {
         // Проверяем существование графа и право на удаление
-        const graph = await this.GraphModel.findById(graphId)
+        const graph = await this.graphModel.findById(graphId)
           .session(session)
           .lean()
           .exec();
@@ -438,7 +438,7 @@ export class GraphService {
         }
 
         // Проверяем роль пользователя: если role === 'create', разрешаем удаление независимо от владения
-        const requester = await this.UserModel.findById(requesterId)
+        const requester = await this.userModel.findById(requesterId)
           .select('role')
           .session(session)
           .lean()
@@ -475,13 +475,13 @@ export class GraphService {
               update: { $inc: { graphSubsNum: -dec } }
             }
           }));
-          await this.UserModel.bulkWrite(userBulk, { session });
+          await this.userModel.bulkWrite(userBulk, { session });
           affectedUserIds = Array.from(userIdToCount.keys());
         }
 
         // Если был родительский граф, уменьшаем его childGraphNum
         if (graph.parentGraphId) {
-          await (this.GraphModel.updateOne as any)(
+          await (this.graphModel.updateOne as any)(
             { _id: graph.parentGraphId },
             { $inc: { childGraphNum: -1 } }
           ).session(session).exec();
@@ -489,14 +489,14 @@ export class GraphService {
 
         // Удаляем граф из managedGraphIds владельца
         if (graph.ownerUserId) {
-          await (this.UserModel.updateOne as any)(
+          await (this.userModel.updateOne as any)(
             { _id: graph.ownerUserId },
             { $pull: { managedGraphIds: graphId } }
           ).session(session).exec();
         }
 
         // Удаляем сам граф
-        await this.GraphModel.deleteOne({ _id: graphId })
+        await this.graphModel.deleteOne({ _id: graphId })
           .session(session)
           .exec();
       });

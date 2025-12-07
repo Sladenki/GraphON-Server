@@ -1,7 +1,7 @@
-import { TypegooseModule } from '@m8a/nestjs-typegoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { UserController } from './user.controller';
-import { UserModel } from './user.model';
-import { GraphModel } from 'src/graph/graph.model';
+import { UserModel, UserSchema } from './user.model';
+import { GraphModel, GraphSchema } from 'src/graph/graph.model';
 import { UserService } from './user.service';
 import { Module } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
@@ -18,18 +18,9 @@ import { PassportModule } from '@nestjs/passport';
     ConfigModule,
     PassportModule,
 
-    TypegooseModule.forFeature([
-      {
-        // Ссылка на модель пользователя
-        typegooseClass: UserModel,
-        // Название коллекции в БД
-        schemaOptions: { collection: 'User' },
-      },
-      {
-        // Ссылка на модель графа (для популяции и бэкофила)
-        typegooseClass: GraphModel,
-        schemaOptions: { collection: 'Graph' },
-      },
+    MongooseModule.forFeature([
+      { name: UserModel.name, schema: UserSchema },
+      { name: GraphModel.name, schema: GraphSchema },
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

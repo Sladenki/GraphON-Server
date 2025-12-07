@@ -1,76 +1,77 @@
-import { modelOptions, prop, Ref } from "@typegoose/typegoose";
-import { Base, TimeStamps } from "@typegoose/typegoose/lib/defaultClasses";
-import { GraphModel } from "src/graph/graph.model";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
-// Base - уникальные id 
-export interface UserModel extends Base {}
+export type UserDocument = UserModel & Document;
 
-@modelOptions({
-  schemaOptions: {
-    versionKey: false, // Отключает поле _v
-    timestamps: { createdAt: true, updatedAt: false }, // Оставляет createdAt, но убирает updatedAt
-  },
+@Schema({
+  collection: 'User',
+  versionKey: false, // Отключает поле _v
+  timestamps: { createdAt: true, updatedAt: false }, // Оставляет createdAt, но убирает updatedAt
 })
-export class UserModel extends TimeStamps {
+export class UserModel {
+  _id: Types.ObjectId;
 
-  @prop({ enum: ['create', 'admin', 'editor', 'sysadmin', 'user'], default: 'user' })
+  @Prop({ enum: ['create', 'admin', 'editor', 'sysadmin', 'user'], default: 'user' })
   role: 'create' | 'admin' | 'editor' | 'sysadmin' | 'user';
 
   // Калининград (больше для локалки)
-  @prop ({ ref: () => GraphModel, index: true, default: null })
-  selectedGraphId: Ref<GraphModel>; 
+  @Prop({ type: Types.ObjectId, ref: 'GraphModel', index: true, default: null })
+  selectedGraphId: Types.ObjectId; 
 
   // КГТУ \ КБК
-  @prop ({ ref: () => GraphModel, index: true, default: null })
-  universityGraphId: Ref<GraphModel>; 
+  @Prop({ type: Types.ObjectId, ref: 'GraphModel', index: true, default: null })
+  universityGraphId: Types.ObjectId; 
 
   // Список графов, которыми управляет пользователь (по сути, где он владелец)
-  @prop({ ref: () => GraphModel, type: () => [GraphModel], default: undefined })
-  managedGraphIds?: Ref<GraphModel>[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'GraphModel' }], default: undefined })
+  managedGraphIds?: Types.ObjectId[];
 
-  @prop()
+  @Prop()
   firstName: string
 
-  @prop()
+  @Prop()
   lastName: string
 
-  @prop()
+  @Prop()
   username: string
 
-  @prop()
+  @Prop()
   avaPath: string
 
-  @prop()
+  @Prop()
   telegramId: string
 
-  @prop({ enum: ['male', 'female'], required: false })
+  @Prop({ enum: ['male', 'female'], required: false })
   gender?: 'male' | 'female'
 
-  @prop({ required: false })
+  @Prop({ required: false })
   birthDate?: Date
 
-  @prop({ default: 0 })
+  @Prop({ default: 0 })
   // subsNum: number  // подписки на граф
   graphSubsNum: number
 
-  @prop({ default: 0 })
+  @Prop({ default: 0 })
   postsNum: number 
 
-  @prop({ default: 0 })
+  @Prop({ default: 0 })
   attentedEventsNum: number
 
   // Поля для соглашения об авторских правах
-  @prop({ default: false })
+  @Prop({ default: false })
   copyrightAgreementAccepted: boolean
 
-  @prop()
+  @Prop()
   copyrightAgreementAcceptedAt: Date
 
   // Поле для отслеживания активности пользователя
-  @prop()
+  @Prop()
   lastActivityDate?: Date
 
-  @prop()
+  @Prop()
   isStudent?: boolean
 
+  createdAt: Date;
 }
+
+export const UserSchema = SchemaFactory.createForClass(UserModel);

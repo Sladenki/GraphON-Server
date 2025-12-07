@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
-import { TypegooseModule } from "@m8a/nestjs-typegoose";
+import { MongooseModule } from "@nestjs/mongoose";
 import { ScheduleController } from "./schedule.controller";
 import { ScheduleService } from "./schedule.service";
-import { ScheduleModel } from "./schedule.model";
+import { ScheduleModel, ScheduleSchema } from "./schedule.model";
 import { EventService } from "src/event/event.service";
 import { EventModule } from "src/event/event.module";
 
@@ -10,11 +10,8 @@ import { EventModule } from "src/event/event.module";
   controllers: [ScheduleController],
   providers: [ScheduleService],
   imports: [
-    TypegooseModule.forFeature([
-      {
-        typegooseClass: ScheduleModel,
-        schemaOptions: { collection: 'Schedule' }
-      },
+    MongooseModule.forFeature([
+      { name: ScheduleModel.name, schema: ScheduleSchema },
     ]),
     EventModule,
   ],

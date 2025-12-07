@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
-import { ModelType } from '@typegoose/typegoose/lib/types';
-import { InjectModel } from '@m8a/nestjs-typegoose';
-import { UserModel } from './user.model';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { UserModel, UserDocument } from './user.model';
 import { JwtAuthService } from '../jwt/jwt.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { Types } from 'mongoose';
-import { GraphModel } from 'src/graph/graph.model';
+import { GraphModel, GraphDocument } from 'src/graph/graph.model';
 import { USER_CONSTANTS } from '../constants/user.constants';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -13,8 +13,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UserService {
   constructor(
     // Обращаемся к БД модели user
-    @InjectModel(UserModel) private readonly UserModel: ModelType<UserModel>,
-    @InjectModel(GraphModel) private readonly GraphModel: ModelType<GraphModel>,
+    @InjectModel(UserModel.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(GraphModel.name) private readonly graphModel: Model<GraphDocument>,
 
     // Для JWT токена
     private jwtAuthService: JwtAuthService,
@@ -24,7 +24,7 @@ export class UserService {
   // --- Вход или регистрация пользователя ---
   async auth(dto: AuthUserDto) {
 
-    const user = await this.UserModel.findOneAndUpdate(
+    const user = await this.userModel.findOneAndUpdate(
       { email: dto.email },
       // Указывает значения, которые будут установлены только при вставке нового документа.
       {
@@ -52,7 +52,7 @@ export class UserService {
 
   // --- Получение данных пользователя по его ID ---
   async getUserById(_id: Types.ObjectId) {
-    const user = await this.UserModel.findById(_id)
+    const user = await this.userModel.findById(_id)
       .lean()
       // Убираем поля
       .select({ email: 0, __v: 0, createdAt: 0, updatedAt: 0 })
@@ -63,7 +63,7 @@ export class UserService {
 
   // --- Получение всех пользователей ---
   async getAllUsers() {
-    const users = await this.UserModel
+    const users = await this.userModel
       .find()
       .sort({ _id: -1 })
       .lean()
@@ -74,7 +74,7 @@ export class UserService {
 
   // --- Получение пользователей по выбранному графу ---
   async getUsersBySelectedGraph(graphId: string) {
-    const users = await (this.UserModel.find as any)({ selectedGraphId: new Types.ObjectId(graphId) })
+    const users = await (this.userModel.find as any)({ selectedGraphId: new Types.ObjectId(graphId) })
       .populate('managedGraphIds', 'name')
       .lean()
       .select({ createdAt: 0, updatedAt: 0 });
@@ -88,7 +88,7 @@ export class UserService {
   //     query._id = { $gt: new Types.ObjectId(lastId) };
   //   }
 
-  //   const users = await this.UserModel
+  //   const users = await this.userModel
   //     .find(query)
   //     .sort({ _id: 1 })
   //     .limit(limit)
@@ -108,7 +108,7 @@ export class UserService {
   async updateSelectedGraph(userId: Types.ObjectId, selectedGraphId: string) {
     try {
       // Сначала получаем пользователя, чтобы проверить isStudent и universityGraphId
-      const user = await this.UserModel.findById(userId).lean();
+      const user = await this.userModel.findById(userId).lean();
       
       if (!user) {
         throw new NotFoundException('Пользователь не найден');
@@ -122,7 +122,7 @@ export class UserService {
         updateFields.universityGraphId = selectedGraphId;
       }
 
-      const updatedUser = await this.UserModel.findByIdAndUpdate(
+      const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
         updateFields,
         { new: true }
@@ -140,7 +140,7 @@ export class UserService {
   // --- Обновление университетского графа пользователя ---
   async updateUniversityGraph(userId: Types.ObjectId, universityGraphId: string) {
     try {
-      const updatedUser = await this.UserModel.findByIdAndUpdate(
+      const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
         { universityGraphId },
         { new: true }
@@ -162,7 +162,7 @@ export class UserService {
   // --- Обновление статуса студента пользователя ---
   async updateIsStudent(userId: Types.ObjectId, isStudent: boolean) {
     try {
-      const updatedUser = await this.UserModel.findByIdAndUpdate(
+      const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
         { isStudent },
         { new: true }
@@ -196,7 +196,7 @@ export class UserService {
         throw new BadRequestException('Нет данных для обновления');
       }
 
-      const updatedUser = await this.UserModel.findByIdAndUpdate(
+      const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
         { $set: updatePayload },
         { new: true }
@@ -221,7 +221,7 @@ export class UserService {
   async findByTelegramId(telegramId: number) {
     try {
       // Ищем пользователя как по числу, так и по строке
-      const user = await (this.UserModel.findOne as any)({
+      const user = await (this.userModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -243,7 +243,7 @@ export class UserService {
       const now = new Date();
       
       // Ищем пользователя как по числу, так и по строке
-      let user = await (this.UserModel.findOne as any)({
+      let user = await (this.userModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -252,7 +252,7 @@ export class UserService {
       
       if (user) {
         // Пользователь найден - обновляем его
-        user = await this.UserModel.findByIdAndUpdate(
+        user = await this.userModel.findByIdAndUpdate(
           user._id,
           {
             $set: {
@@ -266,7 +266,7 @@ export class UserService {
         console.log(`Existing user ${user._id} (telegramId: ${telegramId}) accepted copyright agreement at ${now}`);
       } else {
         // Пользователь не найден - создаем минимальную запись только для соглашения
-        user = await this.UserModel.create({
+        user = await this.userModel.create({
           telegramId: telegramId.toString(), // Сохраняем как строку для консистентности
           copyrightAgreementAccepted: true,
           copyrightAgreementAcceptedAt: now,
@@ -286,7 +286,7 @@ export class UserService {
   // --- Проверка принятия соглашения об авторских правах ---
   async hasAcceptedCopyrightAgreement(telegramId: number): Promise<boolean> {
     try {
-      const user = await (this.UserModel.findOne as any)({
+      const user = await (this.userModel.findOne as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: telegramId.toString() }
@@ -306,7 +306,7 @@ export class UserService {
   // --- Удаление пользователя по telegramId ---
   async deleteUserByTelegramId(telegramId: string) {
     try {
-      const deletedUser = await (this.UserModel.findOneAndDelete as any)({
+      const deletedUser = await (this.userModel.findOneAndDelete as any)({
         $or: [
           { telegramId: telegramId },
           { telegramId: parseInt(telegramId, 10) }
@@ -334,14 +334,14 @@ export class UserService {
   async migrateTelegramIdsToString() {
     try {
       // Находим всех пользователей с числовым telegramId
-      const usersWithNumericTelegramId = await (this.UserModel.find as any)({
+      const usersWithNumericTelegramId = await (this.userModel.find as any)({
         telegramId: { $type: 'number' }
       }).lean();
 
       console.log(`Found ${usersWithNumericTelegramId.length} users with numeric telegramId`);
 
       for (const user of usersWithNumericTelegramId) {
-        await this.UserModel.findByIdAndUpdate(
+        await this.userModel.findByIdAndUpdate(
           user._id,
           { telegramId: user.telegramId.toString() }
         );
@@ -357,7 +357,7 @@ export class UserService {
   // --- Поиск всех пользователей с null telegramId ---
   async findUsersWithNullTelegramId() {
     try {
-      const users = await this.UserModel
+      const users = await this.userModel
         .find({
           $or: [
             { telegramId: null },
@@ -377,7 +377,7 @@ export class UserService {
   // --- Удаление всех пользователей с null telegramId ---
   async deleteUsersWithNullTelegramId() {
     try {
-      const result = await this.UserModel.deleteMany({
+      const result = await this.userModel.deleteMany({
         $or: [
           { telegramId: null },
           { telegramId: { $exists: false } }
@@ -397,7 +397,7 @@ export class UserService {
   // --- Установка isStudent: true для всех пользователей ---
   async setAllUsersAsStudents() {
     try {
-      const result = await this.UserModel.updateMany(
+      const result = await this.userModel.updateMany(
         {}, // Пустой фильтр - обновляем все документы
         { $set: { isStudent: true } }
       );
@@ -417,7 +417,7 @@ export class UserService {
   async migrateSelectedGraphToUniversityGraph() {
     try {
       // Находим всех пользователей с selectedGraphId
-      const usersWithSelectedGraph = await this.UserModel.find({
+      const usersWithSelectedGraph = await this.userModel.find({
         selectedGraphId: { $exists: true, $ne: null }
       }).select({ _id: 1, selectedGraphId: 1, universityGraphId: 1 }).lean();
 
@@ -432,7 +432,7 @@ export class UserService {
         }
 
         // Переносим selectedGraphId в universityGraphId
-        await this.UserModel.findByIdAndUpdate(
+        await this.userModel.findByIdAndUpdate(
           user._id,
           { $set: { universityGraphId: user.selectedGraphId } },
           { new: false }
@@ -456,7 +456,7 @@ export class UserService {
   async backfillManagedGraphs() {
     try {
       // Находим все графы с ownerUserId
-      const graphs = await this.GraphModel.find({ ownerUserId: { $exists: true, $ne: null } })
+      const graphs = await this.graphModel.find({ ownerUserId: { $exists: true, $ne: null } })
         .select({ _id: 1, ownerUserId: 1 })
         .lean();
 
@@ -472,7 +472,7 @@ export class UserService {
 
       let updatedUsers = 0;
       for (const [userId, graphIds] of userIdToGraphIds.entries()) {
-        await this.UserModel.findByIdAndUpdate(
+        await this.userModel.findByIdAndUpdate(
           userId,
           { $set: { managedGraphIds: graphIds } },
           { new: false }
