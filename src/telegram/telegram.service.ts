@@ -71,7 +71,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
   // Настройка команд бота (отображаются в меню)
   async setupBotCommands() {
     try {
-      await this.bot.setMyCommands([
+      await this.bot.telegram.setMyCommands([
         {
           command: 'start',
           description: '🌟 Главное меню'
