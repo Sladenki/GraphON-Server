@@ -7,10 +7,11 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from 'src/user/jwt.strategy';
 import { UserModel, UserSchema } from 'src/user/user.model';
 import { TelegramBotModule } from 'src/telegram/telegram.module';
+import { TelegramValidatorService } from './telegram-validator.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [JwtStrategy],
+  providers: [JwtStrategy, TelegramValidatorService],
   imports: [
     // для JWT
     ConfigModule,

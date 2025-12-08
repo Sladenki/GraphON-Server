@@ -52,12 +52,21 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
-  // Вспомогательный метод для извлечения токена из заголовка Authorization
+  // Вспомогательный метод для извлечения токена из заголовка Authorization или cookie
   private extractTokenFromHeader(request: any): string | undefined {
-    // Разбиваем заголовок Authorization на тип и токен
-    // Например: "Bearer eyJhbGciOiJIUzI1NiIs..."
+    // Сначала пробуем получить токен из заголовка Authorization
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    // Возвращаем токен только если тип авторизации - Bearer
-    return type === 'Bearer' ? token : undefined;
+    if (type === 'Bearer' && token) {
+      return token;
+    }
+    
+    // Если токена нет в заголовке, пробуем получить из cookie
+    // Это позволяет использовать HTTP-only cookie для безопасности
+    const cookieToken = request.cookies?.accessToken;
+    if (cookieToken) {
+      return cookieToken;
+    }
+    
+    return undefined;
   }
 } 
