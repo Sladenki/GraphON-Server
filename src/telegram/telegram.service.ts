@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Telegraf, Context } from 'telegraf';
 import * as fs from 'fs';
@@ -7,7 +7,7 @@ import { UserService } from 'src/user/user.service';
 import { getCopyrightConfig } from 'src/config/copyright.config';
 
 @Injectable()
-export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
+export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy {
   public bot: Telegraf;
   private WEB_APP_URL: string;
   private SERVER_URL: string;
@@ -52,10 +52,23 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     this.handleAuthCommand();
     this.handleSupportCommand();
     this.handleCallbackQueries();
-    
-    // Запускаем бота
-    await this.bot.launch();
-    console.log('Bot started');
+    // Запуск бота перенесен в onApplicationBootstrap, чтобы не блокировать запуск сервера
+  }
+
+  async onApplicationBootstrap() {
+    // Запускаем бота асинхронно, не блокируя выполнение
+    // Используем setImmediate, чтобы запустить бота после того, как все lifecycle hooks завершены
+    setImmediate(async () => {
+      console.log('Starting Telegram bot...');
+      try {
+        await this.bot.launch();
+        console.log('Bot started');
+      } catch (error) {
+        console.error('Error starting bot:', error);
+        // Не блокируем работу сервера, если бот не запустился
+      }
+    });
+    // Не ждем завершения запуска бота
   }
 
   async onModuleDestroy() {
