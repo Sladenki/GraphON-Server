@@ -24,8 +24,6 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
     // const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
     this.bot = new Telegraf(token);
 
-    console.log('Bot instance created');
-
     // Ссылка на приложение 
     const webAppString = this.configService.get<string>('WEB_APP_URL');
     this.WEB_APP_URL = webAppString
@@ -45,7 +43,6 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
   }
 
   async onModuleInit() {
-    console.log('Bot initialized');
     // Настраиваем команды и обработчики
     await this.setupBotCommands();
     this.handleStartCommand();
@@ -59,10 +56,8 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
     // Запускаем бота асинхронно, не блокируя выполнение
     // Используем setImmediate, чтобы запустить бота после того, как все lifecycle hooks завершены
     setImmediate(async () => {
-      console.log('Starting Telegram bot...');
       try {
         await this.bot.launch();
-        console.log('Bot started');
       } catch (error) {
         console.error('Error starting bot:', error);
         // Не блокируем работу сервера, если бот не запустился
@@ -73,7 +68,6 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
 
   async onModuleDestroy() {
     await this.bot.stop();
-    console.log('Bot stopped');
   }
 
   // Метод для получения профиля пользователя

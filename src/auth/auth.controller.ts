@@ -21,7 +21,7 @@ export class AuthController {
 
   // Инициализация при старте модуля
   onModuleInit() {
-    console.log('Bot initialized');
+    // Инициализация модуля
   }
   
   // Эндпоинт для получения данных пользователя после авторизации через Telegram

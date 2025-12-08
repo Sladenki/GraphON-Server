@@ -6,14 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   try {
-    console.log('📦 Starting application...');
-    
     const app = await NestFactory.create(AppModule);
-    console.log('✅ App module created successfully');
 
     // Автоматические добавление api к каждому запросу
     app.setGlobalPrefix('api');
-    console.log('✅ Global prefix "api" set');
 
     // Включение валидации DTO
     app.useGlobalPipes(new ValidationPipe({
@@ -24,12 +20,8 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
     }));
-    console.log('✅ Validation pipes configured');
 
     app.use(cookieParser())
-    console.log('✅ Cookie parser configured');
-
-    // // -----
 
     app.enableCors({
       origin: ['https://graphon.kozow.com', 'http://localhost:3000', 'http://localhost:4200', 'http://127.0.0.1:4200'],
@@ -38,15 +30,12 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: ['set-cookie'],
     })
-    console.log('✅ CORS enabled');
 
     // Включаем shutdown hooks для корректного завершения
     app.enableShutdownHooks();
-    console.log('✅ Shutdown hooks enabled');
 
     const port = process.env.SERVER_PORT || 4200;
     const portNumber = typeof port === 'string' ? parseInt(port, 10) : port;
-    console.log(`🔌 Attempting to listen on port ${portNumber}...`);
     
     // Получаем HTTP сервер ДО вызова listen
     const httpServer = app.getHttpServer();
@@ -54,18 +43,6 @@ async function bootstrap() {
     // Настраиваем обработчики событий
     const serverReady = new Promise<void>((resolve, reject) => {
       httpServer.once('listening', () => {
-        const address = httpServer.address();
-        if (address) {
-          const actualPort = typeof address === 'object' && address ? address.port : portNumber;
-          const actualAddress = typeof address === 'object' && address ? address.address : '0.0.0.0';
-          const displayAddress = actualAddress === '::' || actualAddress === '0.0.0.0' ? 'localhost' : actualAddress;
-          
-          console.log(`\n🚀 Server is running!`);
-          console.log(`   Listening: ${httpServer.listening}`);
-          console.log(`   Address: ${actualAddress}:${actualPort}`);
-          console.log(`   URL: http://${displayAddress}:${actualPort}`);
-          console.log(`   API: http://${displayAddress}:${actualPort}/api`);
-        }
         resolve();
       });
 
@@ -79,8 +56,6 @@ async function bootstrap() {
     });
 
     // Запускаем сервер без await, чтобы не блокировать выполнение
-    // onApplicationBootstrap может блокировать, но сервер должен запуститься
-    console.log('📞 Starting HTTP server...');
     app.listen(portNumber, '0.0.0.0').catch((error) => {
       console.error('❌ Error in app.listen():', error);
     });
@@ -97,15 +72,11 @@ async function bootstrap() {
           const actualAddress = typeof address === 'object' && address ? address.address : '0.0.0.0';
           const displayAddress = actualAddress === '::' || actualAddress === '0.0.0.0' ? 'localhost' : actualAddress;
           
-          console.log(`\n✅ Server is running! (checked after timeout)`);
+          console.log(`✅ Server is running! (checked after timeout)`);
           console.log(`   Listening: ${isListening}`);
           console.log(`   Address: ${actualAddress}:${actualPort}`);
           console.log(`   URL: http://${displayAddress}:${actualPort}`);
           console.log(`   API: http://${displayAddress}:${actualPort}/api`);
-        } else {
-          console.log(`\n⚠️  Server status after timeout:`);
-          console.log(`   Listening: ${isListening}`);
-          console.log(`   Address: ${JSON.stringify(address)}`);
         }
         resolve();
       }, 3000); // 3 секунды таймаут
