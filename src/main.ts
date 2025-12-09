@@ -23,8 +23,13 @@ async function bootstrap() {
 
     app.use(cookieParser())
 
-    // CORS отключен
-    // app.enableCors({...})
+    app.enableCors({
+      origin: ['https://graphon.kozow.com', 'http://localhost:3000', 'http://localhost:4200', 'http://127.0.0.1:4200'],
+      credentials: true,
+      methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['set-cookie'],
+    })
 
     // Включаем shutdown hooks для корректного завершения
     app.enableShutdownHooks();
