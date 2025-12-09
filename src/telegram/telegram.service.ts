@@ -279,7 +279,19 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
       // Проверяем, принял ли пользователь соглашение
       const user = await this.userService.findByTelegramId(chatId);
       
-      if (user && user.copyrightAgreementAccepted) {
+      // Детальная диагностика
+      console.log(`[sendAuthMessage] chatId=${chatId}, user=${user ? 'found' : 'not found'}`);
+      if (user) {
+        console.log(`[sendAuthMessage] copyrightAgreementAccepted=${user.copyrightAgreementAccepted}, type=${typeof user.copyrightAgreementAccepted}`);
+      }
+      
+      // Проверяем, принял ли пользователь соглашение
+      // Проверяем строго на boolean true (не undefined, не null, не false)
+      const hasAccepted = user && user.copyrightAgreementAccepted === true;
+      
+      console.log(`[sendAuthMessage] hasAccepted=${hasAccepted}`);
+      
+      if (hasAccepted) {
         // Пользователь уже принял соглашение - показываем форму авторизации
         await this.bot.telegram.sendMessage(chatId, 
           '🔐 *Авторизация в GraphON*\n\n' +
@@ -308,7 +320,6 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
         });
       } else {
         // Пользователь не принял соглашение - отправляем сообщение и сразу PDF файл
-        // Сначала отправляем текстовое сообщение
         await this.bot.telegram.sendMessage(chatId, 
           '📋 *Вопросы обработки персональных данных*\n\n' +
           'Для продолжения необходимо принять соглашение об авторских правах.\n\n' +
@@ -322,18 +333,46 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
       }
     } catch (error) {
       console.error('Error in sendAuthMessage:', error);
-      // В случае ошибки отправляем запрос на принятие соглашения
+      console.error('Error details:', error.message, error.stack);
+      
+      // В случае ошибки пытаемся снова проверить пользователя
       try {
-        await this.bot.telegram.sendMessage(chatId, 
-          '📋 *Вопросы обработки персональных данных*\n\n' +
-          'Для продолжения необходимо принять соглашение об авторских правах.\n\n' +
-          'Пожалуйста, ознакомьтесь с документом и примите условия.', 
-          {
-          parse_mode: "Markdown",
-        });
-        await this.sendCopyrightAgreement(chatId);
+        const user = await this.userService.findByTelegramId(chatId);
+        const hasAccepted = user && user.copyrightAgreementAccepted === true;
+        
+        if (hasAccepted) {
+          // Пользователь принял соглашение - показываем форму авторизации
+          await this.bot.telegram.sendMessage(chatId, 
+            '🔐 *Авторизация в GraphON*\n\n' +
+            'Для доступа к приложению авторизуйтесь, нажав на кнопку ⬇️', 
+            {
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: '🔐 Авторизоваться',
+                    login_url: {
+                      url: `${this.SERVER_URL}/auth/telegram/callback`, 
+                    },
+                  },
+                ],
+              ],
+            },
+          });
+        } else {
+          // Пользователь не принял соглашение - отправляем запрос
+          await this.bot.telegram.sendMessage(chatId, 
+            '📋 *Вопросы обработки персональных данных*\n\n' +
+            'Для продолжения необходимо принять соглашение об авторских правах.\n\n' +
+            'Пожалуйста, ознакомьтесь с документом и примите условия.', 
+            {
+            parse_mode: "Markdown",
+          });
+          await this.sendCopyrightAgreement(chatId);
+        }
       } catch (fallbackError) {
-        console.error('Error in fallback copyright message:', fallbackError);
+        console.error('Error in fallback auth message:', fallbackError);
       }
     }
   }
