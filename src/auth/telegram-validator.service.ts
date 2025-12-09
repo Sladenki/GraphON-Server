@@ -8,24 +8,14 @@ export class TelegramValidatorService {
 
   /**
    * Валидация данных от Telegram Web App
-   * Проверяет hash и auth_date для защиты от подделки данных
+   * Проверяет hash для защиты от подделки данных
    */
   validateTelegramData(query: any): boolean {
     try {
-      const { hash, auth_date, ...data } = query;
+      const { hash, ...allData } = query;
 
-      // Проверяем наличие обязательных полей
-      if (!hash || !auth_date) {
-        return false;
-      }
-
-      // Проверяем, что auth_date не старше 24 часов (защита от replay атак)
-      const authDate = parseInt(auth_date, 10);
-      const currentTime = Math.floor(Date.now() / 1000);
-      const timeDifference = currentTime - authDate;
-
-      // Данные старше 24 часов считаются невалидными
-      if (timeDifference > 86400) {
+      // Проверяем наличие hash
+      if (!hash) {
         return false;
       }
 
@@ -35,10 +25,11 @@ export class TelegramValidatorService {
         return false;
       }
 
-      // Создаем data check string
-      const dataCheckString = Object.keys(data)
+      // Создаем data check string из всех данных кроме hash
+      // Сортируем ключи алфавитно и формируем строку key=value\n
+      const dataCheckString = Object.keys(allData)
         .sort()
-        .map((key) => `${key}=${data[key]}`)
+        .map((key) => `${key}=${allData[key]}`)
         .join('\n');
 
       // Генерируем secret key
