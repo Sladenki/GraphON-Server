@@ -82,5 +82,9 @@
 		],
 		"coverageDirectory": "../coverage",
 		"testEnvironment": "node"
+	},
+	"overrides": {
+		"yallist": "^4.0.0",
+		"lru-cache": "^10.0.0"
 	}
 }
