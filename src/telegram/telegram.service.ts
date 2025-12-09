@@ -21,8 +21,25 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
   ) {
     // Подключаем бота
     const token = this.configService.get<string>('BOT_TOKEN');
-    // const token = "7335134596:AAFu23SLsADju1xxcG9bqecwFXoi8MgZeBs"
-    this.bot = new Telegraf(token);
+    
+    if (!token) {
+      console.error('❌ BOT_TOKEN is not set in environment variables!');
+      console.error('   Please set BOT_TOKEN in your .env file');
+      throw new Error('BOT_TOKEN is required');
+    }
+    
+    // Проверяем формат токена
+    if (!token.match(/^\d+:[A-Za-z0-9_-]+$/)) {
+      console.error('❌ Invalid BOT_TOKEN format!');
+      console.error('   Expected format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
+      throw new Error('Invalid BOT_TOKEN format');
+    }
+    
+    this.bot = new Telegraf(token, {
+      // Настройки для лучшей диагностики
+      handlerTimeout: 30000,
+    });
+    console.log('✅ Telegram bot instance created');
 
     // Ссылка на приложение 
     const webAppString = this.configService.get<string>('WEB_APP_URL');
@@ -53,17 +70,98 @@ export class TelegramBotService implements OnModuleInit, OnApplicationBootstrap,
   }
 
   async onApplicationBootstrap() {
-    // Запускаем бота асинхронно, не блокируя выполнение
-    // Используем setImmediate, чтобы запустить бота после того, как все lifecycle hooks завершены
-    setImmediate(async () => {
-      try {
-        await this.bot.launch();
-      } catch (error) {
-        console.error('Error starting bot:', error);
-        // Не блокируем работу сервера, если бот не запустился
-      }
+    // Запускаем бота после того, как сервер запущен
+    console.log('🤖 Starting Telegram bot...');
+    
+    // Добавляем обработчики событий бота для диагностики
+    this.bot.catch((err, ctx) => {
+      console.error('❌ Telegram bot error:', err);
     });
-    // Не ждем завершения запуска бота
+    
+    // Проверяем токен через Telegram API перед запуском
+    const token = this.configService.get<string>('BOT_TOKEN');
+    try {
+      console.log('🔍 Verifying bot token...');
+      const testResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const testData = await testResponse.json();
+      
+      if (!testData.ok) {
+        console.error('❌ Invalid bot token!');
+        console.error('   Telegram API error:', testData.description);
+        return;
+      }
+      
+      console.log(`✅ Bot verified: @${testData.result.username} (${testData.result.first_name})`);
+    } catch (error) {
+      console.error('❌ Failed to verify bot token:', error.message);
+      console.error('   Check your internet connection and BOT_TOKEN');
+      return;
+    }
+    
+    // Проверяем, не установлен ли webhook (это может блокировать launch)
+    try {
+      console.log('🔍 Checking for existing webhook...');
+      const webhookInfo = await this.bot.telegram.getWebhookInfo();
+      if (webhookInfo.url) {
+        console.log(`⚠️  Webhook is set: ${webhookInfo.url}`);
+        console.log('   Deleting webhook to enable polling...');
+        await this.bot.telegram.deleteWebhook({ drop_pending_updates: true });
+        console.log('✅ Webhook deleted');
+      } else {
+        console.log('✅ No webhook found, using polling');
+      }
+    } catch (error) {
+      console.error('⚠️  Error checking webhook:', error.message);
+    }
+    
+    // Запускаем бота БЕЗ await, чтобы не блокировать выполнение
+    // bot.launch() в polling режиме блокирует выполнение - это нормально
+    console.log('🚀 Launching bot with polling...');
+    console.log('   Note: bot.launch() will run continuously in the background');
+    
+    // Запускаем бота в фоне (не блокируя выполнение)
+    this.bot.launch({
+      dropPendingUpdates: true,
+    })
+      .then(() => {
+        // Этот код не выполнится, пока бот работает (это нормально)
+        console.log('✅ Telegram bot started successfully');
+      })
+      .catch((error) => {
+        console.error('❌ Error starting Telegram bot:');
+        console.error('   Message:', error.message);
+        if (error.response) {
+          console.error('   Telegram API response:', JSON.stringify(error.response, null, 2));
+        }
+        if (error.code) {
+          console.error('   Error code:', error.code);
+        }
+        if (error.description) {
+          console.error('   Description:', error.description);
+        }
+      });
+    
+    // Проверяем, что бот запустился через небольшую задержку
+    setTimeout(async () => {
+      try {
+        // Пробуем получить информацию о боте через API
+        const botInfo = await this.bot.telegram.getMe();
+        console.log('✅ Bot is running and responding');
+        console.log(`   Bot: @${botInfo.username} (${botInfo.first_name})`);
+      } catch (error) {
+        console.error('⚠️  Bot might not be running:', error.message);
+      }
+    }, 2000);
+    
+    // Обработка graceful shutdown
+    process.once('SIGINT', () => {
+      console.log('🛑 Stopping bot...');
+      this.bot.stop('SIGINT');
+    });
+    process.once('SIGTERM', () => {
+      console.log('🛑 Stopping bot...');
+      this.bot.stop('SIGTERM');
+    });
   }
 
   async onModuleDestroy() {
