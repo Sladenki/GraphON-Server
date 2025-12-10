@@ -283,6 +283,41 @@ export function useAuth() {
 }
 ```
 
+## Проверка авторизации
+
+После получения токена, проверьте, что он работает:
+
+```typescript
+// После сохранения токена, сделайте тестовый запрос
+async function verifyAuth() {
+  const token = localStorage.getItem('accessToken');
+
+  if (!token) {
+    console.error('No token found');
+    return;
+  }
+
+  try {
+    // Пример запроса к защищенному эндпоинту
+    const response = await fetch('/api/user/getById/YOUR_USER_ID', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const user = await response.json();
+      console.log('✅ Auth verified! User:', user);
+    } else {
+      console.error('❌ Auth failed:', response.status, await response.text());
+    }
+  } catch (error) {
+    console.error('Error verifying auth:', error);
+  }
+}
+```
+
 ## Резюме
 
 **Что нужно проверить на фронтенде:**
@@ -293,5 +328,13 @@ export function useAuth() {
 4. ✅ Токен сохраняется: `localStorage.setItem('accessToken', accessToken)`
 5. ✅ Токен используется в запросах: `Authorization: Bearer ${token}`
 6. ✅ После обмена кода, `code` удаляется из URL
+7. ✅ Состояние авторизации обновляется в приложении
+
+**Если токен получен, но авторизация не работает:**
+
+- Проверьте, что токен отправляется в заголовке `Authorization: Bearer ${token}`
+- Проверьте, что токен не истек (срок действия 30 дней)
+- Проверьте консоль браузера на наличие ошибок CORS или других ошибок
+- Убедитесь, что защищенные эндпоинты требуют авторизацию через `JwtAuthGuard`
 
 Если все это уже реализовано, проверьте логи на бэкенде - они покажут, приходит ли запрос и что в нем.

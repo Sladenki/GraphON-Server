@@ -6,30 +6,30 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   try {
-    const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule);
 
-    // Автоматические добавление api к каждому запросу
-    app.setGlobalPrefix('api');
+  // Автоматические добавление api к каждому запросу
+  app.setGlobalPrefix('api');
 
-    // Включение валидации DTO
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true, // Удаляет свойства, которых нет в DTO
-      forbidNonWhitelisted: true, // Выбрасывает ошибку при наличии лишних свойств
-      transform: true, // Автоматически преобразует типы
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }));
+  // Включение валидации DTO
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Удаляет свойства, которых нет в DTO
+    forbidNonWhitelisted: true, // Выбрасывает ошибку при наличии лишних свойств
+    transform: true, // Автоматически преобразует типы
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
 
-    app.use(cookieParser())
+  app.use(cookieParser())
 
-    app.enableCors({
+  app.enableCors({
       origin: ['https://graphon.kozow.com', 'http://localhost:3000', 'http://localhost:4200', 'http://127.0.0.1:4200'],
-      credentials: true,
-      methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      exposedHeaders: ['set-cookie'],
-    })
+    credentials: true,
+    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['set-cookie'],
+  })
 
     // Включаем shutdown hooks для корректного завершения
     app.enableShutdownHooks();

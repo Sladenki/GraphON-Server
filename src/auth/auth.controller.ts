@@ -19,7 +19,19 @@ import * as crypto from 'crypto';
 @Controller('auth')
 export class AuthController {
   // Хранилище одноразовых кодов (в продакшене использовать Redis)
-  private authCodes = new Map<string, { token: string; expiresAt: number }>();
+  private authCodes = new Map<string, { 
+    token: string; 
+    expiresAt: number;
+    user: {
+      _id: string;
+      telegramId: string;
+      firstName?: string;
+      lastName?: string;
+      username?: string;
+      avaPath?: string;
+      role: string;
+    };
+  }>();
 
   constructor(
     private jwtAuthService: JwtAuthService,
@@ -75,6 +87,15 @@ export class AuthController {
     this.authCodes.set(authCode, {
       token: accessToken,
       expiresAt: Date.now() + 5 * 60 * 1000, // Код действителен 5 минут
+      user: {
+        _id: user._id.toString(),
+        telegramId: user.telegramId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        avaPath: user.avaPath,
+        role: user.role,
+      },
     });
     
     console.log('[AuthController] Auth code generated:', authCode.substring(0, 8) + '...');
@@ -151,14 +172,15 @@ export class AuthController {
       throw new BadRequestException('Code expired');
     }
 
-    console.log('[AuthController] Code valid, returning token');
+    console.log('[AuthController] Code valid, returning token and user data');
     
     // Удаляем использованный код (одноразовый)
     this.authCodes.delete(code);
 
-    // Возвращаем токен
+    // Возвращаем токен и данные пользователя
     return res.json({
       accessToken: authData.token,
+      user: authData.user,
     });
   }
 
