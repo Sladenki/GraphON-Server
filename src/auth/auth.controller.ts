@@ -46,11 +46,15 @@ export class AuthController {
   // Эндпоинт для получения данных пользователя после авторизации через Telegram
   @Get('telegram/callback')
   async telegramAuthRedirect(@Req() req: Request, @Res() res: Response, @Query() query: any) {
+    console.log('[AuthController] Telegram callback received');
+    
     // ВАЛИДАЦИЯ: Проверяем подлинность данных от Telegram
     if (!this.telegramValidator.validateTelegramData(query)) {
+      console.log('[AuthController] Validation failed');
       throw new BadRequestException('Invalid Telegram data or data expired');
     }
 
+    console.log('[AuthController] Validation passed, processing user data');
     const { id, first_name, last_name, username, photo_url } = query;
 
     const userData = {
@@ -62,6 +66,8 @@ export class AuthController {
     };
 
     const user = await this.findOrCreateUser(userData);
+    console.log('[AuthController] User found/created:', user._id);
+    
     const accessToken = this.jwtAuthService.generateToken(user._id, user.role);
 
     // БЕЗОПАСНОСТЬ: Используем одноразовый код вместо передачи токена в URL
@@ -70,8 +76,12 @@ export class AuthController {
       token: accessToken,
       expiresAt: Date.now() + 5 * 60 * 1000, // Код действителен 5 минут
     });
+    
+    console.log('[AuthController] Auth code generated:', authCode.substring(0, 8) + '...');
+    console.log('[AuthController] Total active codes:', this.authCodes.size);
 
     const clientUrl = this.configService.get<string>('CLIENT_URL') || 'http://localhost:3000';
+    console.log('[AuthController] Redirecting to:', `${clientUrl}/profile?code=${authCode}`);
 
     // Сохраняем токен в HTTP-only cookie для дополнительной безопасности
     res.cookie('accessToken', accessToken, {
@@ -115,24 +125,36 @@ export class AuthController {
   // Эндпоинт для обмена одноразового кода на токен
   @Post('exchange-code')
   async exchangeCode(@Req() req: Request, @Res() res: Response) {
+    console.log('[AuthController] Exchange code request received');
+    console.log('[AuthController] Request body:', req.body);
+    
     const { code } = req.body;
 
     if (!code) {
+      console.log('[AuthController] Code is missing');
       throw new BadRequestException('Code is required');
     }
 
+    console.log('[AuthController] Looking for code:', code.substring(0, 8) + '...');
+    console.log('[AuthController] Available codes:', this.authCodes.size);
+    
     const authData = this.authCodes.get(code);
     if (!authData) {
+      console.log('[AuthController] Code not found or expired');
       throw new BadRequestException('Invalid or expired code');
     }
 
-    // Удаляем использованный код (одноразовый)
-    this.authCodes.delete(code);
-
     // Проверяем срок действия
     if (authData.expiresAt < Date.now()) {
+      console.log('[AuthController] Code expired');
+      this.authCodes.delete(code);
       throw new BadRequestException('Code expired');
     }
+
+    console.log('[AuthController] Code valid, returning token');
+    
+    // Удаляем использованный код (одноразовый)
+    this.authCodes.delete(code);
 
     // Возвращаем токен
     return res.json({
@@ -140,7 +162,28 @@ export class AuthController {
     });
   }
 
+  // Эндпоинт для проверки статуса кода (только для отладки)
+  @Get('check-code')
+  async checkCode(@Query('code') code: string) {
+    if (!code) {
+      return { valid: false, message: 'Code is required' };
+    }
 
+    const authData = this.authCodes.get(code);
+    if (!authData) {
+      return { valid: false, message: 'Code not found' };
+    }
+
+    if (authData.expiresAt < Date.now()) {
+      return { valid: false, message: 'Code expired', expiresAt: new Date(authData.expiresAt).toISOString() };
+    }
+
+    return { 
+      valid: true, 
+      expiresAt: new Date(authData.expiresAt).toISOString(),
+      expiresIn: Math.floor((authData.expiresAt - Date.now()) / 1000) + ' seconds'
+    };
+  }
 
   // Поиск или создание пользователя в БД
   private async findOrCreateUser(user: any): Promise<any> {
