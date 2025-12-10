@@ -10,12 +10,8 @@ export class TelegramValidatorService {
    * Валидация данных от Telegram Web App
    * Проверяет hash для защиты от подделки данных
    */
-  validateTelegramData(query: any): boolean {
+  validateTelegramData(query: any, originalUrl?: string): boolean {
     try {
-      console.log('[TelegramValidator] Raw query:', JSON.stringify(query));
-      console.log('[TelegramValidator] Query type:', typeof query);
-      console.log('[TelegramValidator] Query keys:', Object.keys(query));
-      
       // Извлекаем hash отдельно
       const hash = query.hash;
       
@@ -40,23 +36,23 @@ export class TelegramValidatorService {
         return false;
       }
 
-      console.log('[TelegramValidator] All data keys:', Object.keys(allData).sort());
-      console.log('[TelegramValidator] All data:', allData);
-
       // Создаем data check string из всех данных кроме hash
       // Сортируем ключи алфавитно и формируем строку key=value\n
-      const dataCheckString = Object.keys(allData)
-        .sort()
+      const sortedKeys = Object.keys(allData).sort();
+      const dataCheckString = sortedKeys
         .map((key) => `${key}=${allData[key]}`)
         .join('\n');
 
-      console.log('[TelegramValidator] Data check string (raw):', dataCheckString);
-      console.log('[TelegramValidator] Data check string (escaped):', dataCheckString.replace(/\n/g, '\\n'));
+      console.log('[TelegramValidator] Sorted keys:', sortedKeys);
+      console.log('[TelegramValidator] Data check string:', dataCheckString);
       console.log('[TelegramValidator] Received hash:', hash);
 
-      // Генерируем secret key
+      // Генерируем secret key для Login Widget
+      // Для Login Widget: secret_key = SHA-256(bot_token)
+      // Для Web App: secret_key = HMAC-SHA-256('WebAppData', bot_token)
+      // Используем алгоритм для Login Widget
       const secretKey = crypto
-        .createHmac('sha256', 'WebAppData')
+        .createHash('sha256')
         .update(botToken)
         .digest();
 
@@ -68,14 +64,11 @@ export class TelegramValidatorService {
 
       console.log('[TelegramValidator] Computed hash:', computedHash);
       console.log('[TelegramValidator] Hashes match:', computedHash === hash);
-      console.log('[TelegramValidator] Hash length - received:', hash.length, 'computed:', computedHash.length);
+      console.log('[TelegramValidator] BOT_TOKEN first 10 chars:', botToken.substring(0, 10) + '...');
 
       // Сравниваем hash
       const isValid = computedHash === hash;
       
-      if (!isValid) {
-        console.log('[TelegramValidator] Validation failed - hash mismatch');
-      }
       
       return isValid;
     } catch (error) {
