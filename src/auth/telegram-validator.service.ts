@@ -12,7 +12,20 @@ export class TelegramValidatorService {
    */
   validateTelegramData(query: any): boolean {
     try {
-      const { hash, ...allData } = query;
+      console.log('[TelegramValidator] Raw query:', JSON.stringify(query));
+      console.log('[TelegramValidator] Query type:', typeof query);
+      console.log('[TelegramValidator] Query keys:', Object.keys(query));
+      
+      // Извлекаем hash отдельно
+      const hash = query.hash;
+      
+      // Создаем копию query без hash
+      const allData: any = {};
+      for (const key in query) {
+        if (key !== 'hash') {
+          allData[key] = query[key];
+        }
+      }
 
       // Проверяем наличие hash
       if (!hash) {
@@ -27,17 +40,19 @@ export class TelegramValidatorService {
         return false;
       }
 
+      console.log('[TelegramValidator] All data keys:', Object.keys(allData).sort());
+      console.log('[TelegramValidator] All data:', allData);
+
       // Создаем data check string из всех данных кроме hash
       // Сортируем ключи алфавитно и формируем строку key=value\n
-      // Важно: используем исходные значения (URL уже декодирован Express)
       const dataCheckString = Object.keys(allData)
         .sort()
         .map((key) => `${key}=${allData[key]}`)
         .join('\n');
 
-      console.log('[TelegramValidator] Data check string:', dataCheckString.replace(/\n/g, '\\n'));
+      console.log('[TelegramValidator] Data check string (raw):', dataCheckString);
+      console.log('[TelegramValidator] Data check string (escaped):', dataCheckString.replace(/\n/g, '\\n'));
       console.log('[TelegramValidator] Received hash:', hash);
-      console.log('[TelegramValidator] All data keys:', Object.keys(allData).sort());
 
       // Генерируем secret key
       const secretKey = crypto
@@ -53,6 +68,7 @@ export class TelegramValidatorService {
 
       console.log('[TelegramValidator] Computed hash:', computedHash);
       console.log('[TelegramValidator] Hashes match:', computedHash === hash);
+      console.log('[TelegramValidator] Hash length - received:', hash.length, 'computed:', computedHash.length);
 
       // Сравниваем hash
       const isValid = computedHash === hash;
@@ -64,6 +80,7 @@ export class TelegramValidatorService {
       return isValid;
     } catch (error) {
       console.error('[TelegramValidator] Error:', error);
+      console.error('[TelegramValidator] Error stack:', error.stack);
       return false;
     }
   }
