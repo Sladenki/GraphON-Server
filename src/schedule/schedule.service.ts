@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { Model } from "mongoose";
 import { ScheduleModel, ScheduleDocument } from "./schedule.model";
 import { CreateScheduleDto } from "./dto/create-schedule.dto";
+import { Types } from "mongoose";
 
 
 @Injectable()
@@ -27,17 +28,25 @@ export class ScheduleService {
   }
 
   // --- Получает расписание для одного графа с понедельника по пятницу ---    
-  async getWeekdaySchedulesByGraph(graphId: string) {
-    return (this.scheduleModel.find as any)({ graphId: graphId })
+  async getWeekdaySchedulesByGraph(graphId: string | Types.ObjectId) {
+    // Преобразуем graphId в ObjectId для корректного поиска в БД
+    const graphObjectId = typeof graphId === 'string' ? new Types.ObjectId(graphId) : graphId;
+    
+    return (this.scheduleModel.find as any)({ graphId: graphObjectId })
       .populate('graphId', 'name')
       .lean()
       .exec();
   }
 
   // --- Получает расписания для нескольких графов (все дни недели) ---    
-  async getWeekdaySchedulesByGraphs(graphIds: string[]) {
+  async getWeekdaySchedulesByGraphs(graphIds: string[] | Types.ObjectId[]) {
+    // Преобразуем все graphIds в ObjectId для корректного поиска в БД
+    const graphObjectIds = graphIds.map(id => 
+      typeof id === 'string' ? new Types.ObjectId(id) : id
+    );
+    
     return (this.scheduleModel.find as any)({
-      graphId: { $in: graphIds },
+      graphId: { $in: graphObjectIds },
       // Убрали фильтр по дням - теперь возвращает все дни недели (0-6)
     })
     .populate('graphId', 'name')

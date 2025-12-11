@@ -78,11 +78,14 @@ export class EventService {
     }
 
     // --- Получение мероприятий для определённого графа ---
-    async getEventsByGraphId(graphId: string) {
+    async getEventsByGraphId(graphId: string | Types.ObjectId) {
+        // Преобразуем graphId в ObjectId для корректного поиска в БД
+        const graphObjectId = typeof graphId === 'string' ? new Types.ObjectId(graphId) : graphId;
+        
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
-        const events = await (this.eventModel.find as any)({ graphId })
+        const events = await (this.eventModel.find as any)({ graphId: graphObjectId })
             .populate("graphId", "name imgPath")
             .lean();
         
