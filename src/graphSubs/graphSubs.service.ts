@@ -54,12 +54,19 @@ export class GraphSubsService {
 
   // --- Переключение подписки на граф ---
   async toggleSub(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
+    // Преобразуем параметры в ObjectId для корректного поиска в БД
+    const userObjectId = typeof user === 'string' ? new Types.ObjectId(user) : user;
+    const graphObjectId = typeof graph === 'string' ? new Types.ObjectId(graph) : graph;
+    
     const session = await this.graphSubsModel.db.startSession();
     
     try {
       return await session.withTransaction(async () => {
         // Используем findOneAndDelete для атомарной операции
-        const deletedSub = await (this.graphSubsModel.findOneAndDelete as any)({ user, graph })
+        const deletedSub = await (this.graphSubsModel.findOneAndDelete as any)({ 
+          user: userObjectId, 
+          graph: graphObjectId 
+        })
           .session(session)
           .lean()
           .exec();
@@ -68,12 +75,12 @@ export class GraphSubsService {
           // Подписка была удалена - уменьшаем счетчики
           await Promise.all([
             this.graphModel.findByIdAndUpdate(
-              graph,
+              graphObjectId,
               { $inc: { subsNum: -1 } },
               { session, lean: true }
             ).exec(),
             this.userModel.findByIdAndUpdate(
-              user,
+              userObjectId,
               { $inc: { graphSubsNum: -1 } },
               { session, lean: true }
             ).exec()
@@ -81,22 +88,22 @@ export class GraphSubsService {
           
           // Инвалидируем кэш подписок пользователя и графа
           await Promise.all([
-            this.invalidateUserSubscriptionsCache(user),
-            this.invalidateGraphCache(graph)
+            this.invalidateUserSubscriptionsCache(userObjectId),
+            this.invalidateGraphCache(graphObjectId)
           ]);
           
           return { subscribed: false };
         } else {
           // Подписки не было - создаем и увеличиваем счетчики
           await Promise.all([
-            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
+            (this.graphSubsModel.create as any)([{ user: userObjectId, graph: graphObjectId }], { session }),
             (this.graphModel.findByIdAndUpdate as any)(
-              graph,
+              graphObjectId,
               { $inc: { subsNum: 1 } },
               { session, lean: true }
             ).exec(),
             (this.userModel.findByIdAndUpdate as any)(
-              user,
+              userObjectId,
               { $inc: { graphSubsNum: 1 } },
               { session, lean: true }
             ).exec()
@@ -104,15 +111,17 @@ export class GraphSubsService {
           
           // Инвалидируем кэш подписок пользователя и графа
           await Promise.all([
-            this.invalidateUserSubscriptionsCache(user),
-            this.invalidateGraphCache(graph)
+            this.invalidateUserSubscriptionsCache(userObjectId),
+            this.invalidateGraphCache(graphObjectId)
           ]);
           
           return { subscribed: true };
         }
       });
     } catch (error) {
-      console.error('Error in toggleSub:', error);
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Ошибка при переключении подписки');
     } finally {
       await session.endSession();
