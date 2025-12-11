@@ -113,6 +113,9 @@ export class EventRegsService {
 
     // Получаем всех пользователей, записанных на мероприятие
     async getUsersByEventId(eventId: string | Types.ObjectId, requestingUserId: string | Types.ObjectId) {
+        // Преобразуем eventId в ObjectId для корректного поиска
+        const eventObjectId = typeof eventId === 'string' ? new Types.ObjectId(eventId) : eventId;
+        
         // Получаем информацию о запрашивающем пользователе
         const requestingUser = await this.userModel
             .findById(requestingUserId)
@@ -125,7 +128,7 @@ export class EventRegsService {
 
         // Если у пользователя роль 'create', разрешаем доступ без дополнительных проверок
         if (requestingUser.role === 'create' || requestingUser.role === 'admin') {
-            const registrations = await (this.eventRegsModel.find as any)({ eventId })
+            const registrations = await (this.eventRegsModel.find as any)({ eventId: eventObjectId })
                 .sort({ _id: -1 })
                 .populate({
                     path: 'userId',
@@ -133,12 +136,15 @@ export class EventRegsService {
                 })
                 .lean();
 
-            return registrations.map(reg => reg.userId);
+            // Фильтруем null значения (если пользователь был удален) и возвращаем только валидных пользователей
+            return registrations
+                .filter(reg => reg.userId !== null && reg.userId !== undefined)
+                .map(reg => reg.userId);
         }
 
         // Для остальных пользователей проверяем права доступа через владение графом
         const event = await this.eventModel
-            .findById(eventId)
+            .findById(eventObjectId)
             .populate({
                 path: 'graphId',
                 select: 'ownerUserId'
@@ -159,7 +165,7 @@ export class EventRegsService {
         }
 
         // Если проверка прошла успешно, получаем список пользователей
-        const registrations = await (this.eventRegsModel.find as any)({ eventId })
+        const registrations = await (this.eventRegsModel.find as any)({ eventId: eventObjectId })
             .sort({ _id: -1 })
             .populate({
                 path: 'userId',
@@ -167,6 +173,9 @@ export class EventRegsService {
             })
             .lean();
 
-        return registrations.map(reg => reg.userId);
+        // Фильтруем null значения (если пользователь был удален) и возвращаем только валидных пользователей
+        return registrations
+            .filter(reg => reg.userId !== null && reg.userId !== undefined)
+            .map(reg => reg.userId);
     }
 }
