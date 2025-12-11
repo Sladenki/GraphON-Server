@@ -168,23 +168,28 @@ export class GraphSubsService {
 
   // --- Подписки ---
   // --- Получение событий из подписок ---
-  async getSubsEvents(userId: Types.ObjectId) {
+  async getSubsEvents(userId: string | Types.ObjectId) {
+    // Преобразуем userId в ObjectId для корректного поиска в БД
+    const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+    
     // Оптимизированный подход: параллельно получаем все необходимые данные
     const [subscribedGraphs, userEventRegs] = await Promise.all([
       // Получаем подписанные графы пользователя
       this.graphSubsModel.aggregate([
-        { $match: { user: userId } },
+        { $match: { user: userObjectId } },
         { $group: { _id: '$graph' } },
         { $project: { _id: 1 } }
       ]).exec(),
       
       // Получаем все записи пользователя на события одним запросом
-      (this.eventRegsModel.find as any)({ userId })
+      (this.eventRegsModel.find as any)({ userId: userObjectId })
         .select('eventId')
         .lean()
         .exec()
     ]);
 
+    // Преобразуем ObjectId в строки для передачи в getEventsByGraphsIds
+    // (метод сам преобразует их обратно в ObjectId)
     const graphIds = subscribedGraphs?.length > 0 
       ? subscribedGraphs.map(graph => graph._id.toString()) 
       : [];

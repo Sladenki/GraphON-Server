@@ -131,12 +131,17 @@ export class EventService {
     }
 
     // Получение мероприятий массива графов
-    async getEventsByGraphsIds(graphIds: string[]) {
+    async getEventsByGraphsIds(graphIds: string[] | Types.ObjectId[]) {
+        // Преобразуем все graphIds в ObjectId для корректного поиска в БД
+        const graphObjectIds = graphIds.map(id => 
+            typeof id === 'string' ? new Types.ObjectId(id) : id
+        );
+        
         // Получаем текущее время (включая часы и минуты)
         const now = new Date();
         
         return (this.eventModel.find as any)({
-                graphId: { $in: graphIds },
+                graphId: { $in: graphObjectIds },
                 $or: [
                     { eventDate: { $gt: now } }, // Больше текущего времени
                     { isDateTbd: true }
