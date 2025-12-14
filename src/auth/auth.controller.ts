@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { UserModel, UserDocument } from 'src/user/user.model';
 import { Request, Response } from 'express';
 import { JwtAuthService } from '../jwt/jwt.service';
@@ -156,6 +156,39 @@ export class AuthController {
       throw new BadRequestException('Code is required');
     }
 
+    // Проверяем, что это dev-код для локальной разработки
+    if (code === 'dev-local-login') {
+      // Проверяем, что мы в dev режиме
+      if (process.env.NODE_ENV === 'production') {
+        throw new BadRequestException('Dev login is only available in development mode');
+      }
+
+      // Всегда используем пользователя с фиксированным ID
+      const devUserId = new Types.ObjectId('6870e8dd6e49885e954e4d25');
+      const testUser = await this.userModel.findById(devUserId).lean();
+      
+      if (!testUser) {
+        throw new BadRequestException('Dev user not found. Please ensure user with ID 6870e8dd6e49885e954e4d25 exists in database.');
+      }
+
+      // Генерируем токен для тестового пользователя
+      const accessToken = this.jwtAuthService.generateToken(testUser._id, testUser.role);
+
+      // Возвращаем токен и данные пользователя в том же формате, что и обычный exchange-code
+      return res.json({
+        accessToken,
+        user: {
+          _id: testUser._id.toString(),
+          telegramId: testUser.telegramId,
+          firstName: testUser.firstName || '',
+          lastName: testUser.lastName || '',
+          username: testUser.username || '',
+          avaPath: testUser.avaPath || '',
+          role: testUser.role || 'user',
+        },
+      });
+    }
+
     console.log('[AuthController] Looking for code:', code.substring(0, 8) + '...');
     console.log('[AuthController] Available codes:', this.authCodes.size);
     
@@ -262,6 +295,42 @@ export class AuthController {
     } catch (error) {
       res.status(500).json({ message: 'Ошибка при выходе из системы' });
     }
+  }
+
+  // DEV-РЕЖИМ: Эндпоинт для локальной разработки через POST (альтернатива exchange-code)
+  // Позволяет получить токен для тестового пользователя без Telegram
+  // Всегда возвращает пользователя с фиксированным ID: 6870e8dd6e49885e954e4d25
+  @Post('dev-login')
+  async devLoginPost(@Res() res: Response) {
+    // Проверяем, что мы в dev режиме
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('Dev login is only available in development mode');
+    }
+
+    // Всегда используем пользователя с фиксированным ID
+    const devUserId = new Types.ObjectId('6870e8dd6e49885e954e4d25');
+    const testUser = await this.userModel.findById(devUserId).lean();
+    
+    if (!testUser) {
+      throw new BadRequestException('Dev user not found. Please ensure user with ID 6870e8dd6e49885e954e4d25 exists in database.');
+    }
+
+    // Генерируем токен для тестового пользователя
+    const accessToken = this.jwtAuthService.generateToken(testUser._id, testUser.role);
+
+    // Возвращаем токен и данные пользователя в том же формате, что и exchange-code
+    return res.json({
+      accessToken,
+      user: {
+        _id: testUser._id.toString(),
+        telegramId: testUser.telegramId,
+        firstName: testUser.firstName || '',
+        lastName: testUser.lastName || '',
+        username: testUser.username || '',
+        avaPath: testUser.avaPath || '',
+        role: testUser.role || 'user',
+      },
+    });
   }
 
   // DEV-РЕЖИМ: Эндпоинт для локальной разработки (только в development)
