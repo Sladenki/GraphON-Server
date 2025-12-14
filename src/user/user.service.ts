@@ -107,8 +107,6 @@ export class UserService {
 
   async updateSelectedGraph(userId: Types.ObjectId, selectedGraphId: string) {
     try {
-      console.log('updateSelectedGraph', userId, selectedGraphId);
-      
       // Преобразуем selectedGraphId в ObjectId
       const selectedGraphObjectId = new Types.ObjectId(selectedGraphId);
       
@@ -121,7 +119,6 @@ export class UserService {
 
       // Обновляем selectedGraphId (используем ObjectId)
       const updateFields: any = { selectedGraphId: selectedGraphObjectId };
-      console.log('updateFields', updateFields);
       
       // Если пользователь студент и universityGraphId еще не заполнен - заполняем его (первая регистрация)
       if (user.isStudent === true && !user.universityGraphId) {
@@ -133,8 +130,7 @@ export class UserService {
         { $set: updateFields },
         { new: true }
       ).lean();
-
-      console.log('updatedUser after updateSelectedGraph', updatedUser);
+      
       return updatedUser;
     } catch (error) {
       if (error instanceof NotFoundException) {
