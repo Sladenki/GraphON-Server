@@ -107,6 +107,11 @@ export class UserService {
 
   async updateSelectedGraph(userId: Types.ObjectId, selectedGraphId: string) {
     try {
+      console.log('updateSelectedGraph', userId, selectedGraphId);
+      
+      // Преобразуем selectedGraphId в ObjectId
+      const selectedGraphObjectId = new Types.ObjectId(selectedGraphId);
+      
       // Сначала получаем пользователя, чтобы проверить isStudent и universityGraphId
       const user = await this.userModel.findById(userId).lean();
       
@@ -114,25 +119,28 @@ export class UserService {
         throw new NotFoundException('Пользователь не найден');
       }
 
-      // Обновляем selectedGraphId
-      const updateFields: any = { selectedGraphId };
+      // Обновляем selectedGraphId (используем ObjectId)
+      const updateFields: any = { selectedGraphId: selectedGraphObjectId };
+      console.log('updateFields', updateFields);
       
       // Если пользователь студент и universityGraphId еще не заполнен - заполняем его (первая регистрация)
       if (user.isStudent === true && !user.universityGraphId) {
-        updateFields.universityGraphId = selectedGraphId;
+        updateFields.universityGraphId = selectedGraphObjectId;
       }
 
       const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
-        updateFields,
+        { $set: updateFields },
         { new: true }
       ).lean();
 
+      console.log('updatedUser after updateSelectedGraph', updatedUser);
       return updatedUser;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      console.error('Error in updateSelectedGraph:', error);
       throw new InternalServerErrorException('Ошибка при обновлении выбранного графа');
     }
   }
@@ -140,11 +148,18 @@ export class UserService {
   // --- Обновление университетского графа пользователя ---
   async updateUniversityGraph(userId: Types.ObjectId, universityGraphId: string) {
     try {
+      console.log('updateUniversityGraph', userId, universityGraphId);
+      
+      // Преобразуем universityGraphId в ObjectId
+      const universityGraphObjectId = new Types.ObjectId(universityGraphId);
+      
       const updatedUser = await this.userModel.findByIdAndUpdate(
         userId,
-        { universityGraphId },
+        { $set: { universityGraphId: universityGraphObjectId } },
         { new: true }
       ).lean();
+
+      console.log('updatedUser', updatedUser);
 
       if (!updatedUser) {
         throw new NotFoundException('Пользователь не найден');
@@ -155,6 +170,7 @@ export class UserService {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      console.error('Error in updateUniversityGraph:', error);
       throw new InternalServerErrorException('Ошибка при обновлении университетского графа');
     }
   }
