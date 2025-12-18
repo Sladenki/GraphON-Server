@@ -32,6 +32,7 @@ export class EventService {
 
     // --- Создание мероприятия ---
     async createEvent(dto: CreateEventDto) {
+        console.log('dto', dto);
         try {
             if (!dto.eventDate && !dto.isDateTbd) {
                 throw new HttpException(
@@ -41,6 +42,22 @@ export class EventService {
             }
 
             const payload: any = { ...dto };
+
+            // Явно конвертируем строки в ObjectId для полей, которые в схеме объявлены как ObjectId
+            if (dto.globalGraphId) {
+                if (!Types.ObjectId.isValid(dto.globalGraphId)) {
+                    throw new HttpException('Некорректный globalGraphId', HttpStatus.BAD_REQUEST);
+                }
+                payload.globalGraphId = new Types.ObjectId(dto.globalGraphId);
+            }
+
+            if (dto.graphId) {
+                if (!Types.ObjectId.isValid(dto.graphId)) {
+                    throw new HttpException('Некорректный graphId', HttpStatus.BAD_REQUEST);
+                }
+                payload.graphId = new Types.ObjectId(dto.graphId);
+            }
+
             if (dto.eventDate) {
                 payload.eventDate = new Date(dto.eventDate);
                 payload.isDateTbd = false;
