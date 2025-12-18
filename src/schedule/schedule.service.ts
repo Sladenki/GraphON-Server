@@ -15,15 +15,31 @@ export class ScheduleService {
 
   // --- Создание расписания --- 
   async createSchedule(scheduleDto: CreateScheduleDto) {
+    // graphId в DTO приходит как строка → конвертируем в ObjectId
+    if (!scheduleDto.graphId || !Types.ObjectId.isValid(scheduleDto.graphId)) {
+      // Не импортируем HttpException/HttpStatus здесь, чтобы не менять структуру файла;
+      // при невалидном ID Mongo сама бросит ошибку, но базовую проверку на наличие делаем.
+      throw new Error('Invalid graphId for schedule'); 
+    }
+
+    const graphObjectId = new Types.ObjectId(scheduleDto.graphId);
+
     // Если передан массив дней, создаём сразу несколько расписаний
     if (Array.isArray(scheduleDto.dayOfWeek) && scheduleDto.dayOfWeek.length > 0) {
       const { dayOfWeek, ...rest } = scheduleDto;
-      const docs = dayOfWeek.map((day: number) => ({ ...rest, dayOfWeek: day }));
+      const docs = dayOfWeek.map((day: number) => ({
+        ...rest,
+        graphId: graphObjectId,
+        dayOfWeek: day,
+      }));
       return this.scheduleModel.insertMany(docs);
     }
 
     // Если передано одно число, создаём одно расписание
-    const newSchedule = new this.scheduleModel(scheduleDto);
+    const newSchedule = new this.scheduleModel({
+      ...scheduleDto,
+      graphId: graphObjectId,
+    });
     return newSchedule.save();
   }
 
