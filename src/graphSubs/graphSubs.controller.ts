@@ -30,7 +30,8 @@ export class GraphSubsController {
             throw new BadRequestException('Некорректный формат graphId');
         }
 
-        return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
+        // return this.graphSubsService.toggleSub(currentUserId, graphIdObjectId)
+        return this.graphSubsService.graphSubsTempMongo(currentUserId, graphIdObjectId)
     }
 
     // --- Получение расписания из подписанных графов ---

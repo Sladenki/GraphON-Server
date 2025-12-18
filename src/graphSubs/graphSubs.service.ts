@@ -128,6 +128,144 @@ export class GraphSubsService {
     }
   }
 
+  /**
+   * Альтернативная версия для MongoDB 3.x без транзакций.
+   * 
+   * Особенности:
+   * - НЕ использует session/transactions.
+   * - Сначала проверяет, есть ли подписка.
+   * - При подписке: сначала обновляет счетчики, потом создаёт документ.
+   *   В случае ошибки при создании документа счётчики откатываются.
+   * - При отписке: сначала удаляет документ, потом обновляет счётчики,
+   *   при ошибке попытка откатить (вставить документ обратно).
+   * 
+   * ВАЖНО: это "best effort" без гарантий атомарности, но
+   * не оставляет "висящего" документа при ошибке.
+   */
+  async graphSubsTempMongo(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
+    const userObjectId = typeof user === 'string' ? new Types.ObjectId(user) : user;
+    const graphObjectId = typeof graph === 'string' ? new Types.ObjectId(graph) : graph;
+
+    try {
+      // Проверяем, есть ли уже подписка
+      const existing = await (this.graphSubsModel.findOne as any)({
+        user: userObjectId,
+        graph: graphObjectId,
+      }).lean().exec();
+
+      if (existing) {
+        // --- ОТПИСКА ---
+        // 1) Пытаемся удалить документ подписки
+        const deleteResult = await (this.graphSubsModel.deleteOne as any)({
+          user: userObjectId,
+          graph: graphObjectId,
+        }).exec();
+
+        if (deleteResult.deletedCount === 0) {
+          // Документ не удалился — считаем, что подписки нет, ничего не делаем
+          return { subscribed: false };
+        }
+
+        try {
+          // 2) Обновляем счётчики
+          await Promise.all([
+            this.graphModel.findByIdAndUpdate(
+              graphObjectId,
+              { $inc: { subsNum: -1 } },
+              { lean: true }
+            ).exec(),
+            this.userModel.findByIdAndUpdate(
+              userObjectId,
+              { $inc: { graphSubsNum: -1 } },
+              { lean: true }
+            ).exec(),
+          ]);
+        } catch (error) {
+          // Пытаемся откатить удаление подписки, чтобы не потерять связь
+          try {
+            await (this.graphSubsModel.create as any)({
+              user: userObjectId,
+              graph: graphObjectId,
+            });
+          } catch (rollbackError) {
+            console.error('graphSubsTempMongo rollback (recreate sub) failed:', rollbackError);
+          }
+
+          throw new InternalServerErrorException('Ошибка при обновлении счётчиков при отписке');
+        }
+
+        // Инвалидируем кэш
+        await Promise.all([
+          this.invalidateUserSubscriptionsCache(userObjectId),
+          this.invalidateGraphCache(graphObjectId),
+        ]);
+
+        return { subscribed: false };
+      } else {
+        // --- ПОДПИСКА ---
+        // 1) Сначала обновляем счётчики
+        try {
+          await Promise.all([
+            this.graphModel.findByIdAndUpdate(
+              graphObjectId,
+              { $inc: { subsNum: 1 } },
+              { lean: true }
+            ).exec(),
+            this.userModel.findByIdAndUpdate(
+              userObjectId,
+              { $inc: { graphSubsNum: 1 } },
+              { lean: true }
+            ).exec(),
+          ]);
+        } catch (error) {
+          throw new InternalServerErrorException('Ошибка при обновлении счётчиков при подписке');
+        }
+
+        // 2) Затем создаём документ подписки
+        try {
+          await (this.graphSubsModel.create as any)({
+            user: userObjectId,
+            graph: graphObjectId,
+          });
+        } catch (error) {
+          // Откатываем ранее увеличенные счётчики
+          try {
+            await Promise.all([
+              this.graphModel.findByIdAndUpdate(
+                graphObjectId,
+                { $inc: { subsNum: -1 } },
+                { lean: true }
+              ).exec(),
+              this.userModel.findByIdAndUpdate(
+                userObjectId,
+                { $inc: { graphSubsNum: -1 } },
+                { lean: true }
+              ).exec(),
+            ]);
+          } catch (rollbackError) {
+            console.error('graphSubsTempMongo rollback (counters) failed:', rollbackError);
+          }
+
+          throw new InternalServerErrorException('Ошибка при создании подписки');
+        }
+
+        // Инвалидируем кэш
+        await Promise.all([
+          this.invalidateUserSubscriptionsCache(userObjectId),
+          this.invalidateGraphCache(graphObjectId),
+        ]);
+
+        return { subscribed: true };
+      }
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      console.error('Error in graphSubsTempMongo:', error);
+      throw new InternalServerErrorException('Ошибка при переключении подписки (режим MongoDB 3.x)');
+    }
+  }
+
   // --- Получение расписания из подписанных графов ---
   // --- Для страницы расписания - стабильное расписание и записанные мероприяти ---
   async getSubsSchedule(userId: Types.ObjectId, daysAhead: number = 30) {
@@ -279,93 +417,6 @@ export class GraphSubsService {
     } catch (error) {
       console.error('Error in isUserSubsExists:', error);
       return false;
-    }
-  }
-
-  // --- Альтернативная высокопроизводительная версия ---
-  // --- Использует MongoDB bulk operations для максимальной производительности ---
-  async toggleSubBulk(user: string | Types.ObjectId, graph: string | Types.ObjectId): Promise<{ subscribed: boolean }> {
-    const session = await this.graphSubsModel.db.startSession();
-    
-    try {
-      return await session.withTransaction(async () => {
-        // Пытаемся удалить подписку
-        const deleteResult = await (this.graphSubsModel.deleteOne as any)({ user, graph })
-          .session(session)
-          .exec();
-
-        if (deleteResult.deletedCount > 0) {
-          // Подписка была удалена - используем bulk operations для обновления счетчиков
-          const bulkOps = [
-            {
-              updateOne: {
-                filter: { _id: graph },
-                update: { $inc: { subsNum: -1 } }
-              }
-            }
-          ];
-
-          const userBulkOps = [
-            {
-              updateOne: {
-                filter: { _id: user },
-                update: { $inc: { graphSubsNum: -1 } }
-              }
-            }
-          ];
-
-          await Promise.all([
-            (this.graphModel.bulkWrite as any)(bulkOps, { session }),
-            (this.userModel.bulkWrite as any)(userBulkOps, { session })
-          ]);
-
-          // Инвалидируем кэш подписок пользователя и графа
-          await Promise.all([
-            this.invalidateUserSubscriptionsCache(user),
-            this.invalidateGraphCache(graph)
-          ]);
-
-          return { subscribed: false };
-        } else {
-          // Подписки не было - создаем новую и обновляем счетчики
-          const bulkOps = [
-            {
-              updateOne: {
-                filter: { _id: graph },
-                update: { $inc: { subsNum: 1 } }
-              }
-            }
-          ];
-
-          const userBulkOps = [
-            {
-              updateOne: {
-                filter: { _id: user },
-                update: { $inc: { graphSubsNum: 1 } }
-              }
-            }
-          ];
-
-          await Promise.all([
-            (this.graphSubsModel.create as any)([{ user, graph }], { session }),
-            (this.graphModel.bulkWrite as any)(bulkOps, { session }),
-            (this.userModel.bulkWrite as any)(userBulkOps, { session })
-          ]);
-
-          // Инвалидируем кэш подписок пользователя и графа
-          await Promise.all([
-            this.invalidateUserSubscriptionsCache(user),
-            this.invalidateGraphCache(graph)
-          ]);
-
-          return { subscribed: true };
-        }
-      });
-    } catch (error) {
-      console.error('Error in toggleSubBulk:', error);
-      throw new InternalServerErrorException('Ошибка при переключении подписки');
-    } finally {
-      await session.endSession();
     }
   }
 
