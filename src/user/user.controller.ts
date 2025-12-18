@@ -48,6 +48,18 @@ export class UserController {
   async getUser(
     @Param('id') id: string
   ) {
+    // Специальный dev-идентификатор для локальной разработки:
+    // /api/user/getById/dev-user-id -> всегда отдаем dev-пользователя.
+    if (id === 'dev-user-id' && process.env.NODE_ENV !== 'production') {
+      const devId = '6870e8dd6e49885e954e4d25';
+      return this.userService.getUserById(new Types.ObjectId(devId));
+    }
+
+    // В остальных случаях ожидаем обычный Mongo ObjectId (24-символьная hex-строка).
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Некорректный формат ID пользователя (ожидается Mongo ObjectId)');
+    }
+
     return this.userService.getUserById(new Types.ObjectId(id));
   }
 
