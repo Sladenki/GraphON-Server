@@ -25,33 +25,43 @@ export class EventRegsService {
 
     // Подписываемся на мероприятие
     async toggleEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) { 
+        // Преобразуем строковые ID в ObjectId для корректной работы с БД
+        const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+        const eventObjectId = typeof eventId === 'string' ? new Types.ObjectId(eventId) : eventId;
+        
         // Оптимизированный подход: пытаемся удалить запись, если она есть
-        const deletedEvent = await (this.eventRegsModel.findOneAndDelete as any)({ userId, eventId }).lean();
+        const deletedEvent = await (this.eventRegsModel.findOneAndDelete as any)({ userId: userObjectId, eventId: eventObjectId }).lean();
     
         if (deletedEvent) {
             // Если запись была найдена и удалена, уменьшаем счётчики
             await Promise.all([
-                (this.userModel.findOneAndUpdate as any)({ _id: userId }, { $inc: { attentedEventsNum: -1 } }),
-                (this.eventModel.findOneAndUpdate as any)({ _id: eventId }, { $inc: { regedUsers: -1 } })
+                (this.userModel.findOneAndUpdate as any)({ _id: userObjectId }, { $inc: { attentedEventsNum: -1 } }),
+                (this.eventModel.findOneAndUpdate as any)({ _id: eventObjectId }, { $inc: { regedUsers: -1 } })
             ]);
         } else {
             // Если записи не было, создаём её и увеличиваем счётчики
             await Promise.all([
-                (this.userModel.findOneAndUpdate as any)({ _id: userId }, { $inc: { attentedEventsNum: 1 } }),
-                (this.eventModel.findOneAndUpdate as any)({ _id: eventId }, { $inc: { regedUsers: 1 } }),
-                (this.eventRegsModel.create as any)({ userId, eventId })
+                (this.userModel.findOneAndUpdate as any)({ _id: userObjectId }, { $inc: { attentedEventsNum: 1 } }),
+                (this.eventModel.findOneAndUpdate as any)({ _id: eventObjectId }, { $inc: { regedUsers: 1 } }),
+                (this.eventRegsModel.create as any)({ userId: userObjectId, eventId: eventObjectId })
             ]);
         }
     }
 
     // Проверяем, участвует ли пользователь в мероприятии
     async isUserAttendingEvent(userId: string | Types.ObjectId, eventId: string | Types.ObjectId) {
-        const eventReg = await (this.eventRegsModel.findOne as any)({ userId, eventId }).exec();
+        // Преобразуем строковые ID в ObjectId для корректной работы с БД
+        const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+        const eventObjectId = typeof eventId === 'string' ? new Types.ObjectId(eventId) : eventId;
+        const eventReg = await (this.eventRegsModel.findOne as any)({ userId: userObjectId, eventId: eventObjectId }).exec();
         return !!eventReg;
     }
 
     // Получаем мероприятия, на которые подписан пользователь (за месяц)
     async getEventsByUserId(userId: string | Types.ObjectId, daysAhead: number = 30) {
+        // Преобразуем строковый ID в ObjectId для корректной работы с БД
+        const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+        
         // Получаем начало текущего дня (00:00:00)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -60,7 +70,7 @@ export class EventRegsService {
         const endDate = new Date(today);
         endDate.setDate(endDate.getDate() + daysAhead);
 
-        const regs = await (this.eventRegsModel.find as any)({ userId })
+        const regs = await (this.eventRegsModel.find as any)({ userId: userObjectId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
@@ -88,7 +98,9 @@ export class EventRegsService {
 
     // Получаем ВСЕ мероприятия, на которые был записан пользователь (включая прошедшие)
     async getAllUserEvents(userId: string | Types.ObjectId) {
-        const regs = await (this.eventRegsModel.find as any)({ userId })
+        // Преобразуем строковый ID в ObjectId для корректной работы с БД
+        const userObjectId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+        const regs = await (this.eventRegsModel.find as any)({ userId: userObjectId })
             .populate({
                 path: 'eventId',
                 model: 'EventModel',
