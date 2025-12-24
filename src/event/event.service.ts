@@ -216,6 +216,10 @@ export class EventService {
                     path: "parentGraphId",
                     select: "name imgPath ownerUserId"
                 }
+            })
+            .populate({
+                path: "parentGraphId",
+                select: "name imgPath ownerUserId"
             });
         
         // Применяем пагинацию только если параметры переданы
