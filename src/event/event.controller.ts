@@ -1,4 +1,17 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Delete, Param, Put } from "@nestjs/common";
+import {
+    BadRequestException,
+    Controller,
+    Delete,
+    Get,
+    NotFoundException,
+    Param,
+    Post,
+    Put,
+    Query,
+    StreamableFile,
+    UseGuards,
+    Body,
+} from "@nestjs/common";
 import { EventService } from "./event.service";
 import { CreateEventDto } from "./dto/event.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
@@ -12,6 +25,9 @@ import { OptionalAuth } from "src/decorators/optionalAuth.decorator";
 import { Auth } from "src/decorators/auth.decorator";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { Types } from "mongoose";
+import { GraphModel, GraphDocument } from "src/graph/graph.model";
+import { buildWorkReportDocx } from "./work-report-docx.util";
 
 @Controller("event")
 export class EventController {
@@ -20,8 +36,46 @@ export class EventController {
         private readonly eventRegsService: EventRegsService,
 
         @InjectModel(EventRegsModel.name)
-        private readonly eventRegsModel: Model<EventRegsDocument>
+        private readonly eventRegsModel: Model<EventRegsDocument>,
+
+        @InjectModel(GraphModel.name)
+        private readonly graphModel: Model<GraphDocument>,
     ) {}
+
+    // --- Скачивание отчёта по проделанной работе (DOCX) ---
+    // query: groupId = ID графа (группы)
+    // ВАЖНО: этот роут должен быть выше, чем @Get(":eventId"), иначе "report" матчит как eventId
+    @Get("report")
+    @UseGuards(JwtAuthGuard, OptionalAuthGuard)
+    @OptionalAuth()
+    async downloadWorkReportDocx(
+        @Query("groupId") groupId: string,
+    ) {
+        if (!groupId || !Types.ObjectId.isValid(groupId)) {
+            throw new BadRequestException("Некорректный groupId");
+        }
+
+        const graph = await this.graphModel.findById(groupId).select("name").lean();
+        if (!graph) {
+            throw new NotFoundException("Граф (группа) не найден");
+        }
+
+        const events = await this.eventService.getAllEventsByGraphIdForReport(groupId);
+        const buffer = await buildWorkReportDocx({
+            graphName: (graph as any).name ?? "—",
+            events,
+        });
+
+        const filename = "Отчет_1_сем_2025.docx";
+        const encoded = encodeURIComponent(filename);
+        const disposition = `attachment; filename="report.docx"; filename*=UTF-8''${encoded}`;
+
+        return new StreamableFile(buffer, {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            disposition,
+            length: buffer.length,
+        });
+    }
 
     // --- Получение мероприятия по id ---
     @Get(":eventId")

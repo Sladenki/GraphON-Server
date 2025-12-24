@@ -131,6 +131,26 @@ export class EventService {
         });
     }
 
+    // --- Получение ВСЕХ мероприятий для отчёта по графу (без фильтров по времени) ---
+    async getAllEventsByGraphIdForReport(graphId: string | Types.ObjectId) {
+        const graphObjectId = typeof graphId === 'string' ? new Types.ObjectId(graphId) : graphId;
+
+        const events = await (this.eventModel.find as any)({ graphId: graphObjectId })
+            .select('name description eventDate isDateTbd regedUsers')
+            .lean();
+
+        // Для отчёта удобнее хронологически (без "дата уточняется" в начале)
+        return (events as any[]).sort((a, b) => {
+            const aTbd = Boolean(a?.isDateTbd);
+            const bTbd = Boolean(b?.isDateTbd);
+            if (aTbd !== bTbd) return aTbd ? 1 : -1;
+
+            const aTime = a?.eventDate ? new Date(a.eventDate).getTime() : Number.POSITIVE_INFINITY;
+            const bTime = b?.eventDate ? new Date(b.eventDate).getTime() : Number.POSITIVE_INFINITY;
+            return aTime - bTime;
+        });
+    }
+
     // --- Получение прошедших мероприятий для определённого графа ---
     async getPastEventsByGraphId(graphId: string) {
         // Начало текущего дня (00:00:00)

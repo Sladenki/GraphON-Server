@@ -6,6 +6,7 @@ import { EventModel, EventSchema } from "./event.model";
 import { EventRegsModel, EventRegsSchema } from "src/eventRegs/eventRegs.model";
 import { EventRegsModule } from "src/eventRegs/eventRegs.module";
 import { ConfigModule } from "@nestjs/config";
+import { GraphModel, GraphSchema } from "src/graph/graph.model";
 
 @Module({
   controllers: [EventController],
@@ -14,6 +15,7 @@ import { ConfigModule } from "@nestjs/config";
     MongooseModule.forFeature([
       { name: EventModel.name, schema: EventSchema },
       { name: EventRegsModel.name, schema: EventRegsSchema },
+      { name: GraphModel.name, schema: GraphSchema },
     ]),
     EventRegsModule,
   ],
