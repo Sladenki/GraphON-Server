@@ -6,6 +6,9 @@ import {
   Post,
   Query,
   BadRequestException,
+  Body,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -214,6 +217,55 @@ export class AuthController {
     return res.json({
       accessToken: authData.token,
       user: authData.user,
+    });
+  }
+
+  // DEV-РЕЖИМ: Войти "как пользователь" по userId (только если NODE_ENV === 'dev')
+  // Body: { "userId": "<mongoObjectId>" }
+  @Post('dev-login-as')
+  async devLoginAs(@Body() body: { userId?: string }, @Res() res: Response) {
+    if (process.env.NODE_ENV !== 'dev') {
+      throw new ForbiddenException('This endpoint is only available in dev environment');
+    }
+
+    const userId = body?.userId;
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid userId (expected Mongo ObjectId)');
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+    const user = await this.userModel.findById(userObjectId).lean();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // If your User has blocked/deleted flags in DB, forbid impersonation.
+    const anyUser: any = user;
+    if (
+      anyUser.isBlocked === true ||
+      anyUser.blocked === true ||
+      anyUser.isDeleted === true ||
+      anyUser.deleted === true ||
+      anyUser.deletedAt
+    ) {
+      throw new ForbiddenException('Cannot login as blocked/deleted user');
+    }
+
+    const accessToken = this.jwtAuthService.generateToken(user._id, user.role);
+
+    // Return the same shape as /auth/exchange-code expects
+    return res.json({
+      accessToken,
+      user: {
+        _id: user._id.toString(),
+        telegramId: (user as any).telegramId,
+        firstName: (user as any).firstName || '',
+        lastName: (user as any).lastName || '',
+        username: (user as any).username || '',
+        avaPath: (user as any).avaPath || '',
+        role: (user as any).role || 'user',
+      },
     });
   }
 
