@@ -9,6 +9,10 @@ import { GraphModel, GraphDocument } from 'src/graph/graph.model';
 import { USER_CONSTANTS } from '../constants/user.constants';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 @Injectable()
 export class UserService {
   constructor(
@@ -90,6 +94,65 @@ export class UserService {
 
     const nextCursor = users.length === limit ? (users[users.length - 1] as any)._id?.toString() : undefined;
 
+    return { items: users, nextCursor };
+  }
+
+  // --- Поиск пользователей по имени/фамилии/username (prefix search) ---
+  // Использует нормализованные поля *Norm (lowercase) для быстрой работы по индексам.
+  async searchUsers(params: { q: string; limit?: number; cursor?: Types.ObjectId }) {
+    const qRaw = (params.q ?? '').trim();
+    if (!qRaw) {
+      return { items: [], nextCursor: undefined };
+    }
+
+    const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
+    const tokens = qRaw.split(/\s+/g).filter(Boolean).slice(0, 3);
+
+    // Simple prefix-search, case-insensitive (no Norm fields)
+    const makePrefixI = (t: string) => new RegExp(`^${escapeRegex(t)}`, 'i');
+
+    const or: any[] = [];
+
+    if (tokens.length >= 2) {
+      const [a, b] = tokens;
+      const ra = makePrefixI(a);
+      const rb = makePrefixI(b);
+
+      // first last OR last first
+      or.push({ $and: [{ firstName: ra }, { lastName: rb }] });
+      or.push({ $and: [{ firstName: rb }, { lastName: ra }] });
+
+      // username / full-name field (if exists in document)
+      or.push({ username: ra });
+      or.push({ username: rb });
+      or.push({ name: ra });
+      or.push({ name: rb });
+    } else {
+      const r = makePrefixI(tokens[0]);
+      or.push({ firstName: r }, { lastName: r }, { username: r }, { name: r });
+    }
+
+    const query: any = { $or: or };
+    if (params.cursor) query._id = { $lt: params.cursor };
+
+    const users = await this.userModel
+      .find(query)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean()
+      // отдаём фронту профильные поля + счётчики
+      .select({
+        firstName: 1,
+        lastName: 1,
+        username: 1,
+        avaPath: 1,
+        friendsCount: 1,
+        followersCount: 1,
+        followingCount: 1,
+        createdAt: 1,
+      });
+
+    const nextCursor = users.length === limit ? (users[users.length - 1] as any)._id?.toString() : undefined;
     return { items: users, nextCursor };
   }
 

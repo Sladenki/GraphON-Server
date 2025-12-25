@@ -93,6 +93,25 @@ export class UserController {
     });
   }
 
+  // Поиск пользователей по имени/фамилии/username
+  // Пример: /api/user/search?q=alex&limit=20&cursor=656a...
+  @Get('search')
+  async searchUsers(
+    @Query('q') q: string,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    const cursorObjId =
+      cursor && Types.ObjectId.isValid(cursor) ? new Types.ObjectId(cursor) : undefined;
+
+    return this.userService.searchUsers({
+      q,
+      limit: parsedLimit,
+      cursor: cursorObjId,
+    });
+  }
+
   // Получение пользователей по выбранному графу
   @Get('allUsersByGraph/:graphId')
   async getUsersBySelectedGraph(

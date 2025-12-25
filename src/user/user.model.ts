@@ -26,13 +26,13 @@ export class UserModel {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'GraphModel' }], default: undefined })
   managedGraphIds?: Types.ObjectId[];
 
-  @Prop()
+  @Prop({ index: true })
   firstName: string
 
-  @Prop()
+  @Prop({ index: true })
   lastName: string
 
-  @Prop()
+  @Prop({ index: true })
   username: string
 
   @Prop()
