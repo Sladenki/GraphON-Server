@@ -66,8 +66,7 @@ export class UserService {
     const users = await this.userModel
       .find()
       .sort({ _id: -1 })
-      .lean()
-      .select({ createdAt: 1, updatedAt: 0 });
+      .lean();
 
     return users;
   }
@@ -87,8 +86,7 @@ export class UserService {
       .find(query)
       .sort({ _id: -1 })
       .limit(limit)
-      .lean()
-      .select({ createdAt: 1, updatedAt: 0 });
+      .lean();
 
     const nextCursor = users.length === limit ? (users[users.length - 1] as any)._id?.toString() : undefined;
 
