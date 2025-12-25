@@ -9,6 +9,7 @@ import { RelationshipsService } from './relationships.service';
 export class RelationshipsController {
   constructor(private readonly relationshipsService: RelationshipsService) {}
 
+  // Отправить заявку в друзья (создаёт/возобновляет PENDING requester -> target)
   @Post('request/:targetUserId')
   @Auth()
   sendFriendRequest(
@@ -18,6 +19,7 @@ export class RelationshipsController {
     return this.relationshipsService.sendFriendRequest(currentUserId, targetUserId);
   }
 
+  // Принять входящую заявку в друзья (PENDING -> ACCEPTED + зеркальная связь)
   @Post('accept/:requesterUserId')
   @Auth()
   acceptFriendRequest(
@@ -27,6 +29,7 @@ export class RelationshipsController {
     return this.relationshipsService.acceptFriendRequest(currentUserId, requesterUserId);
   }
 
+  // Отклонить входящую заявку в друзья (PENDING -> DECLINED)
   @Post('decline/:requesterUserId')
   @Auth()
   declineFriendRequest(
@@ -36,6 +39,7 @@ export class RelationshipsController {
     return this.relationshipsService.declineFriendRequest(currentUserId, requesterUserId);
   }
 
+  // Удалить пользователя из друзей (удаляет ACCEPTED связи в обе стороны)
   @Delete('friends/:friendUserId')
   @Auth()
   removeFriend(
@@ -45,6 +49,7 @@ export class RelationshipsController {
     return this.relationshipsService.removeFriend(currentUserId, friendUserId);
   }
 
+  // Получить список друзей (ACCEPTED, порционно)
   @Get('friends')
   @Auth()
   getFriends(
@@ -58,6 +63,7 @@ export class RelationshipsController {
     });
   }
 
+  // Получить список подписчиков / входящих заявок (PENDING target=user, порционно)
   @Get('followers')
   @Auth()
   getFollowers(
@@ -71,6 +77,7 @@ export class RelationshipsController {
     });
   }
 
+  // Получить список подписок / исходящих заявок (PENDING requester=user, порционно)
   @Get('following')
   @Auth()
   getFollowing(
