@@ -57,6 +57,16 @@ export class UserModel {
   @Prop({ default: 0 })
   attentedEventsNum: number
 
+  // Fast-access social counters (derived from `relationships` collection)
+  @Prop({ default: 0 })
+  friendsCount: number
+
+  @Prop({ default: 0 })
+  followersCount: number
+
+  @Prop({ default: 0 })
+  followingCount: number
+
   // Поля для соглашения об авторских правах
   @Prop({ default: false })
   copyrightAgreementAccepted: boolean

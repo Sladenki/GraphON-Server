@@ -24,6 +24,8 @@ import { MongoModule } from './mongo/mongo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { DownloadsModule } from './downloads/downloads.module';
 import { RequestsConnectedGraphModule } from './requestsConnectedGraph/requests-connected-graph.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { RelationshipsModule } from './relationships/relationships.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { RequestsConnectedGraphModule } from './requestsConnectedGraph/requests-
     AnalyticsModule,
     DownloadsModule,
     RequestsConnectedGraphModule,
+    NotificationsModule,
+    RelationshipsModule,
   ],
   controllers: [AppController],
   providers: [
