@@ -72,6 +72,29 @@ export class UserService {
     return users;
   }
 
+  // --- Порционное получение пользователей (cursor pagination) ---
+  // Возвращаем ObjectId-ы и минимальные поля, без populate
+  async getUsersPaged(params?: { limit?: number; cursor?: Types.ObjectId }) {
+    const limit = Math.min(Math.max(params?.limit ?? USER_CONSTANTS.DEFAULT_USERS_LIMIT ?? 50, 1), 200);
+
+    const query: any = {};
+    // Сортируем по _id DESC (новые сверху), поэтому cursor означает "после этого id вниз"
+    if (params?.cursor) {
+      query._id = { $lt: params.cursor };
+    }
+
+    const users = await this.userModel
+      .find(query)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean()
+      .select({ createdAt: 1, updatedAt: 0 });
+
+    const nextCursor = users.length === limit ? (users[users.length - 1] as any)._id?.toString() : undefined;
+
+    return { items: users, nextCursor };
+  }
+
   // --- Получение пользователей по выбранному графу ---
   async getUsersBySelectedGraph(graphId: string) {
     const users = await (this.userModel.find as any)({ selectedGraphId: new Types.ObjectId(graphId) })

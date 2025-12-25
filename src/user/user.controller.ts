@@ -76,6 +76,23 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
+  // Порционное получение пользователей (cursor pagination)
+  // Пример: /api/user/list?limit=50&cursor=656a... (вернет следующую порцию)
+  @Get('list')
+  async listUsers(
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    const cursorObjId =
+      cursor && Types.ObjectId.isValid(cursor) ? new Types.ObjectId(cursor) : undefined;
+
+    return this.userService.getUsersPaged({
+      limit: parsedLimit,
+      cursor: cursorObjId,
+    });
+  }
+
   // Получение пользователей по выбранному графу
   @Get('allUsersByGraph/:graphId')
   async getUsersBySelectedGraph(
