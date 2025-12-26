@@ -29,6 +29,8 @@
 		"@nestjs/mongoose": "^11.0.3",
 		"@nestjs/passport": "^11.0.5",
 		"@nestjs/platform-express": "^11.1.9",
+		"@nestjs/platform-socket.io": "^11.1.10",
+		"@nestjs/websockets": "^11.1.10",
 		"@redis/client": "^5.10.0",
 		"cache-manager": "^7.2.5",
 		"class-transformer": "^0.5.1",
@@ -41,6 +43,7 @@
 		"passport-jwt": "^4.0.1",
 		"redis": "^5.10.0",
 		"rxjs": "^7.8.2",
+		"socket.io": "^4.8.3",
 		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {

@@ -26,6 +26,7 @@ import { DownloadsModule } from './downloads/downloads.module';
 import { RequestsConnectedGraphModule } from './requestsConnectedGraph/requests-connected-graph.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RelationshipsModule } from './relationships/relationships.module';
+import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { RelationshipsModule } from './relationships/relationships.module';
     RequestsConnectedGraphModule,
     NotificationsModule,
     RelationshipsModule,
+    WebSocketModule,
   ],
   controllers: [AppController],
   providers: [

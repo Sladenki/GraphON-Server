@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserDocument, UserModel } from 'src/user/user.model';
 import { NotificationsService } from 'src/notifications/notifications.service';
+import { WebSocketGatewayService } from 'src/websocket/websocket-gateway.service';
 import { RelationshipDocument, RelationshipModel } from './relationship.model';
 import { RelationshipStatus } from './relationship-status.enum';
 
@@ -24,6 +25,7 @@ export class RelationshipsService {
     @InjectModel(UserModel.name)
     private readonly userModel: Model<UserDocument>,
     private readonly notificationsService: NotificationsService,
+    private readonly wsGateway: WebSocketGatewayService,
   ) {}
 
   async sendFriendRequest(requesterId: Types.ObjectId, targetId: Types.ObjectId) {
@@ -44,6 +46,17 @@ export class RelationshipsService {
     if (revived) {
       await this.applySendRequestCounters(requesterId, targetId);
       await this.notificationsService.createFriendRequestNotification({ userId: targetId, fromUserId: requesterId });
+      
+      // Send WebSocket event to target user
+      this.wsGateway.sendToUser(targetId, {
+        type: 'friend_request_sent',
+        data: {
+          fromUserId: requesterId.toString(),
+          toUserId: targetId.toString(),
+          timestamp: new Date().toISOString(),
+        },
+      });
+      
       return { status: RelationshipStatus.PENDING, created: false, revived: true };
     }
 
@@ -57,6 +70,17 @@ export class RelationshipsService {
 
       await this.applySendRequestCounters(requesterId, targetId);
       await this.notificationsService.createFriendRequestNotification({ userId: targetId, fromUserId: requesterId });
+      
+      // Send WebSocket event to target user
+      this.wsGateway.sendToUser(targetId, {
+        type: 'friend_request_sent',
+        data: {
+          fromUserId: requesterId.toString(),
+          toUserId: targetId.toString(),
+          timestamp: new Date().toISOString(),
+        },
+      });
+      
       return { status: RelationshipStatus.PENDING, created: true, revived: false };
     } catch (err) {
       if (!isDuplicateKeyError(err)) throw err;
@@ -144,6 +168,16 @@ export class RelationshipsService {
         userId: requesterId,
         fromUserId: currentUserId,
       });
+      
+      // Send WebSocket event to original requester (toUserId = requesterId)
+      this.wsGateway.sendToUser(requesterId, {
+        type: 'friend_request_accepted',
+        data: {
+          fromUserId: currentUserId.toString(), // Who accepted (performed action)
+          toUserId: requesterId.toString(), // Who gets notification
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
 
     // Mutual-pending edge case: if currentUser had also sent a request earlier, we transitioned that too
@@ -188,6 +222,17 @@ export class RelationshipsService {
 
     if (transitioned) {
       await this.applyDeclineCounters({ requesterId, targetId: currentUserId });
+      
+      // Send WebSocket event to original requester
+      this.wsGateway.sendToUser(requesterId, {
+        type: 'friend_request_declined',
+        data: {
+          fromUserId: currentUserId.toString(), // Who declined (performed action)
+          toUserId: requesterId.toString(), // Who gets notification
+          timestamp: new Date().toISOString(),
+        },
+      });
+      
       return { status: RelationshipStatus.DECLINED };
     }
 
@@ -225,7 +270,21 @@ export class RelationshipsService {
       await this.userModel.updateOne({ _id: friendUserId }, { $inc: { friendsCount: -1 } });
     }
 
-    return { removed: (aToB.deletedCount ?? 0) + (bToA.deletedCount ?? 0) > 0 };
+    const removed = (aToB.deletedCount ?? 0) + (bToA.deletedCount ?? 0) > 0;
+    
+    // Send WebSocket event to the friend who was removed (if any deletion occurred)
+    if (removed) {
+      this.wsGateway.sendToUser(friendUserId, {
+        type: 'friend_removed',
+        data: {
+          fromUserId: currentUserId.toString(), // Who removed (performed action)
+          toUserId: friendUserId.toString(), // Who gets notification
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+    
+    return { removed };
   }
 
   async getFriends(userId: Types.ObjectId, params?: { limit?: number; cursor?: Types.ObjectId }) {

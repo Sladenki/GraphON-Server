@@ -92,9 +92,18 @@ export class UserService {
       .limit(limit)
       .lean();
 
+    // Явно преобразуем _id и другие ObjectId поля в строки для корректной JSON сериализации
+    const serializedUsers = users.map((user: any) => ({
+      ...user,
+      _id: user._id?.toString(),
+      selectedGraphId: user.selectedGraphId?.toString() || null,
+      universityGraphId: user.universityGraphId?.toString() || null,
+      managedGraphIds: user.managedGraphIds?.map((id: any) => id?.toString()) || undefined,
+    }));
+
     const nextCursor = users.length === limit ? (users[users.length - 1] as any)._id?.toString() : undefined;
 
-    return { items: users, nextCursor };
+    return { items: serializedUsers, nextCursor };
   }
 
   // --- Поиск пользователей по имени/фамилии/username (prefix search) ---
